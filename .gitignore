@@ -2,6 +2,7 @@
 
 # Local Tor Expert Bundle downloads and extracted files
 tor-expert-bundle-*
+!installer/tor-expert-bundle-version.txt
 
 # Generated installers and build output
 dist/
