@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Set up Tor Connect</title>
+  <link rel="stylesheet" href="setup.css">
+</head>
+<body>
+  <main>
+    <p id="setupEyebrow" class="eyebrow">ONE-TIME SETUP</p>
+    <h1>Connect Chrome through Tor</h1>
+    <p id="setupIntro" class="intro">A small companion app installs Tor on this computer and links it to Chrome.</p>
+
+    <div class="setup-tabs" role="tablist" aria-label="Setup method">
+      <button id="manualTab" class="setup-tab active" type="button" role="tab" aria-selected="true" aria-controls="manualPanel">Manual installation</button>
+      <button id="guidedTab" class="setup-tab" type="button" role="tab" aria-selected="false" aria-controls="guidedPanel">Setup wizard</button>
+    </div>
+
+    <div id="guidedPanel" role="tabpanel" aria-labelledby="guidedTab" hidden>
+    <section>
+      <h2>Install Tor Connect for this computer</h2>
+      <p id="setupInstructions">Download and open the Tor Connect installer for your computer. It installs Tor and connects it to Chrome.</p>
+      <a id="macInstallerDownload" class="button secondary" hidden>Download the Mac setup app</a>
+      <a id="windowsInstallerDownload" class="button secondary" hidden>Download the Windows installer</a>
+      <a id="linuxInstallerDownload" class="button secondary" hidden>Download the Debian/Ubuntu package</a>
+      <button id="installerUnavailable" class="button secondary" type="button" disabled>Installer not available yet</button>
+      <p id="installerHelp" class="hint">You only need to set this up once. Your bridge lines stay on this computer.</p>
+    </section>
+
+    <details>
+      <summary>Why is a separate setup app needed?</summary>
+      <p>Chrome extensions cannot install or start Tor on their own. The Tor Connect setup app installs Tor on this computer and connects it to the extension.</p>
+    </details>
+    <details data-platform="mac">
+      <summary>If macOS says “Permission denied”</summary>
+      <p>First verify that the Tor bundle came from the official Tor Project and verify its signature. If it is verified, remove the quarantine flag from the installed copy in Terminal:</p>
+      <pre>xattr -dr com.apple.quarantine "$HOME/Library/Application Support/TorChrome/runtime/bundle"</pre>
+      <p>This removes quarantine only from this Tor bundle; it does not disable Gatekeeper globally.</p>
+      <a href="https://support.torproject.org/little-t-tor/getting-started/verifying/" target="_blank" rel="noreferrer">Tor Project signature verification instructions ↗</a>
+    </details>
+    </div>
+
+    <div id="manualPanel" role="tabpanel" aria-labelledby="manualTab">
+      <section>
+        <h2>Install it yourself</h2>
+        <p class="manual-intro">Download the Tor Expert Bundle from the Tor Project, then run the command for your computer. The command downloads Tor Connect’s small setup script and installs the local helper.</p>
+        <div class="manual-downloads">
+          <a class="button secondary" href="https://www.torproject.org/download/tor/" target="_blank" rel="noreferrer">Download Tor Expert Bundle ↗</a>
+        </div>
+      </section>
+
+      <div class="os-tabs" role="tablist" aria-label="Choose your operating system">
+        <button id="macOsTab" class="os-tab" type="button" role="tab" aria-selected="false" aria-controls="macOsPanel">
+          <svg class="os-icon apple-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12.2 7.2c-1.3-1.1-3.4-1-4.7-.3-3.5 1.8-2.9 7.4-.7 11.3.9 1.6 2 2.5 3 2 1.4-.7 2.7-.7 4.1 0 1 .5 2.1-.3 3-1.9 1.1-1.8 1.8-3.8 1.8-5.6-2.4-.8-3.1-3.8-1.1-5.4-1.7-1.1-3.5-.8-5.4-.1z"/><path d="M12.8 6.1c-.1-2 1.3-3.7 3.6-4.1.2 2.1-1.2 3.7-3.6 4.1z"/></svg>
+          <span>macOS</span>
+        </button>
+        <button id="windowsOsTab" class="os-tab" type="button" role="tab" aria-selected="false" aria-controls="windowsOsPanel">
+          <svg class="os-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 5.2 10.6 4v7.2H2V5.2Zm10.1-1.4L22 2.4v8.8h-9.9V3.8ZM2 12.8h8.6V20L2 18.8v-6Zm10.1 0H22v8.8l-9.9-1.4v-7.4Z"/></svg>
+          <span>Windows</span>
+        </button>
+        <button id="linuxOsTab" class="os-tab" type="button" role="tab" aria-selected="false" aria-controls="linuxOsPanel">
+          <svg class="os-icon linux-icon" viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="13" rx="7" ry="9"/><ellipse class="penguin-belly" cx="12" cy="15" rx="4.2" ry="5.8"/><circle class="penguin-eye" cx="9.5" cy="8.5" r=".8"/><circle class="penguin-eye" cx="14.5" cy="8.5" r=".8"/><path class="penguin-beak" d="m10.5 10.2 1.5 1.2 1.5-1.2-1.5-.8z"/><path class="penguin-feet" d="M6 20.5 3.5 22h5l1-1.5zm8 0 1 1.5h5L17.5 20.5z"/></svg>
+          <span>Linux</span>
+        </button>
+      </div>
+      <p id="manualUnknownPlatform" class="hint" hidden>We couldn’t detect your operating system. Choose a tab to see its instructions.</p>
+
+      <section id="macOsPanel" class="os-panel" role="tabpanel" aria-labelledby="macOsTab" data-os="mac" hidden>
+        <h2>Mac · Terminal</h2>
+        <p>Copy the setup command and paste it into Terminal. A file window will open so you can choose the Tor Expert Bundle you downloaded.</p>
+        <div class="command-actions">
+          <button id="copyMacManualCommand" class="button" type="button">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="13" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h3"/></svg>
+            <span>Copy setup command</span>
+          </button>
+          <span id="macCommandStatus" class="copy-status" role="status" aria-live="polite"></span>
+        </div>
+        <details class="command-details">
+          <summary>View command</summary>
+          <pre id="macManualCommand"></pre>
+        </details>
+        <p class="hint">The script removes download quarantine and ad hoc signs the local Tor files macOS needs to load. No Apple developer certificate is used. Restart Chrome after setup.</p>
+      </section>
+      <section id="windowsOsPanel" class="os-panel" role="tabpanel" aria-labelledby="windowsOsTab" data-os="windows" hidden>
+        <h2>Windows · PowerShell</h2>
+        <p>Extract the Tor Expert Bundle, then copy the setup command and paste it into PowerShell. A folder window will open so you can choose where you extracted it. Setup downloads the Chrome helper from GitHub.</p>
+        <div class="command-actions">
+          <button id="copyWindowsManualCommand" class="button" type="button">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="13" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h3"/></svg>
+            <span>Copy setup command</span>
+          </button>
+          <span id="windowsCommandStatus" class="copy-status" role="status" aria-live="polite"></span>
+        </div>
+        <details class="command-details">
+          <summary>View command</summary>
+          <pre id="windowsManualCommand"></pre>
+        </details>
+        <p class="hint">Restart Chrome after setup to load the local Tor helper.</p>
+      </section>
+      <section id="linuxOsPanel" class="os-panel" role="tabpanel" aria-labelledby="linuxOsTab" data-os="linux" hidden>
+        <h2>Linux · Terminal</h2>
+        <p>Extract the Tor Expert Bundle, then copy the setup command and paste it into Terminal. A folder window will open so you can choose where you extracted it. Python 3 is required.</p>
+        <div class="command-actions">
+          <button id="copyLinuxManualCommand" class="button" type="button">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="13" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h3"/></svg>
+            <span>Copy setup command</span>
+          </button>
+          <span id="linuxCommandStatus" class="copy-status" role="status" aria-live="polite"></span>
+        </div>
+        <details class="command-details">
+          <summary>View command</summary>
+          <pre id="linuxManualCommand"></pre>
+        </details>
+        <p class="hint">Restart Chrome after setup to load the local Tor helper.</p>
+      </section>
+    </div>
+  </main>
+  <script src="setup.js"></script>
+</body>
+</html>

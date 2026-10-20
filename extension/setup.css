@@ -1,0 +1,60 @@
+:root { color-scheme: light dark; font: 16px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+body { margin: 0; color: #20242b; background: #f7f8fa; }
+main { box-sizing: border-box; max-width: 720px; margin: 0 auto; padding: 44px 28px 64px; }
+.eyebrow { color: #68717d; font-size: 11px; font-weight: 700; letter-spacing: .14em; }
+h1 { margin: 6px 0 12px; font-size: clamp(30px, 6vw, 44px); line-height: 1.12; }
+.intro { max-width: 620px; color: #596371; font-size: 18px; }
+section, details { margin-top: 24px; padding: 22px; border: 1px solid #dce1e7; border-radius: 12px; background: white; }
+.setup-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin-top: 28px; padding: 4px; border: 1px solid #dce1e7; border-radius: 10px; background: #e9edf2; }
+.setup-tab { margin: 0; padding: 9px 12px; border: 0; border-radius: 7px; color: #596371; background: transparent; font: inherit; font-size: 14px; font-weight: 650; cursor: pointer; }
+.setup-tab.active { color: #20242b; background: white; box-shadow: 0 1px 3px #20242b1c; }
+#manualPanel section:first-child { margin-top: 20px; }
+.manual-downloads { display: flex; flex-wrap: wrap; gap: 10px; }
+.manual-downloads .button { margin-top: 0; }
+.os-tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin-top: 24px; padding: 4px; border: 1px solid #dce1e7; border-radius: 10px; background: #e9edf2; }
+.os-tab { margin: 0; padding: 9px 12px; border: 0; border-radius: 7px; color: #596371; background: transparent; font: inherit; font-size: 14px; font-weight: 650; cursor: pointer; }
+.os-tab.active { color: #20242b; background: white; box-shadow: 0 1px 3px #20242b1c; }
+.os-icon { width: 17px; height: 17px; flex: none; fill: currentColor; }
+.os-tab { display: flex; align-items: center; justify-content: center; gap: 8px; }
+.linux-icon .penguin-belly { fill: #f7f8fa; }
+.linux-icon .penguin-eye { fill: #20242b; }
+.linux-icon .penguin-beak, .linux-icon .penguin-feet { fill: #e5a136; }
+.os-panel { margin-top: 14px; }
+.command-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; margin: 14px 0 8px; }
+.command-actions .button { display: inline-flex; align-items: center; gap: 9px; margin: 0; }
+.command-actions svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.8; }
+.copy-status { min-height: 1.5em; }
+.copy-status[data-kind="success"] { color: #14633d; }
+.copy-status[data-kind="error"] { color: #9a3434; }
+.command-details { margin: 10px 0 12px; padding: 12px 14px; border-radius: 8px; background: #f1f3f6; }
+.command-details pre { margin-bottom: 0; }
+pre { overflow-x: auto; }
+code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .92em; }
+[hidden] { display: none !important; }
+h2 { margin: 0 0 8px; font-size: 19px; }
+p { margin: 8px 0 14px; }
+a { color: #264cae; }
+.button, button { display: inline-block; margin-top: 4px; padding: 10px 15px; border: 0; border-radius: 7px; color: white; background: #3949ab; font: inherit; font-weight: 650; text-decoration: none; cursor: pointer; }
+.button:disabled, button:disabled { opacity: .55; cursor: not-allowed; }
+.button.secondary { color: #27303b; background: #e5e9ee; }
+pre { overflow-wrap: anywhere; white-space: pre-wrap; padding: 14px; border-radius: 8px; color: #eaf0ff; background: #252b36; font: 13px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; }
+.hint, details p, .copy-status { color: #606a77; font-size: 13px; }
+summary { font-weight: 650; cursor: pointer; }
+@media (prefers-color-scheme: dark) {
+  body { color: #edf0f4; background: #20242a; }
+  .intro, .hint, details p, .copy-status { color: #b3bac4; }
+  .copy-status[data-kind="success"] { color: #9ce2b8; }
+  .copy-status[data-kind="error"] { color: #ffc1c1; }
+  .command-details { background: #20242a; }
+  section, details { border-color: #3a424d; background: #292f37; }
+  .setup-tabs { border-color: #3a424d; background: #20242a; }
+  .setup-tab { color: #b3bac4; }
+  .setup-tab.active { color: #edf0f4; background: #3a424d; box-shadow: none; }
+  .os-tabs { border-color: #3a424d; background: #20242a; }
+  .os-tab { color: #b3bac4; }
+  .os-tab.active { color: #edf0f4; background: #3a424d; box-shadow: none; }
+  .linux-icon .penguin-belly { fill: #20242a; }
+  .linux-icon .penguin-eye { fill: #20242a; }
+  a { color: #a8c2ff; }
+  .button.secondary { color: #edf0f4; background: #3a424d; }
+}

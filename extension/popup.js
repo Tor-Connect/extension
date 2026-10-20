@@ -1,0 +1,684 @@
+const statusNode = document.querySelector("#status");
+const routeCardNode = document.querySelector("#routeCard");
+const snowflakeInfoNode = document.querySelector("#snowflakeInfo");
+const snowflakeInfoTextNode = document.querySelector("#snowflakeInfoText");
+const errorDetailsNode = document.querySelector("#errorDetails");
+const errorTextNode = document.querySelector("#errorText");
+const routeLabelNode = document.querySelector("#routeLabel");
+const routeIdentityNode = document.querySelector(".route-identity");
+const routeNameNode = document.querySelector("#routeName");
+const routeDetailNode = document.querySelector("#routeDetail");
+const bridgeCountryFlagNode = document.querySelector("#bridgeCountryFlag");
+const bridgeAttemptTimerNode = document.querySelector("#bridgeAttemptTimer");
+const connectedDurationNode = document.querySelector("#connectedDuration");
+const statusDetailNode = document.querySelector("#statusDetail");
+const metaSeparatorNode = document.querySelector(".meta-separator");
+const orbitNodesNode = document.querySelector("#orbitNodes");
+const orbitFlowNode = document.querySelector("#orbitFlow");
+const autoBridgeHintNode = document.querySelector("#autoBridgeHint");
+const copyBridgeButton = document.querySelector("#copyBridge");
+const reconnectBridgeButton = document.querySelector("#reconnectBridge");
+const connectionToggle = document.querySelector("#connectionToggle");
+const connectionProgress = document.querySelector("#connectionProgress");
+const popupMainNode = document.querySelector(".popup-main");
+const setupPanelNode = document.querySelector("#setupPanel");
+const setupDescriptionNode = document.querySelector("#setupDescription");
+const openFullScreenButton = document.querySelector("#openFullScreen");
+const openSettingsButton = document.querySelector("#openSettings");
+const bridgeSelectorNode = document.querySelector("#bridgeSelector");
+const autoBridgeSelectionNode = document.querySelector("#autoBridgeSelection");
+let pollTimer;
+let preferences = { mode: "snowflake", bridges: "", autoBridgeSelection: true, selectedBridge: "", disabledBridges: [] };
+let currentState = "disconnected";
+let currentResult = {};
+let bridgeCountries = new Map();
+let bridgeCountryRequestRevision = 0;
+let orbitRoutePosition = -1;
+let orbitRouteRotation = 0;
+let bridgeAttemptStartedAt = 0;
+let bridgeAttemptStoragePending = false;
+let bridgeAttemptTimerInterval;
+let connectedDurationStartedAt = 0;
+let connectedDurationInterval;
+let routeBridgeLine = "";
+let copyFeedbackTimer;
+
+const query = new URLSearchParams(location.search);
+const isTabView = query.get("view") === "tab";
+if (isTabView) document.documentElement.dataset.layout = "tab";
+
+openSettingsButton.addEventListener("click", () => chrome.runtime.openOptionsPage());
+openFullScreenButton.addEventListener("click", () => {
+  chrome.tabs.create({ url: chrome.runtime.getURL("popup.html?view=tab") });
+});
+
+function setStatus(text, kind = "", detail = "") {
+  statusNode.textContent = text;
+  statusNode.dataset.kind = kind;
+  statusDetailNode.textContent = detail;
+  statusDetailNode.hidden = !detail;
+  metaSeparatorNode.hidden = !detail || (bridgeAttemptTimerNode.hidden && connectedDurationNode.hidden);
+}
+
+function send(type, extra = {}) {
+  return new Promise((resolve) => chrome.runtime.sendMessage({ type, ...extra }, resolve));
+}
+
+function readPreferences() {
+  return new Promise((resolve) => {
+    chrome.storage.local.get("torConnectionPreferences", (stored) => {
+      const saved = stored?.torConnectionPreferences;
+      preferences = {
+        mode: saved?.mode === "manual" ? "manual" : "snowflake",
+        bridges: typeof saved?.bridges === "string" ? saved.bridges : "",
+        autoBridgeSelection: saved?.autoBridgeSelection !== false,
+        selectedBridge: typeof saved?.selectedBridge === "string" ? saved.selectedBridge : "",
+        disabledBridges: Array.isArray(saved?.disabledBridges) ? saved.disabledBridges : []
+      };
+      const entries = bridgeEntries();
+      if (!entries.includes(preferences.selectedBridge)) preferences.selectedBridge = entries[0] || "";
+      renderBridgeSelector();
+      resolve(preferences);
+    });
+  });
+}
+
+function bridgeEntries() {
+  const disabled = new Set(preferences.disabledBridges);
+  return allBridgeEntries().filter((line) => !disabled.has(line));
+}
+
+function allBridgeEntries() {
+  return preferences.bridges.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+}
+
+function bridgeNumberForLine(line) {
+  const index = allBridgeEntries().indexOf(line);
+  return index < 0 ? 1 : index + 1;
+}
+
+function selectedBridgePosition(entries = bridgeEntries()) {
+  const index = entries.indexOf(preferences.selectedBridge);
+  return index < 0 ? 0 : index;
+}
+
+function bridgeAddress(line) {
+  const parts = line?.trim().split(/\s+/) || [];
+  return (parts[0] === "Bridge" ? parts[2] : parts[1])?.toLowerCase() || "";
+}
+
+function activeBridgePosition(result, entries = bridgeEntries()) {
+  if (result?.bridgeAddress) {
+    const address = String(result.bridgeAddress).toLowerCase();
+    const match = entries.findIndex((line) => bridgeAddress(line) === address);
+    if (match >= 0) return match;
+  }
+  const originalIndex = Number(result?.currentBridgeIndex) - 1;
+  if (originalIndex < 0) return -1;
+  if (preferences.autoBridgeSelection) return originalIndex < entries.length ? originalIndex : -1;
+  const originalLine = allBridgeEntries()[originalIndex];
+  return originalLine ? entries.indexOf(originalLine) : -1;
+}
+
+function countryFlag(countryCode) {
+  const code = String(countryCode || "").toUpperCase();
+  if (!/^[A-Z]{2}$/.test(code)) return "";
+  return String.fromCodePoint(...[...code].map((character) => 127397 + character.charCodeAt(0)));
+}
+
+function renderBridgeCountry(result, position = -1) {
+  const entries = bridgeEntries();
+  const line = position >= 0 ? entries[position] : "";
+  const active = result?.state === "connected" && position >= 0 && activeBridgePosition(result, entries) === position;
+  const code = String(
+    active && result?.bridgeCountryCode
+      ? result.bridgeCountryCode
+      : bridgeCountries.get(line) || ""
+  ).toUpperCase();
+  const flag = countryFlag(code);
+  bridgeCountryFlagNode.hidden = !flag;
+  bridgeCountryFlagNode.textContent = flag;
+  if (flag) {
+    const countryName = new Intl.DisplayNames([navigator.language || "en"], { type: "region" }).of(code) || code;
+    const bridgeLabel = position >= 0 ? "Bridge " + (position + 1) : "Bridge";
+    bridgeCountryFlagNode.title = "Approximate country of " + bridgeLabel + ": " + countryName;
+    bridgeCountryFlagNode.setAttribute("aria-label", "Approximate country of " + bridgeLabel + ": " + countryName);
+  } else {
+    bridgeCountryFlagNode.removeAttribute("title");
+    bridgeCountryFlagNode.removeAttribute("aria-label");
+  }
+}
+
+async function refreshBridgeCountries() {
+  const revision = ++bridgeCountryRequestRevision;
+  const lines = bridgeEntries();
+  if (preferences.mode !== "manual" || !lines.length) {
+    bridgeCountries = new Map();
+    renderRoute(currentResult);
+    return;
+  }
+  const result = await send("bridgeCountries", { bridges: lines.join("\n") });
+  if (revision !== bridgeCountryRequestRevision) return;
+  bridgeCountries = result?.ok && Array.isArray(result.results)
+    ? new Map(result.results.map(({ line, countryCode }) => [line, countryCode || ""]))
+    : new Map();
+  renderRoute(currentResult);
+}
+
+function renderBridgeSelector() {
+  const entries = bridgeEntries();
+  bridgeSelectorNode.hidden = preferences.mode !== "manual" || entries.length === 0;
+  if (entries.length && !entries.includes(preferences.selectedBridge)) preferences.selectedBridge = entries[0];
+  autoBridgeSelectionNode.checked = preferences.autoBridgeSelection;
+  autoBridgeHintNode.textContent = preferences.autoBridgeSelection
+    ? entries.length
+      ? "Tries " + entries.length + " saved " + (entries.length === 1 ? "bridge" : "bridges") + " in order"
+      : "No saved bridges"
+    : "Off: you choose";
+}
+
+function renderOrbitNodes(focusPosition, activePosition) {
+  const entries = preferences.mode === "manual" ? bridgeEntries() : [];
+  orbitNodesNode.replaceChildren();
+  if (!entries.length) {
+    orbitFlowNode.hidden = true;
+    return;
+  }
+  const slots = [
+    { angle: -90, slot: "top" },
+    { angle: 30, slot: "right" },
+    { angle: 150, slot: "left" }
+  ];
+  const routePosition = activePosition >= 0 ? activePosition : focusPosition;
+  const activeSlot = slots[((routePosition % slots.length) + slots.length) % slots.length];
+  // Keep the route line's geometry fixed and rotate it around the orbit center.
+  // This lets CSS carry the dashed route to the next bridge instead of snapping.
+  if (activeSlot) {
+    if (orbitRoutePosition < 0) orbitRouteRotation = activeSlot.angle - 30;
+    else if (routePosition !== orbitRoutePosition) orbitRouteRotation += (routePosition - orbitRoutePosition) * 120;
+    orbitRoutePosition = routePosition;
+  }
+  orbitFlowNode.style.transform = `rotate(${orbitRouteRotation}deg)`;
+  orbitFlowNode.hidden = !activeSlot;
+  for (const position of [focusPosition - 1, focusPosition, focusPosition + 1]) {
+    if (position < 0 || position >= entries.length) continue;
+    const { slot } = slots[position % slots.length];
+    const line = entries[position];
+    const countryCode = (bridgeCountries.get(line) || "").toUpperCase();
+    const selected = !preferences.autoBridgeSelection && position === selectedBridgePosition(entries);
+    const active = position === activePosition;
+    const candidate = position === focusPosition && activePosition < 0 && currentResult?.state !== "connected";
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "orbit-node orbit-node-" + slot
+      + (selected ? " is-selected" : "")
+      + (active || candidate ? " is-active" : "");
+    button.setAttribute("aria-pressed", String(selected || active || candidate));
+    const country = document.createElement("span");
+    country.className = "orbit-country";
+    country.textContent = /^[A-Z]{2}$/.test(countryCode) ? countryCode : "··";
+    const label = document.createElement("span");
+    label.className = "orbit-node-label";
+    const bridgeNumber = bridgeNumberForLine(line);
+    label.textContent = "Bridge " + bridgeNumber;
+    button.append(country, label);
+    const name = /^[A-Z]{2}$/.test(countryCode)
+      ? new Intl.DisplayNames([navigator.language || "en"], { type: "region" }).of(countryCode)
+      : "country unknown";
+    button.setAttribute("aria-label", "Bridge " + bridgeNumber + ", " + name
+      + (active ? ", currently connected" : selected ? ", selected" : ""));
+    button.title = "Bridge " + bridgeNumber + " · " + name;
+    button.addEventListener("click", () => {
+      saveBridgeSelection(false, line);
+      renderRoute(currentResult);
+    });
+    orbitNodesNode.append(button);
+  }
+  orbitNodesNode.dataset.auto = String(preferences.autoBridgeSelection);
+}
+
+function saveBridgeSelection(autoBridgeSelection, selectedBridge) {
+  preferences.autoBridgeSelection = autoBridgeSelection;
+  preferences.selectedBridge = selectedBridge;
+  renderBridgeSelector();
+  chrome.storage.local.set({ torConnectionPreferences: preferences });
+}
+
+function paintBridgeAttemptTimer() {
+  if (!bridgeAttemptStartedAt) return;
+  const elapsedSeconds = Math.floor((Date.now() - bridgeAttemptStartedAt) / 1000);
+  const minutes = Math.floor(elapsedSeconds / 60);
+  const seconds = elapsedSeconds % 60;
+  bridgeAttemptTimerNode.textContent = `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+}
+
+function paintConnectedDuration() {
+  if (!connectedDurationStartedAt) return;
+  const totalSeconds = Math.floor((Date.now() - connectedDurationStartedAt) / 1000);
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  const elapsed = hours
+    ? `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`
+    : `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+  connectedDurationNode.textContent = elapsed;
+}
+
+function syncConnectedDuration(result) {
+  if (result?.state !== "connected") {
+    connectedDurationStartedAt = 0;
+    connectedDurationNode.hidden = true;
+    if (connectedDurationInterval) clearInterval(connectedDurationInterval);
+    connectedDurationInterval = undefined;
+    return;
+  }
+  const timestamp = Number(result.connectedAt);
+  if (!Number.isFinite(timestamp) || timestamp <= 0) {
+    connectedDurationNode.hidden = true;
+    return;
+  }
+  connectedDurationStartedAt = timestamp;
+  connectedDurationNode.hidden = false;
+  paintConnectedDuration();
+  if (!connectedDurationInterval) connectedDurationInterval = setInterval(paintConnectedDuration, 1000);
+}
+
+function beginBridgeAttemptTimer() {
+  bridgeAttemptStartedAt = Date.now();
+  bridgeAttemptStoragePending = false;
+  chrome.storage.local.set({ bridgeAttemptStartedAt });
+  paintBridgeAttemptTimer();
+  if (!bridgeAttemptTimerInterval) bridgeAttemptTimerInterval = setInterval(paintBridgeAttemptTimer, 1000);
+}
+
+function syncBridgeAttemptTimer(state) {
+  if (state !== "starting") {
+    bridgeAttemptStartedAt = 0;
+    bridgeAttemptStoragePending = false;
+    if (bridgeAttemptTimerInterval) clearInterval(bridgeAttemptTimerInterval);
+    bridgeAttemptTimerInterval = undefined;
+    bridgeAttemptTimerNode.hidden = true;
+    chrome.storage.local.remove("bridgeAttemptStartedAt");
+    return;
+  }
+  if (bridgeAttemptStartedAt || bridgeAttemptStoragePending) return;
+  bridgeAttemptStoragePending = true;
+  chrome.storage.local.get("bridgeAttemptStartedAt", (stored) => {
+    bridgeAttemptStoragePending = false;
+    if (currentResult?.state !== "starting") return;
+    const storedStart = Number(stored?.bridgeAttemptStartedAt);
+    bridgeAttemptStartedAt = Number.isFinite(storedStart) && storedStart > 0 ? storedStart : Date.now();
+    if (!storedStart) chrome.storage.local.set({ bridgeAttemptStartedAt });
+    paintBridgeAttemptTimer();
+    if (!bridgeAttemptTimerInterval) bridgeAttemptTimerInterval = setInterval(paintBridgeAttemptTimer, 1000);
+  });
+}
+
+function explain(result) {
+  if (!result) return "Tor status unavailable";
+  if (!result.ok) return summarizeConnectionError(result.error || result.message);
+  if (result.state === "connected") {
+    if (result.bridgeActivity === "trying") return "Reconnecting…";
+    if (result.bridgeActivity === "failed" || result.bridgeActivity === "closed") return "Connection interrupted";
+    return "Connected";
+  }
+  if (result.state === "starting") {
+    return "Connecting…";
+  }
+  if (result.state === "disconnected") return "Not connected";
+  if (result.state === "missing_runtime") {
+    return "Tor setup is incomplete";
+  }
+  if (result.state === "failed") return summarizeConnectionError(result.error || result.message);
+  return "Tor status needs attention";
+}
+
+function summarizeConnectionError(error) {
+  const message = typeof error === "string" ? error : "";
+  if (/address already in use|could not bind to|failed to bind|bind.*already in use/i.test(message)) {
+    return "A local Tor port is already in use";
+  }
+  if (/permission denied|operation not permitted|access is denied/i.test(message)) {
+    return "Tor can’t access a required file";
+  }
+  if (/failed to parse\/validate config|invalid config|invalid bridge|enter one or more valid|choose one valid bridge|choose snowflake or manual/i.test(message)) {
+    return "Check your bridge settings";
+  }
+  if (/signal\s+\d+|killed|terminated unexpectedly/i.test(message)) {
+    return "Tor stopped before connecting";
+  }
+  if (/timed out|timeout|no route to host|connection refused/i.test(message)) {
+    return "Couldn’t connect through this bridge";
+  }
+  if (/no such file|does not exist|doesn’t exist|not found/i.test(message)) {
+    return "Tor files are missing";
+  }
+  if (/native helper unavailable|native messaging host not found|native host.*not registered/i.test(message)) {
+    return "Tor helper isn’t available";
+  }
+  return "Tor couldn’t connect. Try again.";
+}
+
+function connectionErrorHint(error) {
+  const message = typeof error === "string" ? error : "";
+  if (/address already in use|could not bind to|failed to bind|bind.*already in use/i.test(message)) {
+    return "Another app or Chrome profile may already have a Tor connection open.";
+  }
+  if (/permission denied|operation not permitted|access is denied/i.test(message)) {
+    return "Check that Tor Connect can access its installed files.";
+  }
+  if (/failed to parse\/validate config|invalid config|invalid bridge|enter one or more valid|choose one valid bridge|choose snowflake or manual/i.test(message)) {
+    return "Review the bridge lines in Settings.";
+  }
+  if (/signal\s+\d+|killed|terminated unexpectedly/i.test(message)) {
+    return "Tor closed before it could connect. You can try again.";
+  }
+  if (/timed out|timeout|no route to host|connection refused/i.test(message)) {
+    return "Try another saved bridge or connection method.";
+  }
+  if (/no such file|does not exist|doesn’t exist|not found/i.test(message)) {
+    return "Run setup again to install the Tor files.";
+  }
+  if (/native helper unavailable|native messaging host not found|native host.*not registered/i.test(message)) {
+    return "Set up Tor Connect on this device, then restart Chrome.";
+  }
+  return "Try again. Open the details if it keeps happening.";
+}
+
+function renderErrorDetails(result) {
+  const error = typeof result?.error === "string" ? result.error : "";
+  const message = typeof result?.message === "string" ? result.message : "";
+  const knownStates = ["connected", "starting", "disconnected", "missing_runtime", "failed"];
+  const isUnknownState = Boolean(result?.state) && !knownStates.includes(result.state);
+  const diagnostic = error || (result?.state === "failed" || result?.ok === false || isUnknownState ? message : "");
+  const hasError = Boolean(diagnostic);
+  errorDetailsNode.hidden = !hasError;
+  if (!hasError) errorDetailsNode.open = false;
+  errorTextNode.textContent = diagnostic;
+}
+
+function renderRoute(result = {}) {
+  bridgeAttemptTimerNode.hidden = result.state !== "starting";
+  connectedDurationNode.hidden = result.state !== "connected";
+  copyBridgeButton.hidden = true;
+  routeBridgeLine = "";
+  routeIdentityNode.hidden = false;
+  routeDetailNode.hidden = true;
+  routeDetailNode.textContent = "";
+  reconnectBridgeButton.hidden = true;
+  reconnectBridgeButton.disabled = false;
+  routeCardNode.dataset.state = result.state || "disconnected";
+  routeCardNode.dataset.activity = result.bridgeActivity || "";
+  routeCardNode.dataset.mode = preferences.mode;
+  delete routeCardNode.dataset.route;
+
+  const entries = preferences.mode === "manual" ? bridgeEntries() : [];
+  const activePosition = (result.state === "connected" || result.state === "starting")
+    ? activeBridgePosition(result, entries) : -1;
+  const selectedPosition = entries.length ? selectedBridgePosition(entries) : -1;
+  const focusPosition = !preferences.autoBridgeSelection && selectedPosition >= 0
+    ? selectedPosition : activePosition >= 0 ? activePosition : Math.max(0, selectedPosition);
+  renderOrbitNodes(focusPosition, activePosition);
+  if (preferences.mode === "snowflake") {
+    orbitFlowNode.hidden = result.state !== "connected";
+    orbitFlowNode.style.transform = "rotate(0deg)";
+  }
+
+  let shownPosition = -1;
+  if (entries.length) {
+    if (activePosition >= 0) shownPosition = activePosition;
+    else if (!preferences.autoBridgeSelection) shownPosition = selectedPosition;
+  }
+  renderBridgeCountry(result, shownPosition);
+  snowflakeInfoNode.hidden = preferences.mode !== "snowflake";
+  if (preferences.mode === "snowflake") {
+    snowflakeInfoTextNode.textContent = result.state === "failed"
+      ? "Couldn’t connect. Check the error details or try again."
+      : result.state === "starting"
+      ? "Asking volunteer proxies to relay your traffic."
+      : result.state === "connected" && result.bridgeActivity === "trying"
+        ? "Trying another volunteer proxy."
+        : result.state === "connected" && ["failed", "closed"].includes(result.bridgeActivity)
+          ? "The route was interrupted. Tor may retry automatically."
+          : result.state === "connected"
+            ? "Your traffic is relayed through Snowflake proxies. The route may change."
+            : "Connect through volunteer proxies. No bridge lines to add.";
+  }
+  routeLabelNode.textContent = result.state === "connected" && shownPosition >= 0 ? "CONNECTED THROUGH"
+    : result.state === "starting" && shownPosition >= 0 ? "TRYING BRIDGE"
+      : result.state === "starting" ? "CONNECTING THROUGH" : "WILL CONNECT THROUGH";
+  if (result.state === "starting") routeCardNode.dataset.route = "trying-bridge";
+
+  if (shownPosition >= 0) {
+    const line = entries[shownPosition];
+    const parts = line.split(/\s+/);
+    const endpoint = parts[0] === "Bridge" ? (parts[2] || "") : (parts[1] || "");
+    routeNameNode.textContent = "Bridge " + bridgeNumberForLine(line);
+    if (endpoint) {
+      routeDetailNode.textContent = endpoint;
+      routeDetailNode.hidden = false;
+      routeBridgeLine = line;
+      copyBridgeButton.hidden = false;
+    }
+  } else if (preferences.mode === "manual") {
+    const bridgeCount = entries.length;
+    if (preferences.autoBridgeSelection) {
+      routeIdentityNode.hidden = true;
+    } else {
+      routeNameNode.textContent = "Automatic";
+      if (bridgeCount) {
+        routeDetailNode.textContent = bridgeCount + " saved " + (bridgeCount === 1 ? "bridge" : "bridges") + " · tries in order";
+        routeDetailNode.hidden = false;
+      }
+    }
+  } else {
+    routeNameNode.textContent = "Snowflake";
+    routeDetailNode.textContent = "Snowflake transport";
+    routeDetailNode.hidden = false;
+  }
+
+  const reconnectAvailable = result.state === "connected"
+    && preferences.mode === "manual"
+    && !preferences.autoBridgeSelection
+    && selectedPosition >= 0
+    && selectedPosition !== activePosition;
+  reconnectBridgeButton.hidden = !reconnectAvailable;
+  reconnectBridgeButton.disabled = !reconnectAvailable || result.state === "starting";
+  copyBridgeButton.hidden = reconnectAvailable || !routeBridgeLine;
+}
+
+function renderResult(result) {
+  currentResult = result || {};
+  renderErrorDetails(currentResult);
+  syncBridgeAttemptTimer(currentResult.state);
+  syncConnectedDuration(currentResult);
+  const helperUnavailable = /native helper unavailable|native messaging host not found|native host.*not registered|failed to start native messaging host|access to the specified native messaging host is forbidden/i.test(result?.error || "");
+  if (helperUnavailable || result?.state === "missing_runtime") {
+    popupMainNode.dataset.view = "cold-start";
+    setupPanelNode.hidden = false;
+    routeCardNode.hidden = true;
+    openSettingsButton.hidden = true;
+    setupDescriptionNode.textContent = result?.state === "missing_runtime"
+      ? "Install Tor and its helper once to connect through Chrome."
+      : "Install the Tor helper once to connect through Chrome.";
+    setToggleState("disconnected");
+    if (pollTimer) { clearTimeout(pollTimer); pollTimer = undefined; }
+    return;
+  }
+  popupMainNode.dataset.view = "connection";
+  setupPanelNode.hidden = true;
+  routeCardNode.hidden = false;
+  openSettingsButton.hidden = false;
+  renderRoute(result || {});
+  renderProgress(result);
+  const statusKind = result?.state === "connected" && result?.bridgeActivity === "trying" ? "starting"
+    : result?.state === "connected" && ["failed", "closed"].includes(result?.bridgeActivity) ? "error"
+      : result?.state === "connected" ? "connected"
+    : result?.state === "starting" ? "starting"
+      : result?.state === "failed" || !result?.ok ? "error" : "";
+  const failureMessage = result?.error || result?.message;
+  const detail = result?.state === "failed" || !result?.ok
+    ? connectionErrorHint(failureMessage)
+    : result?.state === "connected" && ["failed", "closed"].includes(result?.bridgeActivity)
+    ? preferences.mode === "snowflake" ? "Tor may retry the Snowflake route" : "Tor may retry the bridge"
+    : result?.state === "connected" && result?.bridgeActivity === "trying"
+      ? preferences.mode === "snowflake" ? "Trying another volunteer proxy" : "Trying another bridge"
+      : result?.state === "connected" ? "Tap the center to disconnect"
+    : result?.state === "starting"
+      ? Number(result.currentBridgeIndex) > 0 ? `Crossing through Bridge ${Number(result.currentBridgeIndex)}`
+        : preferences.mode === "manual" ? "Trying saved bridges" : "Finding a volunteer proxy · tap to cancel"
+      : result?.state === "disconnected"
+        ? preferences.mode === "manual" && !preferences.autoBridgeSelection
+          ? "Pick a bridge, then tap the center"
+          : preferences.mode === "manual" ? "Tap the center to try saved bridges" : "Tap the center to connect"
+        : "";
+  setStatus(explain(result), statusKind, detail);
+  setToggleState(result?.state || "disconnected", result?.bridgeActivity);
+  if (result?.state === "starting" || (result?.state === "connected" && preferences.mode === "manual")) pollForProgress();
+  else if (pollTimer) { clearTimeout(pollTimer); pollTimer = undefined; }
+}
+
+function setToggleState(state, bridgeActivity) {
+  currentState = state;
+  renderBridgeSelector();
+  connectionToggle.disabled = false;
+  const visualState = state === "connected" && bridgeActivity === "trying" ? "reconnecting"
+    : state === "connected" && ["failed", "closed"].includes(bridgeActivity) ? "bridge-interrupted"
+      : state;
+  connectionToggle.dataset.state = visualState;
+  connectionToggle.dataset.mode = preferences.mode;
+  connectionProgress.hidden = state !== "starting";
+  const label = state === "connected" ? "Disconnect" : state === "starting" ? "Cancel connection" : "Connect";
+  const accessibleLabel = state === "connected" && bridgeActivity === "trying"
+    ? "Disconnect from Tor; the bridge is reconnecting"
+    : state === "connected" && ["failed", "closed"].includes(bridgeActivity)
+      ? "Disconnect from Tor; the bridge connection is interrupted"
+      : label === "Connect" ? "Connect to Tor" : label === "Disconnect" ? "Disconnect from Tor" : "Cancel Tor connection";
+  connectionToggle.setAttribute("aria-label", accessibleLabel);
+  connectionToggle.title = accessibleLabel;
+}
+
+function renderProgress(result) {
+  if (result?.state !== "starting") {
+    connectionProgress.hidden = true;
+    connectionProgress.removeAttribute("aria-valuenow");
+    delete connectionToggle.dataset.progressMode;
+    connectionToggle.style.removeProperty("--progress");
+    return;
+  }
+  connectionProgress.hidden = false;
+  const percent = result.message?.match(/\b(\d{1,3})%/);
+  if (!percent) {
+    connectionToggle.dataset.progressMode = "indeterminate";
+    connectionToggle.style.removeProperty("--progress");
+    connectionProgress.removeAttribute("aria-valuenow");
+    return;
+  }
+  const value = Math.min(100, Number(percent[1]));
+  connectionToggle.dataset.progressMode = "determinate";
+  connectionToggle.style.setProperty("--progress", `${value}%`);
+  connectionProgress.setAttribute("aria-valuenow", String(value));
+}
+
+function pollForProgress() {
+  if (pollTimer) clearTimeout(pollTimer);
+  pollTimer = setTimeout(async () => {
+    renderResult(await send("status"));
+  }, currentResult.state === "connected" ? 2000 : 1200);
+}
+
+async function connectWithSavedPreferences() {
+  const saved = await readPreferences();
+  const entries = bridgeEntries();
+  if (saved.mode === "manual" && !entries.length) {
+    return { ok: false, state: "failed", error: "Enable at least one bridge in Settings before connecting." };
+  }
+  const selectedBridgeIndex = saved.mode === "manual" && !saved.autoBridgeSelection
+    ? allBridgeEntries().indexOf(saved.selectedBridge) + 1
+    : null;
+  const bridges = selectedBridgeIndex ? saved.selectedBridge : entries.join("\n");
+  return send("connect", { mode: saved.mode, bridges, selectedBridgeIndex });
+}
+
+connectionToggle.addEventListener("click", async () => {
+  connectionToggle.disabled = true;
+  if (currentState === "connected" || currentState === "starting") {
+    setStatus("Disconnecting…", "starting");
+    renderResult(await send("disconnect"));
+    return;
+  }
+  setStatus("Connecting…", "starting");
+  beginBridgeAttemptTimer();
+  renderResult(await connectWithSavedPreferences());
+});
+
+copyBridgeButton.addEventListener("click", async () => {
+  if (!routeBridgeLine) return;
+  if (copyFeedbackTimer) clearTimeout(copyFeedbackTimer);
+  copyBridgeButton.classList.remove("is-copied");
+  copyBridgeButton.setAttribute("aria-label", "Copy full bridge line");
+  copyBridgeButton.title = "Copy full bridge line";
+  copyBridgeButton.disabled = true;
+  try {
+    const allowed = await new Promise((resolve) => chrome.permissions.request({ permissions: ["clipboardWrite"] }, resolve));
+    if (!allowed) {
+      copyBridgeButton.title = "Allow clipboard access to copy the bridge line";
+      return;
+    }
+    await navigator.clipboard.writeText(routeBridgeLine);
+    copyBridgeButton.classList.add("is-copied");
+    copyBridgeButton.setAttribute("aria-label", "Bridge line copied");
+    copyBridgeButton.title = "Bridge line copied";
+    copyFeedbackTimer = window.setTimeout(() => {
+      copyBridgeButton.classList.remove("is-copied");
+      copyBridgeButton.setAttribute("aria-label", "Copy full bridge line");
+      copyBridgeButton.title = "Copy full bridge line";
+      copyFeedbackTimer = undefined;
+    }, 1400);
+  } catch {
+    copyBridgeButton.title = "Could not copy bridge line";
+    window.setTimeout(() => { copyBridgeButton.title = "Copy full bridge line"; }, 1800);
+  } finally {
+    copyBridgeButton.disabled = false;
+  }
+});
+
+reconnectBridgeButton.addEventListener("click", async () => {
+  reconnectBridgeButton.disabled = true;
+  connectionToggle.disabled = true;
+  setStatus("Reconnecting…", "starting");
+  const stopped = await send("disconnect");
+  if (!stopped?.ok) {
+    renderResult(stopped);
+    reconnectBridgeButton.disabled = false;
+    return;
+  }
+  beginBridgeAttemptTimer();
+  renderResult(await connectWithSavedPreferences());
+});
+
+autoBridgeSelectionNode.addEventListener("change", () => {
+  saveBridgeSelection(autoBridgeSelectionNode.checked, preferences.selectedBridge || bridgeEntries()[0] || "");
+  renderRoute(currentResult);
+});
+
+chrome.storage.onChanged.addListener((changes, areaName) => {
+  if (areaName !== "local" || !changes.torConnectionPreferences) return;
+  const saved = changes.torConnectionPreferences.newValue || {};
+  preferences = {
+    mode: saved.mode === "manual" ? "manual" : "snowflake",
+    bridges: typeof saved.bridges === "string" ? saved.bridges : "",
+    autoBridgeSelection: saved.autoBridgeSelection !== false,
+    selectedBridge: typeof saved.selectedBridge === "string" ? saved.selectedBridge : "",
+    disabledBridges: Array.isArray(saved.disabledBridges) ? saved.disabledBridges : []
+  };
+  if (!bridgeEntries().includes(preferences.selectedBridge)) preferences.selectedBridge = bridgeEntries()[0] || "";
+  renderBridgeSelector();
+  renderRoute(currentResult);
+  refreshBridgeCountries();
+});
+
+readPreferences().then(async () => {
+  const [result] = await Promise.all([send("status"), refreshBridgeCountries()]);
+  renderResult(result);
+});

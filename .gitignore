@@ -1,0 +1,14 @@
+.DS_Store
+
+# Local Tor Expert Bundle downloads and extracted files
+tor-expert-bundle-*
+
+# Generated installers and build output
+dist/
+build/
+*.app/
+
+# Python artifacts
+__pycache__/
+*.py[cod]
+.venv/

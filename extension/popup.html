@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tor Connect</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body class="popup-page">
+  <main class="popup-main" data-view="connection">
+    <header class="heading">
+      <span class="app-icon" aria-hidden="true">
+        <svg class="brand-mark-connected" viewBox="0 0 128 128"><g fill="none" stroke="currentColor" stroke-width="10" stroke-linecap="round"><path d="M20 88H108"/><path d="M20 88A44 44 0 0 1 108 88" stroke-dasharray="30 12"/><path d="M35 88A29 29 0 0 1 93 88"/><path d="M50 88A14 14 0 0 1 78 88"/></g></svg>
+        <svg class="brand-mark-broken" viewBox="0 0 128 128"><g fill="none" stroke="currentColor" stroke-width="10" stroke-linecap="round"><path d="M20 88H48"/><path d="M80 88H108"/><path d="M20 88A44 44 0 0 1 108 88" stroke-dasharray="54 30 54"/><path d="M35 88A29 29 0 0 1 93 88" stroke-dasharray="33.5 24 33.5"/><path d="M50 88A14 14 0 0 1 78 88" stroke-dasharray="14 16 14"/></g></svg>
+      </span>
+      <h1>Tor Connect</h1>
+      <button id="openSettings" class="expand-button" type="button" aria-label="Open settings" title="Settings">
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg>
+      </button>
+      <button id="openFullScreen" class="expand-button" type="button" aria-label="Open Tor controls in a new tab" title="Open in a tab">
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M8 4H4v4M16 4h4v4M20 16v4h-4M4 16v4h4"/></svg>
+      </button>
+    </header>
+    <section id="setupPanel" class="setup-panel" aria-labelledby="setupTitle" hidden>
+      <div class="setup-orbit" aria-hidden="true">
+        <svg class="setup-orbit-rings" viewBox="0 0 260 250" width="260" height="250">
+          <circle class="setup-orbit-outer" cx="130" cy="125" r="100" />
+          <circle class="setup-orbit-inner" cx="130" cy="125" r="68" />
+          <path class="setup-orbit-spoke" d="M130 125V25" />
+          <path class="setup-orbit-spoke" d="m130 125-86.6 50" />
+          <path class="setup-orbit-spoke" d="m130 125 86.6 50" />
+        </svg>
+        <span class="setup-orbit-center">
+          <svg viewBox="0 0 128 128"><g fill="none" stroke="currentColor" stroke-width="9" stroke-linecap="round"><path d="M20 88H48"/><path d="M80 88H108"/><path d="M20 88A44 44 0 0 1 108 88" stroke-dasharray="54 30 54"/><path d="M35 88A29 29 0 0 1 93 88" stroke-dasharray="33.5 24 33.5"/><path d="M50 88A14 14 0 0 1 78 88" stroke-dasharray="14 16 14"/></g></svg>
+        </span>
+        <span class="setup-orbit-node setup-orbit-node-top"></span>
+        <span class="setup-orbit-node setup-orbit-node-right"></span>
+        <span class="setup-orbit-node setup-orbit-node-left"></span>
+        <span class="setup-orbit-download">
+          <svg viewBox="0 0 24 24"><path d="M12 4v12m-5-5 5 5 5-5M5 20h14"/></svg>
+        </span>
+      </div>
+      <h2 id="setupTitle" class="setup-title" aria-live="polite">Set up Tor</h2>
+      <p id="setupDescription" class="setup-description">Install the Tor helper once to connect through Chrome.</p>
+      <ol class="setup-steps" aria-label="Setup steps">
+        <li class="is-current" aria-current="step"><span class="step-marker">1</span><span>Install helper</span></li>
+        <li><span class="step-marker">2</span><span>Pick a bridge</span></li>
+        <li><span class="step-marker">3</span><span>Connect</span></li>
+      </ol>
+      <a class="setup-cta" href="setup.html" target="_blank" rel="noreferrer">Set up this device</a>
+    </section>
+    <section id="routeCard" class="route-card orbit-card">
+      <p id="routeLabel" class="route-label visually-hidden">CONNECTION METHOD</p>
+      <div class="connection-overview">
+        <p id="status" class="status" role="status" aria-live="polite">Checking…</p>
+        <div class="connection-meta">
+          <span id="bridgeAttemptTimer" class="bridge-attempt-timer" aria-label="Elapsed connection time" hidden>00:00</span>
+          <span id="connectedDuration" class="connected-duration" aria-label="Connected duration" hidden></span>
+          <span class="meta-separator" aria-hidden="true" hidden>·</span>
+          <p id="statusDetail" class="status-detail" hidden></p>
+        </div>
+        <details id="errorDetails" class="error-details" hidden>
+          <summary>Show error details</summary>
+          <pre id="errorText"></pre>
+        </details>
+      </div>
+      <div id="orbitStage" class="orbit-stage">
+        <svg class="orbit-diagram" viewBox="0 0 320 320" aria-hidden="true" focusable="false">
+          <circle class="orbit-outer" cx="160" cy="160" r="122"/>
+          <circle class="orbit-inner" cx="160" cy="160" r="84"/>
+          <path class="orbit-spoke" d="M160 160 L160 38"/>
+          <path class="orbit-spoke" d="M160 160 L54.3 221"/>
+          <path class="orbit-spoke" d="M160 160 L265.7 221"/>
+          <path id="orbitFlow" class="orbit-flow" d="M160 160 L265.7 221"/>
+        </svg>
+        <div class="snowflake-field" aria-hidden="true">
+          <span class="snowflake-particle particle-1"><svg viewBox="0 0 24 24"><path d="M12 3v18M4.2 7.5l15.6 9M4.2 16.5l15.6-9M9.5 4.8 12 7l2.5-2.2M9.5 19.2 12 17l2.5 2.2"/></svg></span>
+          <span class="snowflake-particle particle-2"><svg viewBox="0 0 24 24"><path d="M12 3v18M4.2 7.5l15.6 9M4.2 16.5l15.6-9M9.5 4.8 12 7l2.5-2.2M9.5 19.2 12 17l2.5 2.2"/></svg></span>
+          <span class="snowflake-particle particle-3"><svg viewBox="0 0 24 24"><path d="M12 3v18M4.2 7.5l15.6 9M4.2 16.5l15.6-9M9.5 4.8 12 7l2.5-2.2M9.5 19.2 12 17l2.5 2.2"/></svg></span>
+          <span class="snowflake-particle particle-inner"><svg viewBox="0 0 24 24"><path d="M12 3v18M4.2 7.5l15.6 9M4.2 16.5l15.6-9M9.5 4.8 12 7l2.5-2.2M9.5 19.2 12 17l2.5 2.2"/></svg></span>
+          <span class="snowflake-particle particle-4"><svg viewBox="0 0 24 24"><path d="M12 3v18M4.2 7.5l15.6 9M4.2 16.5l15.6-9M9.5 4.8 12 7l2.5-2.2M9.5 19.2 12 17l2.5 2.2"/></svg></span>
+          <span class="snowflake-particle particle-5"><svg viewBox="0 0 24 24"><path d="M12 3v18M4.2 7.5l15.6 9M4.2 16.5l15.6-9M9.5 4.8 12 7l2.5-2.2M9.5 19.2 12 17l2.5 2.2"/></svg></span>
+          <span class="snowflake-particle particle-6"><svg viewBox="0 0 24 24"><path d="M12 3v18M4.2 7.5l15.6 9M4.2 16.5l15.6-9M9.5 4.8 12 7l2.5-2.2M9.5 19.2 12 17l2.5 2.2"/></svg></span>
+        </div>
+        <div id="orbitNodes" class="orbit-nodes" role="group" aria-label="Saved bridges"></div>
+        <button id="connectionToggle" class="power-button" type="button" aria-label="Connect to Tor" disabled>
+          <span id="connectionProgress" class="visually-hidden" role="progressbar" aria-label="Tor connection progress" aria-valuemin="0" aria-valuemax="100" hidden></span>
+          <svg class="connection-mark" viewBox="0 0 128 128" aria-hidden="true" focusable="false">
+            <g class="mark-connected" fill="none" stroke="currentColor" stroke-width="7" stroke-linecap="round"><path d="M20 88H108"/><path d="M20 88A44 44 0 0 1 108 88"/><path d="M35 88A29 29 0 0 1 93 88"/><path d="M50 88A14 14 0 0 1 78 88"/></g>
+            <g class="mark-connecting" fill="none" stroke="currentColor" stroke-width="9" stroke-linecap="round"><path d="M20 88H108" stroke-opacity=".6"/><path d="M20 88A44 44 0 0 1 108 88" stroke-dasharray="30 12" stroke-opacity=".6"/><path d="M35 88A29 29 0 0 1 93 88"/><path d="M50 88A14 14 0 0 1 78 88"/></g>
+            <g class="mark-broken" fill="none" stroke="currentColor" stroke-width="9" stroke-linecap="round"><path d="M20 88H48"/><path d="M80 88H108"/><path d="M20 88A44 44 0 0 1 108 88" stroke-dasharray="54 30 54"/><path d="M35 88A29 29 0 0 1 93 88" stroke-dasharray="33.5 24 33.5"/><path d="M50 88A14 14 0 0 1 78 88" stroke-dasharray="14 16 14"/></g>
+          </svg>
+        </button>
+      </div>
+      <div class="bridge-summary">
+        <div class="route-identity">
+          <div class="route-title-line">
+            <strong id="routeName" class="route-name">Checking…</strong>
+            <span id="bridgeCountryFlag" class="bridge-country-flag" hidden></span>
+          </div>
+          <span id="routeDetail" class="route-detail" hidden></span>
+        </div>
+        <button id="copyBridge" class="copy-bridge-button" type="button" aria-label="Copy full bridge line" title="Copy full bridge line" hidden>
+          <svg class="copy-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h8"/></svg>
+          <svg class="copied-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m5 12 4 4L19 6"/></svg>
+        </button>
+        <button id="reconnectBridge" class="reconnect-bridge-button" type="button" aria-label="Reconnect using selected bridge" title="Reconnect using selected bridge" hidden>
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20 11a8 8 0 0 0-14.9-4L3 10m0-5v5h5M4 13a8 8 0 0 0 14.9 4L21 14m0 5v-5h-5"/></svg>
+          <span>Reconnect</span>
+        </button>
+      </div>
+      <div id="snowflakeInfo" class="snowflake-info" hidden>
+        <span class="snowflake-info-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3v18M4.2 7.5l15.6 9M4.2 16.5l15.6-9M9.5 4.8 12 7l2.5-2.2M9.5 19.2 12 17l2.5 2.2"/></svg></span>
+        <div><strong>Snowflake</strong><span id="snowflakeInfoText"></span></div>
+      </div>
+      <div id="bridgeSelector" class="bridge-selector" aria-label="Bridge selection" hidden>
+        <div class="auto-copy">
+          <span class="auto-title">Auto-select bridge</span>
+          <span id="autoBridgeHint" class="auto-hint">Tries saved bridges in order</span>
+        </div>
+        <label class="bridge-auto-toggle" for="autoBridgeSelection" aria-label="Auto-select bridge">
+          <input id="autoBridgeSelection" type="checkbox" checked>
+          <span class="bridge-switch" aria-hidden="true"></span>
+        </label>
+      </div>
+    </section>
+  </main>
+  <script src="theme.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>
