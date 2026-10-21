@@ -221,7 +221,7 @@ function renderOrbitNodes(focusPosition, activePosition) {
     const countryCode = (bridgeCountries.get(line) || "").toUpperCase();
     const selected = !preferences.autoBridgeSelection && position === selectedBridgePosition(entries);
     const active = position === activePosition;
-    const candidate = position === focusPosition && activePosition < 0 && currentResult?.state !== "connected";
+    const candidate = position === focusPosition && activePosition < 0 && currentResult?.state === "starting";
     const button = document.createElement("button");
     button.type = "button";
     button.className = "orbit-node orbit-node-" + slot
