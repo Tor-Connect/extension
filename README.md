@@ -64,12 +64,6 @@ For local development, you need Google Chrome, Git, and the Tor Expert Bundle fo
 
 If you remove and reload the unpacked extension, Chrome may assign it a different ID. Rerun the installer with the new ID.
 
-## Releases
-
-GitHub Actions builds companion installers for macOS, Windows x64, and Debian/Ubuntu x64. A release is published from qualifying Conventional Commit titles on `main`: `fix:` for a patch, `feat:` for a minor release, and a breaking change such as `feat!:` for a major release. Other commit types run the build workflow without publishing a release.
-
-The build downloads the Tor Expert Bundle version pinned in `installer/tor-expert-bundle-version.txt` and verifies its Tor Project signature before packaging it. The macOS app is ad-hoc signed but not notarized, and the Windows installer is not Authenticode-signed, so those operating systems may show security warnings.
-
 ## Privacy
 
 Tor Connect stores your connection preferences, theme, and bridge lines locally. It does not operate a service that receives your browsing history, visited URLs, or bridge lines. Tor traffic still involves Tor relays, bridges, and Snowflake infrastructure, and optional bridge pings contact bridge endpoints directly. Read the [Privacy Policy](PRIVACY.md) for details.
