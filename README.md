@@ -29,9 +29,11 @@ This routes Chrome through Tor; it does not provide Tor Browser's fingerprinting
 
 If the popup reports that the native helper is unavailable, rerun the matching installer with the current extension ID and restart Chrome. Re-run installation if you removed and reloaded the unpacked extension and Chrome assigned it a new ID.
 
-### Build setup installers
+### Build and release setup installers
 
-The `Build companion installers` GitHub Actions workflow builds a Mac ZIP, Windows x64 setup executable, and Linux x64 Debian package. Run it from the Actions tab to create test artifacts; it does not publish a release. The build downloads the pinned Tor Expert Bundle version in `installer/tor-expert-bundle-version.txt` and verifies each archive's Tor Project signature before packaging it.
+Every push to `main` runs the installer builds. Semantic Release publishes a GitHub release when commit titles call for a version bump: `fix:` creates a patch release, `feat:` creates a minor release, and a breaking change (for example, `feat!:`) creates a major release. Commit subjects that reach `main` must follow this format; with squash merges, use the PR title as the Conventional Commit subject. Other commit types such as `docs:` and `chore:` build for verification but do not publish a release. A manual run from the Actions tab builds test artifacts only.
+
+The release uses a `v`-prefixed version tag and includes the Mac ZIP, Windows x64 setup executable and helper, and Linux x64 Debian package. The build downloads the pinned Tor Expert Bundle version in `installer/tor-expert-bundle-version.txt` and verifies each archive's Tor Project signature before packaging it.
 
 The workflow uses `TOR_EXTENSION_ID` from repository Actions variables. If it is unset, builds use the current local testing extension ID, `nhpflipfjhibgcopfbeoloeghdpoighk`. Set the variable to the Chrome Web Store ID before making release installers.
 
