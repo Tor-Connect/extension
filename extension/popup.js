@@ -144,7 +144,7 @@ function renderBridgeCountry(result, position = -1) {
   bridgeCountryFlagNode.hidden = !flag;
   bridgeCountryFlagNode.textContent = flag;
   if (flag) {
-    const countryName = new Intl.DisplayNames([navigator.language || "en"], { type: "region" }).of(code) || code;
+    const countryName = new Intl.DisplayNames([globalThis.torI18n?.language || navigator.language || "en"], { type: "region" }).of(code) || code;
     const bridgeLabel = position >= 0 ? "Bridge " + (position + 1) : "Bridge";
     bridgeCountryFlagNode.title = "Approximate country of " + bridgeLabel + ": " + countryName;
     bridgeCountryFlagNode.setAttribute("aria-label", "Approximate country of " + bridgeLabel + ": " + countryName);
@@ -237,7 +237,7 @@ function renderOrbitNodes(focusPosition, activePosition) {
     label.textContent = "Bridge " + bridgeNumber;
     button.append(country, label);
     const name = /^[A-Z]{2}$/.test(countryCode)
-      ? new Intl.DisplayNames([navigator.language || "en"], { type: "region" }).of(countryCode)
+      ? new Intl.DisplayNames([globalThis.torI18n?.language || navigator.language || "en"], { type: "region" }).of(countryCode)
       : "country unknown";
     button.setAttribute("aria-label", "Bridge " + bridgeNumber + ", " + name
       + (active ? ", currently connected" : selected ? ", selected" : ""));
@@ -736,6 +736,8 @@ autoBridgeSelectionNode.addEventListener("change", () => {
   saveBridgeSelection(autoBridgeSelectionNode.checked, preferences.selectedBridge || bridgeEntries()[0] || "");
   renderRoute(currentResult);
 });
+
+document.addEventListener("tor-language-changed", () => renderResult(currentResult));
 
 chrome.storage.onChanged.addListener((changes, areaName) => {
   if (areaName !== "local" || !changes.torConnectionPreferences) return;

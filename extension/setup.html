@@ -10,10 +10,30 @@
   <main>
     <div class="setup-heading">
       <p id="setupEyebrow" class="eyebrow">ONE-TIME SETUP</p>
-      <button class="theme-toggle" type="button" data-theme-toggle aria-label="Switch to light theme" title="Switch to light theme">
-        <svg class="theme-icon theme-icon-light" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.93 4.93l1.41 1.41m11.32 11.32 1.41 1.41M2 12h2m16 0h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
-        <svg class="theme-icon theme-icon-dark" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.2 15.2A8.5 8.5 0 0 1 8.8 3.8 8.5 8.5 0 1 0 20.2 15.2Z"/></svg>
-      </button>
+      <div class="setup-heading-actions">
+        <div class="language-picker">
+          <button id="languageSelect" class="language-picker-trigger" type="button" aria-label="Language" aria-haspopup="listbox" aria-controls="languageOptions" aria-expanded="false">
+            <span id="languageCurrentFlag" class="language-flag" aria-hidden="true">🇺🇸</span>
+            <span id="languageCurrent">English</span>
+            <svg class="language-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m7 10 5 5 5-5"/></svg>
+          </button>
+          <div id="languageOptions" class="language-options" role="listbox" aria-label="Language" hidden>
+            <button class="language-option" type="button" role="option" data-language-option="en" aria-selected="true"><span class="language-option-label"><span class="language-flag" aria-hidden="true">🇺🇸</span><span class="language-option-name">English</span></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></button>
+            <button class="language-option" type="button" role="option" data-language-option="fa" aria-selected="false"><span class="language-option-label"><span class="language-flag" aria-hidden="true">🇮🇷</span><span class="language-option-name">فارسی</span></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></button>
+            <button class="language-option" type="button" role="option" data-language-option="de" aria-selected="false"><span class="language-option-label"><span class="language-flag" aria-hidden="true">🇩🇪</span><span class="language-option-name">Deutsch</span></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></button>
+            <button class="language-option" type="button" role="option" data-language-option="es" aria-selected="false"><span class="language-option-label"><span class="language-flag" aria-hidden="true">🇪🇸</span><span class="language-option-name">Español</span></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></button>
+            <button class="language-option" type="button" role="option" data-language-option="ar" aria-selected="false"><span class="language-option-label"><span class="language-flag" aria-hidden="true">🇸🇦</span><span class="language-option-name">العربية</span></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></button>
+            <button class="language-option" type="button" role="option" data-language-option="zh" aria-selected="false"><span class="language-option-label"><span class="language-flag" aria-hidden="true">🇨🇳</span><span class="language-option-name">中文</span></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></button>
+            <button class="language-option" type="button" role="option" data-language-option="hi" aria-selected="false"><span class="language-option-label"><span class="language-flag" aria-hidden="true">🇮🇳</span><span class="language-option-name">हिन्दी</span></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></button>
+            <button class="language-option" type="button" role="option" data-language-option="fr" aria-selected="false"><span class="language-option-label"><span class="language-flag" aria-hidden="true">🇫🇷</span><span class="language-option-name">Français</span></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></button>
+            <button class="language-option" type="button" role="option" data-language-option="ru" aria-selected="false"><span class="language-option-label"><span class="language-flag" aria-hidden="true">🇷🇺</span><span class="language-option-name">Русский</span></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></button>
+          </div>
+        </div>
+        <button class="theme-toggle" type="button" data-theme-toggle aria-label="Switch to light theme" title="Switch to light theme">
+          <svg class="theme-icon theme-icon-light" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.93 4.93l1.41 1.41m11.32 11.32 1.41 1.41M2 12h2m16 0h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+          <svg class="theme-icon theme-icon-dark" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.2 15.2A8.5 8.5 0 0 1 8.8 3.8 8.5 8.5 0 1 0 20.2 15.2Z"/></svg>
+        </button>
+      </div>
     </div>
     <h1>Connect Chrome through Tor</h1>
     <p id="setupIntro" class="intro">A small companion app installs Tor on this computer and links it to Chrome.</p>
@@ -95,7 +115,7 @@
         </div>
         <details class="command-details">
           <summary>View command</summary>
-          <pre id="macManualCommand"></pre>
+          <pre id="macManualCommand" dir="ltr"></pre>
         </details>
         <p class="hint">The script removes download quarantine and ad hoc signs the local Tor files macOS needs to load. No Apple developer certificate is used. Restart Chrome after setup.</p>
       </section>
@@ -111,7 +131,7 @@
         </div>
         <details class="command-details">
           <summary>View command</summary>
-          <pre id="windowsManualCommand"></pre>
+          <pre id="windowsManualCommand" dir="ltr"></pre>
         </details>
         <p class="hint">Restart Chrome after setup to load the local Tor helper.</p>
       </section>
@@ -127,12 +147,13 @@
         </div>
         <details class="command-details">
           <summary>View command</summary>
-          <pre id="linuxManualCommand"></pre>
+          <pre id="linuxManualCommand" dir="ltr"></pre>
         </details>
         <p class="hint">Restart Chrome after setup to load the local Tor helper.</p>
       </section>
     </div>
   </main>
+  <script src="i18n.js"></script>
   <script src="theme.js"></script>
   <script src="setup.js"></script>
 </body>

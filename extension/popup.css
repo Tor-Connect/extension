@@ -705,3 +705,10 @@ html[data-layout="tab"] body.popup-page .popup-main[data-view="cold-start"] {
 @media (prefers-reduced-motion: reduce) {
   body.popup-page .popup-main[data-view="cold-start"] .setup-cta { transition: none; }
 }
+html[lang="fa"], html[lang="ar"] { font-family: Tahoma, "Noto Sans Arabic", "Segoe UI", sans-serif; }
+html[dir="rtl"] .heading { direction: ltr; }
+html[dir="rtl"] .route-title-line,
+html[dir="rtl"] .route-identity,
+html[dir="rtl"] .auto-copy,
+html[dir="rtl"] .snowflake-info { direction: rtl; }
+html[dir="rtl"] .bridge-endpoint { direction: ltr; text-align: left; unicode-bidi: isolate; }

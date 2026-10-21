@@ -147,6 +147,27 @@
             <span>Match system</span>
           </button>
         </div>
+        <div class="language-setting">
+          <label for="languageSelect">Language</label>
+          <div class="language-picker">
+            <button id="languageSelect" class="language-picker-trigger" type="button" aria-label="Language" aria-haspopup="listbox" aria-controls="languageOptions" aria-expanded="false">
+              <span id="languageCurrentFlag" class="language-flag" aria-hidden="true">🇺🇸</span>
+              <span id="languageCurrent">English</span>
+              <svg class="language-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m7 10 5 5 5-5"/></svg>
+            </button>
+            <div id="languageOptions" class="language-options" role="listbox" aria-label="Language" hidden>
+              <button class="language-option" type="button" role="option" data-language-option="en" aria-selected="true"><span class="language-option-label"><span class="language-flag" aria-hidden="true">🇺🇸</span><span class="language-option-name">English</span></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></button>
+              <button class="language-option" type="button" role="option" data-language-option="fa" aria-selected="false"><span class="language-option-label"><span class="language-flag" aria-hidden="true">🇮🇷</span><span class="language-option-name">فارسی</span></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></button>
+              <button class="language-option" type="button" role="option" data-language-option="de" aria-selected="false"><span class="language-option-label"><span class="language-flag" aria-hidden="true">🇩🇪</span><span class="language-option-name">Deutsch</span></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></button>
+              <button class="language-option" type="button" role="option" data-language-option="es" aria-selected="false"><span class="language-option-label"><span class="language-flag" aria-hidden="true">🇪🇸</span><span class="language-option-name">Español</span></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></button>
+              <button class="language-option" type="button" role="option" data-language-option="ar" aria-selected="false"><span class="language-option-label"><span class="language-flag" aria-hidden="true">🇸🇦</span><span class="language-option-name">العربية</span></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></button>
+              <button class="language-option" type="button" role="option" data-language-option="zh" aria-selected="false"><span class="language-option-label"><span class="language-flag" aria-hidden="true">🇨🇳</span><span class="language-option-name">中文</span></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></button>
+              <button class="language-option" type="button" role="option" data-language-option="hi" aria-selected="false"><span class="language-option-label"><span class="language-flag" aria-hidden="true">🇮🇳</span><span class="language-option-name">हिन्दी</span></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></button>
+              <button class="language-option" type="button" role="option" data-language-option="fr" aria-selected="false"><span class="language-option-label"><span class="language-flag" aria-hidden="true">🇫🇷</span><span class="language-option-name">Français</span></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></button>
+              <button class="language-option" type="button" role="option" data-language-option="ru" aria-selected="false"><span class="language-option-label"><span class="language-flag" aria-hidden="true">🇷🇺</span><span class="language-option-name">Русский</span></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></button>
+            </div>
+          </div>
+        </div>
       </section>
 
       <section id="privacy" class="settings-section" aria-labelledby="privacyHeading">
@@ -159,7 +180,7 @@
           <summary><span><strong>Connection details</strong><small>Bridge, transport and uptime</small></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
           <div class="connection-details-body">
             <p id="connectionStatusMessage">Checking Tor connection…</p>
-            <pre id="diagnosticText">Waiting for Tor status…</pre>
+            <pre id="diagnosticText" dir="ltr">Waiting for Tor status…</pre>
             <p>For the live Chrome log, open <code>chrome://extensions</code>, find Tor Connect, then click <strong>Service worker</strong>. Look for entries beginning <code>[Tor extension]</code>.</p>
           </div>
         </details>
@@ -167,6 +188,7 @@
     </main>
   </div>
 
+  <script src="i18n.js"></script>
   <script src="theme.js"></script>
   <script src="settings.js"></script>
 </body>

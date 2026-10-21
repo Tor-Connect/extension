@@ -225,7 +225,7 @@ function renderBridgeList() {
       const countryBadge = document.createElement("span");
       countryBadge.className = "bridge-country-code";
       countryBadge.textContent = countryCode.toUpperCase();
-      const countryName = new Intl.DisplayNames([navigator.language || "en"], { type: "region" }).of(countryCode.toUpperCase()) || countryCode.toUpperCase();
+      const countryName = new Intl.DisplayNames([globalThis.torI18n?.language || navigator.language || "en"], { type: "region" }).of(countryCode.toUpperCase()) || countryCode.toUpperCase();
       flag.title = countryBadge.title = `Approximate bridge country: ${countryName}`;
       flag.setAttribute("aria-label", `Approximate bridge country: ${countryName}`);
       primary.append(flag, countryBadge);
@@ -627,6 +627,8 @@ reconnectNowButton.addEventListener("click", reconnectUsingSavedSettings);
 sectionLinks.forEach((link) => {
   link.addEventListener("click", () => setActiveSection(link.dataset.sectionLink));
 });
+
+document.addEventListener("tor-language-changed", () => renderBridgeList());
 
 chrome.storage.onChanged.addListener((changes, areaName) => {
   if (areaName !== "local" || !changes.torConnectionPreferences || isDirty) return;
