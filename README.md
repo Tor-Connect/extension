@@ -1,3 +1,7 @@
+<p align="left">
+  <img src="brand-assets/tor-connect-store-icon-128.png" alt="Tor Connect logo" width="96">
+</p>
+
 # Tor Connect
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
