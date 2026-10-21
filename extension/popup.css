@@ -228,26 +228,20 @@ body.popup-page .orbit-card[data-mode="snowflake"][data-state="connected"] .orbi
 body.popup-page .snowflake-field { position: absolute; z-index: 1; inset: 0; display: none; pointer-events: none; }
 body.popup-page .orbit-card[data-mode="snowflake"] .snowflake-field { display: block; }
 body.popup-page .snowflake-particle { position: absolute; display: grid; width: 36px; height: 36px; place-items: center; border: 2px solid #d6dfda; border-radius: 50%; color: #66716b; background: #edf2ef; }
-body.popup-page .snowflake-particle.particle-inner { width: 20px; height: 20px; border-color: #9aa69f; color: #4a5753; background: #e3eae6; }
-body.popup-page .snowflake-particle.particle-inner svg { width: 12px; height: 12px; }
 body.popup-page .snowflake-particle svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 2; }
 body.popup-page .particle-1 { top: 20px; left: 142px; }
 body.popup-page .particle-2 { top: 81px; left: 248px; }
 body.popup-page .particle-3 { top: 203px; left: 248px; }
-body.popup-page .particle-inner { top: 178px; left: 198.5px; }
 body.popup-page .particle-4 { top: 264px; left: 142px; }
 body.popup-page .particle-5 { top: 203px; left: 36px; }
 body.popup-page .particle-6 { top: 81px; left: 36px; }
 body.popup-page .orbit-card[data-state="starting"] .snowflake-particle { border-color: #1e3a2c; color: #2bd576; animation: snowflake-twinkle 1.5s ease-in-out infinite; }
-body.popup-page .orbit-card[data-state="starting"] .snowflake-particle.particle-inner { border-color: #2bd576; color: #fff; background: #2bd576; box-shadow: 0 0 0 3px rgb(43 213 118 / 18%); animation: none; }
 body.popup-page .orbit-card[data-state="starting"] .particle-2 { animation-delay: .25s; }
 body.popup-page .orbit-card[data-state="starting"] .particle-3 { animation-delay: .5s; }
-body.popup-page .orbit-card[data-state="starting"] .particle-inner { animation-delay: .625s; }
 body.popup-page .orbit-card[data-state="starting"] .particle-4 { animation-delay: .75s; }
 body.popup-page .orbit-card[data-state="starting"] .particle-5 { animation-delay: 1s; }
 body.popup-page .orbit-card[data-state="starting"] .particle-6 { animation-delay: 1.25s; }
 body.popup-page .orbit-card[data-state="connected"] .snowflake-particle { border-color: #d6dfda; color: #87948d; background: #edf2ef; }
-body.popup-page .orbit-card[data-state="connected"] .snowflake-particle.particle-inner { border-color: #2bd576; color: #fff; background: #2bd576; box-shadow: 0 0 0 3px rgb(43 213 118 / 18%); animation: none; }
 body.popup-page .orbit-card[data-state="connected"] .particle-3 { border-color: #2bd576; color: #14864c; background: #e8f6ee; box-shadow: 0 0 0 5px rgb(43 213 118 / 15%); }
 @keyframes snowflake-twinkle { 0%, 100% { opacity: .3; } 50% { opacity: 1; } }
 @keyframes orbit-flow { to { stroke-dashoffset: -28; } }
@@ -334,13 +328,8 @@ html[data-theme="dark"] body.popup-page .orbit-card[data-state="connected"][data
 html[data-theme="dark"] body.popup-page .orbit-card[data-state="connected"][data-activity="failed"] .orbit-flow, html[data-theme="dark"] body.popup-page .orbit-card[data-state="connected"][data-activity="closed"] .orbit-flow { stroke: #ef7770; }
 html[data-theme="dark"] body.popup-page .orbit-country { border-color: #1d2522; color: #a9b3ae; background: #0e1412; }
 html[data-theme="dark"] body.popup-page .snowflake-particle { border-color: #1d2522; color: #4a5753; background: #0e1412; }
-html[data-theme="dark"] body.popup-page .snowflake-particle.particle-inner { border-color: #34413b; color: #a9b3ae; background: #121816; }
 html[data-theme="dark"] body.popup-page .orbit-card[data-state="starting"] .snowflake-particle { border-color: #1e3a2c; color: #2bd576; background: #0e1412; }
-html[data-theme="dark"] body.popup-page .orbit-card[data-state="starting"] .snowflake-particle.particle-inner { border-color: #2bd576; color: #fff; background: #2bd576; box-shadow: 0 0 0 3px rgb(43 213 118 / 18%); animation: none; }
-html[data-theme="dark"] body.popup-page .orbit-card[data-state="starting"] .snowflake-particle.particle-inner svg { stroke: #fff; }
 html[data-theme="dark"] body.popup-page .orbit-card[data-state="connected"] .snowflake-particle { border-color: #1d2522; color: #3f6b55; background: #0e1412; }
-html[data-theme="dark"] body.popup-page .orbit-card[data-state="connected"] .snowflake-particle.particle-inner { border-color: #2bd576; color: #fff; background: #2bd576; box-shadow: 0 0 0 3px rgb(43 213 118 / 18%); animation: none; }
-html[data-theme="dark"] body.popup-page .orbit-card[data-state="connected"] .snowflake-particle.particle-inner svg { stroke: #fff; }
 html[data-theme="dark"] body.popup-page .orbit-card[data-state="connected"] .particle-3 { border-color: #2bd576; color: #2bd576; background: #10291c; }
 html[data-theme="dark"] body.popup-page .snowflake-info-icon { color: #6b7771; }
 html[data-theme="dark"] body.popup-page .orbit-card[data-mode="snowflake"][data-state="starting"] .snowflake-info-icon,
@@ -377,6 +366,134 @@ html[data-theme="dark"] body.popup-page a.setup-cta:hover { background: #42e58a;
 @media (prefers-reduced-motion: reduce) {
   body.popup-page .orbit-card[data-state="connected"] .orbit-flow { animation: none; }
   body.popup-page .snowflake-particle, body.popup-page .power-button[data-progress-mode="indeterminate"]::after { animation: none !important; }
+}
+
+/* Method switch from the C Orbit connection-method design. */
+body.popup-page .connection-method-switch {
+  position: absolute;
+  z-index: 5;
+  top: 266px;
+  left: 50%;
+  display: flex;
+  width: 100px;
+  height: 52px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 2px;
+  border: 1.5px solid #262d2b;
+  border-radius: 26px;
+  background: #0e1412;
+  box-shadow: 0 0 0 5px #080c0b;
+  transform: translateX(-50%);
+}
+body.popup-page .connection-method-thumb {
+  position: absolute;
+  top: 2px;
+  left: 3px;
+  width: 44px;
+  height: 44px;
+  border: 1.5px solid #2bd576;
+  border-radius: 50%;
+  background: #10291c;
+  box-shadow: 0 0 14px rgb(43 213 118 / 28%);
+  transition: transform .25s cubic-bezier(.3,.9,.3,1);
+}
+body.popup-page .connection-method-switch[data-mode="manual"] .connection-method-thumb { transform: translateX(47px); }
+body.popup-page button.connection-method-option {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
+  place-items: center;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  color: #6b7771;
+  background: transparent;
+  cursor: pointer;
+}
+body.popup-page button.connection-method-option[aria-checked="true"] { color: #2bd576; }
+body.popup-page .connection-method-option svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+body.popup-page .connection-method-option:hover { color: #a9b3ae; }
+body.popup-page .connection-method-option[aria-checked="true"]:hover { color: #2bd576; }
+body.popup-page .connection-method-option:focus-visible { outline: 2px solid #7e9bff; outline-offset: 2px; }
+body.popup-page .connection-method-option:disabled { opacity: .6; cursor: wait; }
+body.popup-page .orbit-empty-node {
+  position: absolute;
+  display: grid;
+  width: 48px;
+  height: 48px;
+  place-items: center;
+  border: 2px dashed #26302c;
+  border-radius: 50%;
+  color: #46514c;
+  background: #0e1412;
+  font: 300 22px/1 "Space Grotesk", Inter, sans-serif;
+}
+body.popup-page .orbit-empty-node-top { top: 14px; left: 136px; }
+body.popup-page .orbit-empty-node-right { top: 197px; left: 242px; }
+body.popup-page .orbit-empty-node-left { top: 197px; left: 30px; }
+body.popup-page .orbit-card[data-empty="true"] .bridge-summary { display: none; }
+body.popup-page .orbit-card[data-empty="true"] button.power-button {
+  border: 2px dashed #2a3230;
+  color: #4a5753;
+  background: #0e1412;
+  box-shadow: none;
+}
+body.popup-page .orbit-card[data-empty="true"] button.power-button:hover { background: #121816; }
+body.popup-page .snowflake-particle.particle-2 { top: 104px; left: 258px; }
+body.popup-page .snowflake-particle.particle-3 { top: 230px; left: 227px; }
+body.popup-page .snowflake-particle.particle-4 { display: none; }
+body.popup-page .snowflake-particle.particle-5 { top: 230px; left: 57px; }
+body.popup-page .snowflake-particle.particle-6 { top: 104px; left: 26px; }
+body.popup-page .empty-bridge-info {
+  display: flex;
+  min-height: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  justify-content: flex-end;
+  margin-top: auto;
+  padding: 0 0 4px;
+}
+body.popup-page .empty-bridge-info[hidden] { display: none !important; }
+body.popup-page .empty-bridge-info p { max-width: 290px; margin: 0 auto 12px; color: #8a948f; font-size: 13px; line-height: 1.45; text-align: center; }
+body.popup-page button.add-bridges-button {
+  display: flex;
+  width: 100%;
+  min-height: 52px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin: 0;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 26px;
+  color: #06150d;
+  background: #2bd576;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+body.popup-page button.add-bridges-button:hover { background: #42e58a; }
+body.popup-page button.add-bridges-button svg { width: 18px; height: 18px; flex: 0 0 auto; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+html[data-theme="light"] body.popup-page .connection-method-switch { border-color: #d6dfda; background: #e9efeb; box-shadow: 0 0 0 5px #f3f6f4; }
+html[data-theme="light"] body.popup-page .connection-method-thumb { background: #e8f6ee; }
+html[data-theme="light"] body.popup-page .orbit-empty-node { border-color: #d6dfda; color: #8a948f; background: #edf2ef; }
+html[data-theme="light"] body.popup-page .orbit-card[data-state="starting"] .snowflake-particle { border-color: #b8d9c4; color: #16804a; background: #edf8f1; }
+html[data-theme="light"] body.popup-page .orbit-card[data-empty="true"] button.power-button { border-color: #d6dfda; color: #8a948f; background: #edf2ef; }
+html[data-theme="light"] body.popup-page .orbit-card[data-empty="true"] button.power-button:hover { background: #e7eeea; }
+html[data-theme="light"] body.popup-page button.connection-method-option { color: #66716b; }
+html[data-theme="light"] body.popup-page button.connection-method-option[aria-checked="true"] { color: #14864c; }
+html[data-theme="light"] body.popup-page button.connection-method-option:hover { color: #252d29; }
+html[data-theme="light"] body.popup-page button.connection-method-option[aria-checked="true"]:hover { color: #14864c; }
+html[data-theme="light"] body.popup-page .empty-bridge-info p { color: #66716b; }
+html[data-theme="light"] body.popup-page button.add-bridges-button { color: #06150d; }
+@media (prefers-reduced-motion: reduce) {
+  body.popup-page .connection-method-thumb { transition: none; }
 }
 @media (max-width: 480px) {
   html[data-layout="tab"] body.popup-page .popup-main { padding-right: 0; padding-left: 0; }

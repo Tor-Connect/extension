@@ -77,12 +77,20 @@
           <span class="snowflake-particle particle-1"><svg viewBox="0 0 24 24"><path d="M12 3v18M4.2 7.5l15.6 9M4.2 16.5l15.6-9M9.5 4.8 12 7l2.5-2.2M9.5 19.2 12 17l2.5 2.2"/></svg></span>
           <span class="snowflake-particle particle-2"><svg viewBox="0 0 24 24"><path d="M12 3v18M4.2 7.5l15.6 9M4.2 16.5l15.6-9M9.5 4.8 12 7l2.5-2.2M9.5 19.2 12 17l2.5 2.2"/></svg></span>
           <span class="snowflake-particle particle-3"><svg viewBox="0 0 24 24"><path d="M12 3v18M4.2 7.5l15.6 9M4.2 16.5l15.6-9M9.5 4.8 12 7l2.5-2.2M9.5 19.2 12 17l2.5 2.2"/></svg></span>
-          <span class="snowflake-particle particle-inner"><svg viewBox="0 0 24 24"><path d="M12 3v18M4.2 7.5l15.6 9M4.2 16.5l15.6-9M9.5 4.8 12 7l2.5-2.2M9.5 19.2 12 17l2.5 2.2"/></svg></span>
           <span class="snowflake-particle particle-4"><svg viewBox="0 0 24 24"><path d="M12 3v18M4.2 7.5l15.6 9M4.2 16.5l15.6-9M9.5 4.8 12 7l2.5-2.2M9.5 19.2 12 17l2.5 2.2"/></svg></span>
           <span class="snowflake-particle particle-5"><svg viewBox="0 0 24 24"><path d="M12 3v18M4.2 7.5l15.6 9M4.2 16.5l15.6-9M9.5 4.8 12 7l2.5-2.2M9.5 19.2 12 17l2.5 2.2"/></svg></span>
           <span class="snowflake-particle particle-6"><svg viewBox="0 0 24 24"><path d="M12 3v18M4.2 7.5l15.6 9M4.2 16.5l15.6-9M9.5 4.8 12 7l2.5-2.2M9.5 19.2 12 17l2.5 2.2"/></svg></span>
         </div>
         <div id="orbitNodes" class="orbit-nodes" role="group" aria-label="Saved bridges"></div>
+        <div id="connectionMethodSwitch" class="connection-method-switch" role="radiogroup" aria-label="Connection method" data-mode="snowflake">
+          <span class="connection-method-thumb" aria-hidden="true"></span>
+          <button class="connection-method-option" type="button" role="radio" data-mode="snowflake" aria-label="Snowflake" title="Snowflake" aria-checked="true" tabindex="0">
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3v18M4.2 7.5l15.6 9M4.2 16.5l15.6-9M9.5 4.8 12 7l2.5-2.2M9.5 19.2 12 17l2.5 2.2"/></svg>
+          </button>
+          <button class="connection-method-option" type="button" role="radio" data-mode="manual" aria-label="Bridge lines" title="Bridge lines" aria-checked="false" tabindex="-1">
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="5" cy="6" r="1.4"/><circle cx="5" cy="12" r="1.4"/><circle cx="5" cy="18" r="1.4"/><path d="M10 6h10M10 12h10M10 18h6"/></svg>
+          </button>
+        </div>
         <button id="connectionToggle" class="power-button" type="button" aria-label="Connect to Tor" disabled>
           <span id="connectionProgress" class="visually-hidden" role="progressbar" aria-label="Tor connection progress" aria-valuemin="0" aria-valuemax="100" hidden></span>
           <svg class="connection-mark" viewBox="0 0 128 128" aria-hidden="true" focusable="false">
@@ -107,6 +115,13 @@
         <button id="reconnectBridge" class="reconnect-bridge-button" type="button" aria-label="Reconnect using selected bridge" title="Reconnect using selected bridge" hidden>
           <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20 11a8 8 0 0 0-14.9-4L3 10m0-5v5h5M4 13a8 8 0 0 0 14.9 4L21 14m0 5v-5h-5"/></svg>
           <span>Reconnect</span>
+        </button>
+      </div>
+      <div id="emptyBridgeInfo" class="empty-bridge-info" hidden>
+        <p>Bridges are private Tor entry points. Request some from the Tor Project, then add them in Settings.</p>
+        <button id="addBridges" class="add-bridges-button" type="button">
+          Add bridges in Settings
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M7 17 17 7M9 7h8v8"/></svg>
         </button>
       </div>
       <div id="snowflakeInfo" class="snowflake-info" hidden>
