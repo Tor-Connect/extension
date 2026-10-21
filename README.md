@@ -17,11 +17,17 @@ Tor Connect is a Chrome extension that routes Chrome through a Tor client runnin
 
 These images are rendered from the interactive design mockups and show the intended interface. They are design previews, not screenshots of a live extension session.
 
-![Tor Connect connection-method screen design](docs/screenshots/connection-method-mockup.png)
+<details>
+<summary>View design mockups</summary>
 
-![Tor Connect connected through a saved bridge design](docs/screenshots/connected-bridge-mockup.png)
-
-![Tor Connect settings page design](docs/screenshots/settings-mockup.png)
+<p>
+  <a href="docs/screenshots/connection-method-mockup.png"><img src="docs/screenshots/connection-method-mockup.png" width="240" alt="Tor Connect connection-method screen design" /></a>
+  <a href="docs/screenshots/connected-bridge-mockup.png"><img src="docs/screenshots/connected-bridge-mockup.png" width="240" alt="Tor Connect connected through a saved bridge design" /></a>
+</p>
+<p align="center">
+  <a href="docs/screenshots/settings-mockup.png"><img src="docs/screenshots/settings-mockup.png" width="420" alt="Tor Connect settings page design" /></a>
+</p>
+</details>
 
 ## Install
 
