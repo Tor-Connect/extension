@@ -147,6 +147,7 @@ button:focus-visible, a:focus-visible, summary:focus-visible { outline: 3px soli
 .privacy-icon svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 2; }
 .privacy-card strong { font-size: 16px; font-weight: 600; }
 .privacy-card p { margin: 6px 0 0; color: #c3cdc8; font-size: 14px; line-height: 1.6; }
+.privacy-policy-link { display: inline-flex; margin-top: 12px; color: #2bd576; font-size: 13px; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
 .connection-details { overflow: hidden; border: 1px solid #1d2421; border-radius: 16px; }
 .connection-details summary { display: flex; min-height: 60px; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 20px; cursor: pointer; list-style: none; }
 .connection-details summary::-webkit-details-marker { display: none; }
@@ -233,6 +234,7 @@ html[data-theme="light"] .theme-options button[aria-pressed="true"] { border-col
 html[data-theme="light"] .privacy-card { border-color: #dce4df; background: #fff; }
 html[data-theme="light"] .privacy-icon { color: #66716b; background: #edf1ef; }
 html[data-theme="light"] .privacy-card p { color: #4f5c55; }
+html[data-theme="light"] .privacy-policy-link { color: #16804a; }
 html[data-theme="light"] .connection-details { border-color: #dce4df; }
 html[data-theme="light"] .connection-details summary small, html[data-theme="light"] .connection-details summary svg { color: #66716b; stroke: #66716b; }
 html[data-theme="light"] .connection-details-body { color: #56645c; }
