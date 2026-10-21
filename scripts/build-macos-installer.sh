@@ -2,7 +2,7 @@
 set -euo pipefail
 
 root_dir="$(cd "$(dirname "$0")/.." && pwd -P)"
-extension_id="${EXTENSION_ID:-nhpflipfjhibgcopfbeoloeghdpoighk}"
+extension_id="${TOR_EXTENSION_ID:-${EXTENSION_ID:-nhpflipfjhibgcopfbeoloeghdpoighk}}"
 if [[ ! "$extension_id" =~ ^[a-p]{32}$ ]]; then
   echo "EXTENSION_ID must be 32 lowercase letters from a through p." >&2
   exit 2
