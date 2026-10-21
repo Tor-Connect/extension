@@ -28,6 +28,17 @@
       <p id="installerHelp" class="hint">You only need to set this up once. Your bridge lines stay on this computer.</p>
     </section>
 
+    <details data-platform="mac">
+      <summary>If macOS blocks the setup app</summary>
+      <p>Apple hasn’t notarized Tor Connect Setup, so macOS may block it.</p>
+      <ol>
+        <li>Try opening Tor Connect Setup once, then close the warning.</li>
+        <li>Open <strong>Apple menu → System Settings → Privacy &amp; Security</strong>. Under <strong>Security</strong>, click <strong>Open Anyway</strong> next to Tor Connect Setup.</li>
+        <li>Confirm, then open Tor Connect Setup again.</li>
+      </ol>
+      <p>Only continue if you downloaded it from the <a href="https://github.com/Tor-Connect/extension/releases/latest" target="_blank" rel="noreferrer">official Tor Connect release</a>.</p>
+    </details>
+
     <details>
       <summary>Why is a separate setup app needed?</summary>
       <p>Chrome extensions cannot install or start Tor on their own. The Tor Connect setup app installs Tor on this computer and connects it to the extension.</p>

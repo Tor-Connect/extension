@@ -103,6 +103,14 @@ private final class InstallerWindowController: NSObject, NSApplicationDelegate {
         privacy.frame.origin.x = 52
         root.addSubview(privacy)
 
+        let extensionIdLabel = label("Chrome extension ID", size: 11, weight: .medium, color: .secondaryLabelColor)
+        extensionIdLabel.frame = NSRect(x: 30, y: 158, width: 126, height: 16)
+        root.addSubview(extensionIdLabel)
+        let extensionIdValue = label(configuredExtensionId, size: 10, weight: .regular, color: .secondaryLabelColor)
+        extensionIdValue.font = NSFont.monospacedSystemFont(ofSize: 10, weight: .regular)
+        extensionIdValue.frame = NSRect(x: 158, y: 158, width: 382, height: 16)
+        root.addSubview(extensionIdValue)
+
         statusLabel = label("", size: 12, weight: .medium, color: .secondaryLabelColor)
         statusLabel.frame = NSRect(x: 54, y: 105, width: 485, height: 38)
         statusLabel.lineBreakMode = .byWordWrapping
@@ -125,6 +133,14 @@ private final class InstallerWindowController: NSObject, NSApplicationDelegate {
         text.font = NSFont.systemFont(ofSize: size, weight: weight)
         text.textColor = color
         return text
+    }
+
+    private var configuredExtensionId: String {
+        guard let url = Bundle.main.url(forResource: "InstallerConfig", withExtension: "plist"),
+              let config = try? PropertyListDecoder().decode(InstallerConfig.self, from: Data(contentsOf: url)) else {
+            return "Unavailable"
+        }
+        return config.extensionId
     }
 
     @objc private func install() {

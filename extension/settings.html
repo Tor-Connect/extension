@@ -72,6 +72,14 @@
       </section>
 
       <section id="bridges" class="settings-section" aria-labelledby="bridgesHeading">
+        <div id="bridgeSummary" class="bridge-summary" hidden>
+          <div class="bridge-summary-copy">
+            <strong>Bridge lines <span id="bridgeSummaryCount" class="nav-count">0 saved</span></strong>
+            <span>Not used with Snowflake. Your lines are kept and come back when you switch to Bridge lines.</span>
+          </div>
+          <button id="useBridgeLines" class="quiet-button" type="button">Use bridge lines</button>
+        </div>
+        <div id="bridgeManagement" class="bridge-management">
         <div class="bridge-section-heading">
           <div class="section-heading">
             <h2 id="bridgesHeading">Bridge lines</h2>
@@ -117,6 +125,7 @@
         </div>
         <div id="bridgeList" class="settings-bridge-list" aria-live="polite"></div>
         <p id="clipboardStatus" class="clipboard-status" role="status" aria-live="polite"></p>
+        </div>
       </section>
 
       <section id="appearance" class="settings-section" aria-labelledby="appearanceHeading">

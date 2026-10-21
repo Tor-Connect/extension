@@ -15,6 +15,10 @@ const clearButton = document.querySelector("#clearBridges");
 const copyAllButton = document.querySelector("#copyAllBridges");
 const bridgeListNode = document.querySelector("#bridgeList");
 const bridgeCountNode = document.querySelector("#bridgeCount");
+const bridgeSummaryNode = document.querySelector("#bridgeSummary");
+const bridgeSummaryCountNode = document.querySelector("#bridgeSummaryCount");
+const bridgeManagementNode = document.querySelector("#bridgeManagement");
+const useBridgeLinesButton = document.querySelector("#useBridgeLines");
 const clipboardStatusNode = document.querySelector("#clipboardStatus");
 const changeBanner = document.querySelector("#changeBanner");
 const changeBannerMessage = document.querySelector("#changeBannerMessage");
@@ -78,6 +82,9 @@ function readPreferences() {
 
 function setMode(mode) {
   selectedMode = mode === "manual" ? "manual" : "snowflake";
+  const snowflakeSelected = selectedMode === "snowflake";
+  bridgeSummaryNode.hidden = !snowflakeSelected;
+  bridgeManagementNode.hidden = snowflakeSelected;
   modeButtons.forEach((button) => {
     const selected = button.dataset.mode === selectedMode;
     button.setAttribute("aria-checked", String(selected));
@@ -108,6 +115,15 @@ function showClipboardStatus(message, kind = "") {
 function setImportMenuOpen(open) {
   importMenu.hidden = !open;
   importMenuToggle.setAttribute("aria-expanded", String(open));
+}
+
+function setActiveSection(sectionId) {
+  sectionLinks.forEach((link) => {
+    const active = link.dataset.sectionLink === sectionId;
+    link.classList.toggle("active", active);
+    if (active) link.setAttribute("aria-current", "location");
+    else link.removeAttribute("aria-current");
+  });
 }
 
 function requestClipboardPermission(permission) {
@@ -159,6 +175,7 @@ function makeIconButton(className, label, svg) {
 function renderBridgeList() {
   bridgeListNode.replaceChildren();
   bridgeCountNode.textContent = String(bridgeLines.length);
+  bridgeSummaryCountNode.textContent = `${bridgeLines.length} saved`;
   pingButton.disabled = bridgeLines.length === 0;
   copyAllButton.disabled = bridgeLines.length === 0;
   clearButton.disabled = bridgeLines.length === 0;
@@ -571,6 +588,12 @@ modeButtons.forEach((button, index) => {
   });
 });
 
+useBridgeLinesButton.addEventListener("click", () => {
+  if (selectedMode === "manual") return;
+  setMode("manual");
+  markDirty();
+});
+
 saveButton.addEventListener("click", saveSettings);
 
 async function reconnectUsingSavedSettings() {
@@ -601,6 +624,10 @@ async function reconnectUsingSavedSettings() {
 
 reconnectNowButton.addEventListener("click", reconnectUsingSavedSettings);
 
+sectionLinks.forEach((link) => {
+  link.addEventListener("click", () => setActiveSection(link.dataset.sectionLink));
+});
+
 chrome.storage.onChanged.addListener((changes, areaName) => {
   if (areaName !== "local" || !changes.torConnectionPreferences || isDirty) return;
   const saved = changes.torConnectionPreferences.newValue || {};
@@ -624,7 +651,7 @@ if ("IntersectionObserver" in window) {
   const sectionObserver = new IntersectionObserver((entries) => {
     const visible = entries.filter((entry) => entry.isIntersecting).sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
     if (!visible) return;
-    sectionLinks.forEach((link) => link.classList.toggle("active", link.dataset.sectionLink === visible.target.id));
+    setActiveSection(visible.target.id);
   }, { rootMargin: "-15% 0px -65% 0px", threshold: [0, 0.1, 0.35] });
   ["method", "bridges", "appearance", "privacy"].forEach((id) => sectionObserver.observe(document.getElementById(id)));
 }

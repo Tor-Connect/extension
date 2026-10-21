@@ -29,10 +29,10 @@ button.power-button[data-state="bridge-interrupted"], button.power-button[data-s
 .power-button[data-state="starting"] .connection-mark .mark-broken,
 .power-button[data-state="reconnecting"] .connection-mark .mark-broken,
 .power-button[data-state="bridge-interrupted"] .connection-mark .mark-broken { display: none; }
-.power-button::after { position: absolute; z-index: 1; inset: 0; display: none; border-radius: 50%; background: conic-gradient(#2bd576 var(--progress, 0%), #2bd57638 0); content: ""; pointer-events: none; -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 2px)); mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 2px)); }
+.power-button::after { position: absolute; z-index: 1; inset: 0; display: none; border-radius: 50%; background: conic-gradient(#2bd576 var(--progress, 0%), transparent 0); content: ""; pointer-events: none; -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 2px)); mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 2px)); }
 .power-button > svg { position: relative; z-index: 2; }
 .power-button[data-state="starting"]::after { display: block; }
-.power-button[data-progress-mode="indeterminate"]::after { background: conic-gradient(#2bd576 0 82deg, #2bd57638 82deg 360deg); animation: progress-spin 1.6s linear infinite; }
+.power-button[data-progress-mode="indeterminate"]::after { background: conic-gradient(#2bd576 0 74deg, transparent 74deg 360deg); animation: progress-spin 1.6s linear infinite; }
 @keyframes progress-spin { to { transform: rotate(360deg); } }
 .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; clip-path: inset(50%); }
 button:focus-visible { outline: 3px solid #7e9bff; outline-offset: 3px; }
@@ -268,7 +268,7 @@ body.popup-page button.power-button:hover { transform: scale(1.015); background:
 body.popup-page .connection-mark { width: 64px; height: 64px; }
 body.popup-page button.power-button[data-mode="snowflake"] .connection-mark .mark-connected { stroke-width: 9; }
 body.popup-page button.power-button[data-state="connected"] { border-color: #2bd576; color: #2bd576; background: #e8f6ee; box-shadow: 0 0 0 8px #2bd57612, 0 0 40px #2bd57620; }
-body.popup-page button.power-button[data-state="starting"] { border-color: #2bd576; color: #2bd576; background: #e7f3eb; }
+body.popup-page button.power-button[data-state="starting"] { border-color: #bfdac9; color: #2bd576; background: #e7f3eb; }
 body.popup-page button.power-button[data-state="reconnecting"] { border-color: #d99a28; color: #d99a28; background: #f7f0e2; }
 body.popup-page button.power-button[data-state="bridge-interrupted"], body.popup-page button.power-button[data-state="failed"] { border-color: #cc5a55; color: #cc5a55; background: #f8e9e7; }
 body.popup-page button.power-button[data-mode="snowflake"][data-state="starting"] .connection-mark .mark-connected,
@@ -356,7 +356,7 @@ html[data-theme="dark"] body.popup-page .orbit-node:hover .orbit-country { borde
 html[data-theme="dark"] body.popup-page button.power-button { border-color: #2a3230; color: #7d868f; background: #121816; }
 html[data-theme="dark"] body.popup-page button.power-button:hover { background: #18211d; }
 html[data-theme="dark"] body.popup-page button.power-button[data-state="connected"] { border-color: #2bd576; color: #2bd576; background: #10291c; box-shadow: 0 0 0 8px #2bd57614, 0 0 40px #2bd5764d; }
-html[data-theme="dark"] body.popup-page button.power-button[data-state="starting"] { border-color: #2bd576; color: #2bd576; background: #10291c; }
+html[data-theme="dark"] body.popup-page button.power-button[data-state="starting"] { border-color: #1e3a2c; color: #2bd576; background: #12261c; }
 html[data-theme="dark"] body.popup-page button.power-button[data-state="reconnecting"] { border-color: #9b712e; color: #e2a333; background: #242018; }
 html[data-theme="dark"] body.popup-page button.power-button[data-state="bridge-interrupted"], html[data-theme="dark"] body.popup-page button.power-button[data-state="failed"] { border-color: #5b3432; color: #ef7770; background: #271b1a; }
 html[data-theme="dark"] body.popup-page .route-name, html[data-theme="dark"] body.popup-page .auto-title { color: #eaf1ee; }
