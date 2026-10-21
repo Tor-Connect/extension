@@ -1,6 +1,8 @@
-:root { color-scheme: light dark; font: 16px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+:root { color-scheme: light; font: 16px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+html[data-theme="dark"] { color-scheme: dark; }
 body { margin: 0; color: #20242b; background: #f7f8fa; }
 main { box-sizing: border-box; max-width: 720px; margin: 0 auto; padding: 44px 28px 64px; }
+.setup-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .eyebrow { color: #68717d; font-size: 11px; font-weight: 700; letter-spacing: .14em; }
 h1 { margin: 6px 0 12px; font-size: clamp(30px, 6vw, 44px); line-height: 1.12; }
 .intro { max-width: 620px; color: #596371; font-size: 18px; }
@@ -40,21 +42,32 @@ a { color: #264cae; }
 pre { overflow-wrap: anywhere; white-space: pre-wrap; padding: 14px; border-radius: 8px; color: #eaf0ff; background: #252b36; font: 13px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; }
 .hint, details p, .copy-status { color: #606a77; font-size: 13px; }
 summary { font-weight: 650; cursor: pointer; }
-@media (prefers-color-scheme: dark) {
-  body { color: #edf0f4; background: #20242a; }
-  .intro, .hint, details p, .copy-status { color: #b3bac4; }
-  .copy-status[data-kind="success"] { color: #9ce2b8; }
-  .copy-status[data-kind="error"] { color: #ffc1c1; }
-  .command-details { background: #20242a; }
-  section, details { border-color: #3a424d; background: #292f37; }
-  .setup-tabs { border-color: #3a424d; background: #20242a; }
-  .setup-tab { color: #b3bac4; }
-  .setup-tab.active { color: #edf0f4; background: #3a424d; box-shadow: none; }
-  .os-tabs { border-color: #3a424d; background: #20242a; }
-  .os-tab { color: #b3bac4; }
-  .os-tab.active { color: #edf0f4; background: #3a424d; box-shadow: none; }
-  .linux-icon .penguin-belly { fill: #20242a; }
-  .linux-icon .penguin-eye { fill: #20242a; }
-  a { color: #a8c2ff; }
-  .button.secondary { color: #edf0f4; background: #3a424d; }
-}
+html[data-theme="dark"] body { color: #edf0f4; background: #20242a; }
+html[data-theme="dark"] .intro,
+html[data-theme="dark"] .hint,
+html[data-theme="dark"] details p,
+html[data-theme="dark"] .copy-status { color: #b3bac4; }
+html[data-theme="dark"] .copy-status[data-kind="success"] { color: #9ce2b8; }
+html[data-theme="dark"] .copy-status[data-kind="error"] { color: #ffc1c1; }
+html[data-theme="dark"] .command-details { background: #20242a; }
+html[data-theme="dark"] section,
+html[data-theme="dark"] details { border-color: #3a424d; background: #292f37; }
+html[data-theme="dark"] .setup-tabs { border-color: #3a424d; background: #20242a; }
+html[data-theme="dark"] .setup-tab { color: #b3bac4; }
+html[data-theme="dark"] .setup-tab.active { color: #edf0f4; background: #3a424d; box-shadow: none; }
+html[data-theme="dark"] .os-tabs { border-color: #3a424d; background: #20242a; }
+html[data-theme="dark"] .os-tab { color: #b3bac4; }
+html[data-theme="dark"] .os-tab.active { color: #edf0f4; background: #3a424d; box-shadow: none; }
+html[data-theme="dark"] .linux-icon .penguin-belly,
+html[data-theme="dark"] .linux-icon .penguin-eye { fill: #20242a; }
+html[data-theme="dark"] a { color: #a8c2ff; }
+html[data-theme="dark"] .button.secondary { color: #edf0f4; background: #3a424d; }
+.theme-toggle { width: 36px; height: 36px; flex: none; display: grid; place-items: center; margin: 0; padding: 8px; border: 1px solid #dce1e7; border-radius: 50%; color: #596371; background: white; }
+.theme-toggle:hover { background: #eef1f4; }
+.theme-toggle svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.8; }
+.theme-icon { display: none; }
+html[data-theme="dark"] .theme-icon-light,
+html[data-theme="light"] .theme-icon-dark { display: block; }
+html[data-theme="dark"] .theme-toggle { border-color: #3a424d; color: #c3cbd4; background: #292f37; }
+html[data-theme="dark"] .theme-toggle:hover { background: #343b45; }
+.theme-toggle:focus-visible { outline: 3px solid #7e9bff; outline-offset: 3px; }

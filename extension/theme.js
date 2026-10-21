@@ -12,6 +12,11 @@ function applyTheme(theme) {
   themeChoices.forEach((button) => {
     button.setAttribute("aria-pressed", String(button.dataset.themeChoice === savedThemePreference));
   });
+  document.querySelectorAll("[data-theme-toggle]").forEach((button) => {
+    const nextTheme = resolvedTheme === "dark" ? "light" : "dark";
+    button.setAttribute("aria-label", `Switch to ${nextTheme} theme`);
+    button.title = `Switch to ${nextTheme} theme`;
+  });
 }
 
 chrome.storage.local.get(themePreferenceKey, (stored) => {
@@ -21,6 +26,14 @@ chrome.storage.local.get(themePreferenceKey, (stored) => {
 themeChoices.forEach((button) => {
   button.addEventListener("click", () => {
     const theme = button.dataset.themeChoice;
+    applyTheme(theme);
+    chrome.storage.local.set({ [themePreferenceKey]: theme });
+  });
+});
+
+document.querySelectorAll("[data-theme-toggle]").forEach((button) => {
+  button.addEventListener("click", () => {
+    const theme = document.documentElement.dataset.theme === "dark" ? "light" : "dark";
     applyTheme(theme);
     chrome.storage.local.set({ [themePreferenceKey]: theme });
   });
