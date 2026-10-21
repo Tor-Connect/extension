@@ -1,5 +1,9 @@
 # Tor Connect
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Build companion installers](https://github.com/Tor-Connect/extension/actions/workflows/build-installers.yml/badge.svg?branch=main)](https://github.com/Tor-Connect/extension/actions/workflows/build-installers.yml)
+[![Latest release](https://img.shields.io/github/v/release/Tor-Connect/extension?label=latest%20release)](https://github.com/Tor-Connect/extension/releases/latest)
+
 Tor Connect is a Chrome extension that routes Chrome through a Tor client running on your computer. Choose Snowflake or add your own Tor bridge lines. Your bridge settings are stored locally in your Chrome profile.
 
 > Tor Connect is not Tor Browser. It does not provide Tor Browser’s fingerprinting protections, and it does not route other apps on your computer through Tor.
