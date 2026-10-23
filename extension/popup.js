@@ -671,6 +671,7 @@ function renderResult(result) {
     popupMainNode.dataset.view = "connection";
     setupPanelNode.hidden = true;
     routeCardNode.hidden = false;
+    routeIdentityNode.hidden = true;
     openSettingsButton.hidden = false;
     setStatus("Checking connection…", "starting", "Waiting for the Tor helper");
     setToggleState("starting");
