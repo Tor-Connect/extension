@@ -79,7 +79,7 @@ function checkConnectivityAfterConnect(result, generation) {
   }
   connectivityCheckConnectionId = connectionId;
   const attempt = ++connectivityCheckAttempt;
-  connectivityCheckState = "pending";
+  if (connectivityCheckState !== "failed") connectivityCheckState = "pending";
   connectivityCheckPromise = checkTorReachability().then((reachable) => {
     if (connectivityCheckConnectionId === connectionId && connectivityCheckAttempt === attempt) {
       connectivityCheckState = reachable ? "passed" : "failed";
