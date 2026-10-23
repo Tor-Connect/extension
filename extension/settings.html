@@ -40,6 +40,7 @@
       <a href="#bridges" data-section-link="bridges"><span>Bridge lines</span><span id="bridgeCount" class="nav-count">0</span></a>
       <a href="#appearance" data-section-link="appearance">Appearance</a>
       <a href="#privacy" data-section-link="privacy">Privacy and about</a>
+      <a href="#support" data-section-link="support">Support development</a>
     </nav>
 
     <main class="settings-content">
@@ -87,10 +88,19 @@
           </div>
           <div class="bridge-list-actions">
             <button id="pingBridges" class="quiet-button" type="button" title="Ping bridges and sort by speed">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12h4l3-8 5 16 3-8h5"/></svg><span>Ping all</span>
+              <svg class="ping-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12h4l3-8 5 16 3-8h5"/></svg>
+              <svg class="ping-loading-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
+              <span>Ping all</span>
             </button>
-            <button id="copyAllBridges" class="quiet-button" type="button">Copy all</button>
-            <button id="clearBridges" class="quiet-button danger-button" type="button">Clear all</button>
+            <button id="copyAllBridges" class="quiet-button" type="button">
+              <svg class="copy-all-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="13" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h3"/></svg>
+              <svg class="copy-all-success-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg>
+              <span>Copy all</span>
+            </button>
+            <button id="clearBridges" class="quiet-button danger-button" type="button">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg>
+              <span>Clear all</span>
+            </button>
           </div>
         </div>
 
@@ -184,6 +194,15 @@
             <p>For the live Chrome log, open <code>chrome://extensions</code>, find Tor Connect, then click <strong>Service worker</strong>. Look for entries beginning <code>[Tor extension]</code>.</p>
           </div>
         </details>
+      </section>
+
+      <section id="support" class="settings-section" aria-labelledby="supportHeading">
+        <div class="section-heading">
+          <h2 id="supportHeading">Support development</h2>
+          <p>If Tor Connect is useful to you, consider supporting its development.</p>
+        </div>
+        <div id="donationList" class="donation-list" aria-label="Donation addresses"></div>
+        <p id="donationStatus" class="donation-status" role="status" aria-live="polite"></p>
       </section>
     </main>
   </div>

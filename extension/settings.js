@@ -11,8 +11,10 @@ const importMenuToggle = document.querySelector("#importMenuToggle");
 const importMenu = document.querySelector("#importMenu");
 const bridgeFileInput = document.querySelector("#bridgeFileInput");
 const pingButton = document.querySelector("#pingBridges");
+const pingButtonLabel = pingButton.querySelector("span");
 const clearButton = document.querySelector("#clearBridges");
 const copyAllButton = document.querySelector("#copyAllBridges");
+const copyAllButtonLabel = copyAllButton.querySelector("span");
 const bridgeListNode = document.querySelector("#bridgeList");
 const bridgeCountNode = document.querySelector("#bridgeCount");
 const bridgeSummaryNode = document.querySelector("#bridgeSummary");
@@ -20,6 +22,8 @@ const bridgeSummaryCountNode = document.querySelector("#bridgeSummaryCount");
 const bridgeManagementNode = document.querySelector("#bridgeManagement");
 const useBridgeLinesButton = document.querySelector("#useBridgeLines");
 const clipboardStatusNode = document.querySelector("#clipboardStatus");
+const donationListNode = document.querySelector("#donationList");
+const donationStatusNode = document.querySelector("#donationStatus");
 const changeBanner = document.querySelector("#changeBanner");
 const changeBannerMessage = document.querySelector("#changeBannerMessage");
 const reconnectNowButton = document.querySelector("#reconnectNow");
@@ -30,6 +34,9 @@ let bridgeLines = [];
 let disabledBridgeLines = new Set();
 let pingResults = new Map();
 let countryResults = new Map();
+let isPingingBridges = false;
+let isCopyingAllBridges = false;
+let copyAllSuccessTimer = null;
 let connectedBridgeIndex = null;
 let connectedBridgeAddress = "";
 let connectedBridgeFingerprint = "";
@@ -112,6 +119,85 @@ function showClipboardStatus(message, kind = "") {
   clipboardStatusNode.dataset.kind = kind;
 }
 
+async function loadDonationAddresses() {
+  try {
+    const response = await fetch(chrome.runtime.getURL("donation-addresses.txt"));
+    if (!response.ok) throw new Error("Donation address list is unavailable.");
+    const lines = (await response.text()).split(/\r?\n/);
+    const entries = lines.map((line) => line.trim()).filter((line) => line && !line.startsWith("#"))
+      .map((line) => line.split("|"))
+      .filter((parts) => parts.length === 3 && parts.every((part) => part.trim()))
+      .map(([coin, network, address]) => ({ coin: coin.trim().toUpperCase(), network: network.trim(), address: address.trim() }));
+
+    for (const { coin, network, address } of entries) {
+      const card = document.createElement("article");
+      card.className = "donation-card";
+      const metadata = document.createElement("div");
+      metadata.className = "donation-metadata";
+      const name = document.createElement("strong");
+      name.textContent = ({ BTC: "Bitcoin", ETH: "Ethereum", ZEC: "Zcash", XMR: "Monero" })[coin] || coin;
+      const networkLabel = document.createElement("span");
+      networkLabel.textContent = `${coin} · ${network}`;
+      metadata.append(name, networkLabel);
+
+      const addressRow = document.createElement("div");
+      addressRow.className = "donation-address-row";
+      const addressNode = document.createElement("code");
+      addressNode.className = "donation-address";
+      addressNode.dir = "ltr";
+      addressNode.textContent = address;
+      const copyButton = document.createElement("button");
+      copyButton.className = "quiet-button donation-copy-button";
+      copyButton.type = "button";
+      copyButton.setAttribute("aria-label", `Copy ${coin} donation address`);
+      const copyIcon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      copyIcon.setAttribute("class", "donation-copy-icon");
+      copyIcon.setAttribute("viewBox", "0 0 24 24");
+      copyIcon.setAttribute("aria-hidden", "true");
+      const copyPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      copyPath.setAttribute("d", "M8 8V5a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2h-3M5 8h9a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2Z");
+      copyIcon.append(copyPath);
+      const copiedIcon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      copiedIcon.setAttribute("class", "donation-copy-success-icon");
+      copiedIcon.setAttribute("viewBox", "0 0 24 24");
+      copiedIcon.setAttribute("aria-hidden", "true");
+      const copiedPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      copiedPath.setAttribute("d", "m5 12 4 4L19 6");
+      copiedIcon.append(copiedPath);
+      copyButton.append(copyIcon, copiedIcon);
+      let copiedStateTimer;
+      copyButton.addEventListener("click", async () => {
+        copyButton.disabled = true;
+        donationStatusNode.textContent = "";
+        try {
+          const allowed = await requestClipboardPermission("clipboardWrite");
+          if (!allowed) {
+            donationStatusNode.textContent = "Allow clipboard access to copy the address.";
+            return;
+          }
+          await navigator.clipboard.writeText(address);
+          clearTimeout(copiedStateTimer);
+          copyButton.classList.add("is-copied");
+          copyButton.setAttribute("aria-label", `${coin} address copied`);
+          copiedStateTimer = setTimeout(() => {
+            copyButton.classList.remove("is-copied");
+            copyButton.setAttribute("aria-label", `Copy ${coin} donation address`);
+          }, 1200);
+        } catch {
+          donationStatusNode.textContent = `Could not copy the ${coin} address. Check Chrome’s clipboard permission and try again.`;
+        } finally {
+          copyButton.disabled = false;
+        }
+      });
+      addressRow.append(addressNode, copyButton);
+      card.append(metadata, addressRow);
+      donationListNode.append(card);
+    }
+  } catch {
+    donationStatusNode.textContent = "Could not load donation addresses.";
+  }
+}
+
 function setImportMenuOpen(open) {
   importMenu.hidden = !open;
   importMenuToggle.setAttribute("aria-expanded", String(open));
@@ -159,7 +245,7 @@ function pingDescription(line) {
   if (result === undefined) return { label: "Not tested", level: 0, timeout: false };
   if (result === null) return { label: "Timed out", level: 0, timeout: true };
   const level = result < 100 ? 3 : result < 250 ? 2 : 1;
-  return { label: `${result} ms`, level, timeout: false };
+  return { label: result < 0.05 ? "<0.1 ms" : `${result.toFixed(1)} ms`, level, timeout: false };
 }
 
 function makeIconButton(className, label, svg) {
@@ -176,8 +262,8 @@ function renderBridgeList() {
   bridgeListNode.replaceChildren();
   bridgeCountNode.textContent = String(bridgeLines.length);
   bridgeSummaryCountNode.textContent = `${bridgeLines.length} saved`;
-  pingButton.disabled = bridgeLines.length === 0;
-  copyAllButton.disabled = bridgeLines.length === 0;
+  pingButton.disabled = bridgeLines.length === 0 || isPingingBridges;
+  copyAllButton.disabled = bridgeLines.length === 0 || isCopyingAllBridges;
   clearButton.disabled = bridgeLines.length === 0;
   if (!bridgeLines.length) {
     const empty = document.createElement("p");
@@ -452,8 +538,14 @@ bridgeFileInput.addEventListener("change", async () => {
 });
 
 copyAllButton.addEventListener("click", async () => {
-  if (!bridgeLines.length) return;
+  if (!bridgeLines.length || isCopyingAllBridges) return;
+  const copyStartedAt = Date.now();
+  clearTimeout(copyAllSuccessTimer);
+  copyAllButton.classList.remove("is-copied");
+  copyAllButtonLabel.textContent = "Copy all";
+  isCopyingAllBridges = true;
   copyAllButton.disabled = true;
+  showClipboardStatus("");
   try {
     const allowed = await requestClipboardPermission("clipboardWrite");
     if (!allowed) {
@@ -461,11 +553,20 @@ copyAllButton.addEventListener("click", async () => {
       return;
     }
     await navigator.clipboard.writeText(bridgeLines.join("\n"));
+    copyAllButton.classList.add("is-copied");
+    copyAllButtonLabel.textContent = "Copied";
+    copyAllSuccessTimer = setTimeout(() => {
+      copyAllButton.classList.remove("is-copied");
+      copyAllButtonLabel.textContent = "Copy all";
+    }, 1200);
     showClipboardStatus("All bridges copied.", "success");
   } catch {
     showClipboardStatus("Could not copy bridges. Check Chrome’s clipboard permission and try again.", "error");
   } finally {
-    copyAllButton.disabled = bridgeLines.length === 0;
+    const remainingBusyTime = 500 - (Date.now() - copyStartedAt);
+    if (remainingBusyTime > 0) await new Promise((resolve) => setTimeout(resolve, remainingBusyTime));
+    isCopyingAllBridges = false;
+    renderBridgeList();
   }
 });
 
@@ -483,14 +584,25 @@ clearButton.addEventListener("click", () => {
 });
 
 pingButton.addEventListener("click", () => {
-  if (!bridgeLines.length) return;
+  if (!bridgeLines.length || isPingingBridges) return;
+  const pingStartedAt = Date.now();
+  isPingingBridges = true;
+  pingButtonLabel.textContent = "Pinging";
   pingButton.disabled = true;
   pingButton.setAttribute("aria-busy", "true");
+  const finishPinging = () => {
+    const remainingBusyTime = 500 - (Date.now() - pingStartedAt);
+    setTimeout(() => {
+      isPingingBridges = false;
+      pingButton.removeAttribute("aria-busy");
+      pingButtonLabel.textContent = "Ping all";
+      renderBridgeList();
+    }, Math.max(0, remainingBusyTime));
+  };
   chrome.runtime.sendMessage({ type: "pingBridges", bridges: bridgeLines.join("\n") }, (result) => {
-    pingButton.removeAttribute("aria-busy");
     if (chrome.runtime.lastError || !result?.ok || !Array.isArray(result.results)) {
-      pingButton.disabled = bridgeLines.length === 0;
       showClipboardStatus(result?.error || "Could not ping bridges.", "error");
+      finishPinging();
       return;
     }
     pingResults = new Map(result.results.map(({ line, latencyMs }) => [line, Number.isFinite(latencyMs) ? latencyMs : null]));
@@ -502,6 +614,7 @@ pingButton.addEventListener("click", () => {
       return (pa ?? Infinity) - (pb ?? Infinity);
     });
     renderBridgeList();
+    finishPinging();
     markDirty();
     saveBridgeList("Sorted fastest first and saved.");
   });
@@ -655,7 +768,8 @@ if ("IntersectionObserver" in window) {
     if (!visible) return;
     setActiveSection(visible.target.id);
   }, { rootMargin: "-15% 0px -65% 0px", threshold: [0, 0.1, 0.35] });
-  ["method", "bridges", "appearance", "privacy"].forEach((id) => sectionObserver.observe(document.getElementById(id)));
+  ["method", "bridges", "appearance", "privacy", "support"].forEach((id) => sectionObserver.observe(document.getElementById(id)));
 }
 
+loadDonationAddresses();
 readPreferences().then(sendStatus);

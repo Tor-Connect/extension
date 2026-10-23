@@ -543,7 +543,7 @@ final class Helper {
 
     // Measures TCP connect time to the bridge endpoint. This is a reachability
     // estimate, not a Tor handshake or a guarantee that the bridge will work.
-    private func tcpLatency(endpoint: String) -> Int? {
+    private func tcpLatency(endpoint: String) -> Double? {
         let host: String
         let port: String
         if endpoint.hasPrefix("["), let close = endpoint.firstIndex(of: "]") {
@@ -584,7 +584,7 @@ final class Helper {
                         connected = getsockopt(fd, SOL_SOCKET, SO_ERROR, &socketError, &errorLength) == 0 && socketError == 0
                     }
                 }
-                let elapsed = Int((DispatchTime.now().uptimeNanoseconds - start) / 1_000_000)
+                let elapsed = Double(DispatchTime.now().uptimeNanoseconds - start) / 1_000_000
                 _ = close(fd)
                 if connected { return elapsed }
             }

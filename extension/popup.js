@@ -616,9 +616,7 @@ function renderRoute(result = {}) {
       }
     }
   } else {
-    routeNameNode.textContent = "Snowflake";
-    routeDetailNode.textContent = "Snowflake transport";
-    routeDetailNode.hidden = false;
+    routeIdentityNode.hidden = true;
   }
 
   const reconnectAvailable = result.state === "connected"
@@ -672,6 +670,7 @@ function renderResult(result) {
   renderProgress(result);
   const statusKind = result?.state === "connected" && result?.bridgeActivity === "trying" ? "starting"
     : result?.state === "connected" && ["failed", "closed"].includes(result?.bridgeActivity) ? "error"
+      : result?.state === "connected" && result?.connectivityCheck === "failed" ? "connected-check-failed"
       : result?.state === "connected" ? "connected"
     : result?.state === "starting" ? "starting"
       : result?.state === "failed" || !result?.ok ? "error" : "";

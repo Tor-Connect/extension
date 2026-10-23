@@ -5,6 +5,59 @@ let pending = new Map();
 let nextId = 1;
 let lastLoggedStatus;
 let lastActionConnected;
+let connectivityCheckConnectionId;
+let connectivityCheckState = "";
+let connectivityCheckPromise;
+
+async function checkTorReachability() {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 8000);
+  try {
+    const response = await fetch("https://check.torproject.org/api/ip", {
+      method: "GET",
+      cache: "no-store",
+      credentials: "omit",
+      redirect: "error",
+      referrerPolicy: "no-referrer",
+      signal: controller.signal
+    });
+    if (!response.ok) return false;
+    const result = await response.json();
+    return result?.IsTor === true || result?.isTor === true;
+  } catch {
+    return false;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+function checkConnectivityAfterConnect(result) {
+  if (result?.state !== "connected") {
+    connectivityCheckConnectionId = undefined;
+    connectivityCheckState = "";
+    connectivityCheckPromise = undefined;
+    return;
+  }
+  if (result.bridgeActivity === "trying") return;
+
+  const connectionId = result.connectedAt || "connected";
+  if (connectivityCheckConnectionId === connectionId && (connectivityCheckState || connectivityCheckPromise)) return;
+  connectivityCheckConnectionId = connectionId;
+  connectivityCheckState = "pending";
+  connectivityCheckPromise = checkTorReachability().then((reachable) => {
+    if (connectivityCheckConnectionId === connectionId) {
+      connectivityCheckState = reachable ? "passed" : "failed";
+      connectivityCheckPromise = undefined;
+    }
+  });
+}
+
+function addConnectivityCheck(result) {
+  if (result?.state === "connected") {
+    result.connectivityCheck = connectivityCheckConnectionId ? connectivityCheckState || "pending" : "pending";
+  }
+  return result;
+}
 
 function logHelperResult(command, result) {
   const entry = {
@@ -35,7 +88,11 @@ function connectHost() {
     if (message.id === 0) {
       logHelperResult("heartbeat", message);
       const connected = message.ok && message.state === "connected";
-      if (connected) setTorProxy().catch(() => {});
+      if (connected) {
+        setTorProxy().then(() => checkConnectivityAfterConnect(message)).catch(() => {});
+      } else {
+        checkConnectivityAfterConnect(message);
+      }
       setActionConnected(connected, connected && message.bridgeActivity === "trying").catch(() => {});
       return;
     }
@@ -131,9 +188,14 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       const result = await request("status");
       logHelperResult("status", result);
       const connected = result.ok && result.state === "connected";
-      if (connected) await setTorProxy();
+      if (connected) {
+        await setTorProxy();
+        checkConnectivityAfterConnect(result);
+      } else {
+        checkConnectivityAfterConnect(result);
+      }
       await setActionConnected(connected, connected && result.bridgeActivity === "trying");
-      sendResponse(result);
+      sendResponse(addConnectivityCheck(result));
       return;
     }
     if (message.type === "pingBridges") {
@@ -154,9 +216,14 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       });
       logHelperResult("start", result);
       const connected = result.ok && result.state === "connected";
-      if (connected) await setTorProxy();
+      if (connected) {
+        await setTorProxy();
+        checkConnectivityAfterConnect(result);
+      } else {
+        checkConnectivityAfterConnect(result);
+      }
       await setActionConnected(connected);
-      sendResponse(result);
+      sendResponse(addConnectivityCheck(result));
       return;
     }
     if (message.type === "disconnect") {

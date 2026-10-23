@@ -372,7 +372,7 @@ class Helper:
                 started = time.monotonic()
                 try:
                     with socket.create_connection(parsed, timeout=1.8):
-                        result["latencyMs"] = int((time.monotonic() - started) * 1000)
+                        result["latencyMs"] = round((time.monotonic() - started) * 1000, 1)
                 except OSError: pass
                 code = self.country_code(endpoint)
                 if code: result["countryCode"] = code

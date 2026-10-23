@@ -75,6 +75,18 @@ button:focus-visible, a:focus-visible, summary:focus-visible { outline: 3px soli
 .quiet-button, .request-button, .bridge-row-action { display: inline-flex; min-height: 44px; align-items: center; justify-content: center; gap: 8px; padding: 0 16px; border: 1px solid #262d2b; border-radius: 12px; color: #eaf1ee; background: transparent; font-weight: 500; white-space: nowrap; }
 .quiet-button:hover, .request-button:hover, .bridge-row-action:hover { border-color: #46534c; background: #121816; }
 .quiet-button svg, .request-button svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 2; }
+.bridge-list-actions .quiet-button[aria-busy="true"] { border-color: #1c5b3b; color: #2bd576; background: #0f1f17; cursor: wait; }
+#pingBridges .ping-loading-icon { display: none; }
+#pingBridges[aria-busy="true"] .ping-icon { display: none; }
+#pingBridges[aria-busy="true"] .ping-loading-icon { display: block; }
+#pingBridges[aria-busy="true"] .ping-loading-icon circle { fill: currentColor; stroke: none; transform-box: fill-box; transform-origin: center; animation: ping-dot-pulse 900ms ease-in-out infinite; }
+#pingBridges[aria-busy="true"] .ping-loading-icon circle:nth-child(2) { animation-delay: 150ms; }
+#pingBridges[aria-busy="true"] .ping-loading-icon circle:nth-child(3) { animation-delay: 300ms; }
+#copyAllBridges .copy-all-success-icon { display: none; }
+#copyAllBridges.is-copied { border-color: #1c5b3b; color: #2bd576; background: #0f1f17; }
+#copyAllBridges.is-copied .copy-all-icon { display: none; }
+#copyAllBridges.is-copied .copy-all-success-icon { display: block; }
+@keyframes ping-dot-pulse { 0%, 60%, 100% { opacity: .35; transform: scale(.75); } 30% { opacity: 1; transform: scale(1); } }
 .danger-button { color: #e9a3a3; }
 .danger-button:hover { border-color: #694545; color: #ffc1c1; background: #201515; }
 .add-bridges-panel { display: flex; flex-wrap: wrap; align-items: center; gap: 14px 16px; padding: 14px 16px 14px 20px; border: 1.5px dashed #2a3430; border-radius: 16px; background: #0a100e; }
@@ -148,6 +160,25 @@ button:focus-visible, a:focus-visible, summary:focus-visible { outline: 3px soli
 .privacy-card strong { font-size: 16px; font-weight: 600; }
 .privacy-card p { margin: 6px 0 0; color: #c3cdc8; font-size: 14px; line-height: 1.6; }
 .privacy-policy-link { display: inline-flex; margin-top: 12px; color: #2bd576; font-size: 13px; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
+.donation-list { display: grid; gap: 8px; }
+.donation-card { display: grid; grid-template-columns: minmax(112px, auto) minmax(0, 1fr) auto; align-items: center; gap: 12px; padding: 9px 12px; border: 1px solid #262d2b; border-radius: 12px; background: #0c1210; }
+.donation-metadata { display: grid; gap: 1px; }
+.donation-metadata strong { color: #eaf1ee; font-size: 15px; font-weight: 600; }
+.donation-metadata span { color: #8a948f; font-size: 12px; }
+.donation-address-row { display: contents; }
+.donation-address { display: flex; min-width: 0; align-items: center; padding: 8px 10px; border: 1px solid #1d2421; border-radius: 8px; color: #cfe9db; background: #101613; font: 12px/1.4 "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace; overflow-wrap: anywhere; }
+.donation-copy-button { width: 40px; min-height: 40px; flex: 0 0 40px; padding: 0; }
+.donation-copy-button svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 2; }
+.donation-copy-success-icon { display: none; }
+.donation-copy-button.is-copied { border-color: #1c5b3b; color: #2bd576; background: #0f1f17; }
+.donation-copy-button.is-copied .donation-copy-icon { display: none; }
+.donation-copy-button.is-copied .donation-copy-success-icon { display: block; }
+.donation-privacy-note, .donation-status { margin: 0; color: #8a948f; font-size: 13px; line-height: 1.5; }
+.donation-status:empty { display: none; }
+#support { gap: 10px; }
+#support .section-heading { gap: 3px; }
+#support .section-heading h2 { font-size: 20px; }
+#support .section-heading p { font-size: 13px; }
 .connection-details { overflow: hidden; border: 1px solid #1d2421; border-radius: 16px; }
 .connection-details summary { display: flex; min-height: 60px; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 20px; cursor: pointer; list-style: none; }
 .connection-details summary::-webkit-details-marker { display: none; }
@@ -197,6 +228,8 @@ html[data-theme="light"] .method-card-copy span { color: #66716b; }
 html[data-theme="light"] .method-card[aria-checked="true"] .method-card-copy span { color: #4e6156; }
 html[data-theme="light"] .quiet-button, html[data-theme="light"] .request-button, html[data-theme="light"] .bridge-row-action { border-color: #dce4df; color: #26332c; }
 html[data-theme="light"] .quiet-button:hover, html[data-theme="light"] .request-button:hover, html[data-theme="light"] .bridge-row-action:hover { border-color: #a9cbb5; background: #eef5f0; }
+html[data-theme="light"] .bridge-list-actions .quiet-button[aria-busy="true"] { border-color: #a3e5bf; color: #14864c; background: #edf9f1; }
+html[data-theme="light"] #copyAllBridges.is-copied { border-color: #a3e5bf; color: #14864c; background: #edf9f1; }
 html[data-theme="light"] .danger-button { color: #a34440; }
 html[data-theme="light"] .danger-button:hover { border-color: #e2b7b4; color: #8d2f2f; background: #fff4f4; }
 html[data-theme="light"] .add-bridges-panel { border-color: #d1ded6; background: #f8fbf9; }
@@ -234,10 +267,19 @@ html[data-theme="light"] .theme-options button[aria-pressed="true"] { border-col
 html[data-theme="light"] .privacy-card { border-color: #dce4df; background: #fff; }
 html[data-theme="light"] .privacy-icon { color: #66716b; background: #edf1ef; }
 html[data-theme="light"] .privacy-card p { color: #4f5c55; }
+html[data-theme="light"] .donation-card { border-color: #dce4df; background: #fff; }
+html[data-theme="light"] .donation-metadata strong { color: #26332c; }
+html[data-theme="light"] .donation-metadata span, html[data-theme="light"] .donation-privacy-note, html[data-theme="light"] .donation-status { color: #66716b; }
+html[data-theme="light"] .donation-address { border-color: #dce4df; color: #344139; background: #f5f8f6; }
+html[data-theme="light"] .donation-copy-button.is-copied { border-color: #a3e5bf; color: #14864c; background: #edf9f1; }
 html[data-theme="light"] .privacy-policy-link { color: #16804a; }
 html[data-theme="light"] .connection-details { border-color: #dce4df; }
 html[data-theme="light"] .connection-details summary small, html[data-theme="light"] .connection-details summary svg { color: #66716b; stroke: #66716b; }
 html[data-theme="light"] .connection-details-body { color: #56645c; }
+
+@media (prefers-reduced-motion: reduce) {
+  #pingBridges[aria-busy="true"] .ping-loading-icon circle { animation: none; opacity: 1; transform: none; }
+}
 html[data-theme="light"] .connection-details-body pre { color: #344139; background: #edf1ef; }
 
 @media (max-width: 760px) {
@@ -268,6 +310,8 @@ html[data-theme="light"] .connection-details-body pre { color: #344139; backgrou
   .bridge-row-actions { margin-left: auto; }
   .theme-options button { padding: 0 14px; }
   .change-banner { padding: 12px 16px; text-align: center; }
+  .donation-card { grid-template-columns: minmax(0, 1fr) auto; gap: 6px 10px; padding: 9px 10px; }
+  .donation-metadata { grid-column: 1 / -1; display: flex; align-items: baseline; gap: 8px; }
 }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } *, *::before, *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; } }
 

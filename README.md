@@ -87,3 +87,10 @@ Disconnect in Tor Connect and remove the extension from `chrome://extensions`. T
 ## Support
 
 Report bugs or ask questions in [GitHub Issues](https://github.com/Tor-Connect/extension/issues). Issues are public; do not post bridge lines, diagnostic logs containing private information, or other sensitive details.
+
+### Support development
+
+If Tor Connect is useful to you, consider supporting its development. You can donate BTC or ETH using these mainnet addresses:
+
+- **BTC (Bitcoin mainnet):** `bc1qdnyx6q2y239s372ew97cuvf04st0rkk4wjfsqu`
+- **ETH (Ethereum mainnet):** `0x3f00eb6ABA72c5ddFD8B313fD611993A68167921`
