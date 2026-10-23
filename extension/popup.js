@@ -33,6 +33,7 @@ const bridgeSelectorNode = document.querySelector("#bridgeSelector");
 const statsToggleNode = document.querySelector("#statsToggle");
 const liveStatsNode = document.querySelector("#liveStats");
 const statsBackdropNode = document.querySelector("#statsBackdrop");
+const closeStatsNode = document.querySelector("#closeStats");
 let statsPollTimer;
 let lastStatsSample;
 const autoBridgeSelectionNode = document.querySelector("#autoBridgeSelection");
@@ -55,12 +56,14 @@ let routeBridgeLine = "";
 let copyFeedbackTimer;
 
 function closeLiveStats() {
+  const wasOpen = !liveStatsNode.hidden;
   statsToggleNode.setAttribute("aria-expanded", "false");
   statsToggleNode.setAttribute("aria-label", "Open live statistics");
   liveStatsNode.hidden = true;
   statsBackdropNode.hidden = true;
   if (statsPollTimer) clearInterval(statsPollTimer);
   statsPollTimer = undefined;
+  if (wasOpen) (statsToggleNode.hidden ? connectionToggle : statsToggleNode).focus();
 }
 
 statsToggleNode.addEventListener("click", () => {
@@ -68,12 +71,43 @@ statsToggleNode.addEventListener("click", () => {
   statsToggleNode.setAttribute("aria-label", "Close live statistics");
   liveStatsNode.hidden = false;
   statsBackdropNode.hidden = false;
+  closeStatsNode.focus();
   lastStatsSample = undefined;
   refreshLiveStats();
   statsPollTimer = setInterval(refreshLiveStats, 1000);
 });
-document.querySelector("#closeStats").addEventListener("click", closeLiveStats);
+closeStatsNode.addEventListener("click", closeLiveStats);
 statsBackdropNode.addEventListener("click", closeLiveStats);
+
+liveStatsNode.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") {
+    event.preventDefault();
+    closeLiveStats();
+    return;
+  }
+  if (event.key !== "Tab") return;
+
+  const focusable = [...liveStatsNode.querySelectorAll("button:not([disabled]):not([hidden]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex='-1'])")]
+    .filter((node) => node.getClientRects().length);
+  if (!focusable.length) {
+    event.preventDefault();
+    closeStatsNode.focus();
+    return;
+  }
+  const first = focusable[0];
+  const last = focusable[focusable.length - 1];
+  if (event.shiftKey && document.activeElement === first) {
+    event.preventDefault();
+    last.focus();
+  } else if (!event.shiftKey && document.activeElement === last) {
+    event.preventDefault();
+    first.focus();
+  }
+});
+
+document.addEventListener("focusin", (event) => {
+  if (!liveStatsNode.hidden && !liveStatsNode.contains(event.target)) closeStatsNode.focus();
+});
 
 function formatBytes(value) {
   if (!Number.isFinite(value)) return "—";
@@ -458,6 +492,7 @@ function explain(result) {
   if (result.state === "connected") {
     if (result.bridgeActivity === "trying") return "Reconnecting…";
     if (result.bridgeActivity === "failed" || result.bridgeActivity === "closed") return "Connection interrupted";
+    if (result.connectivityCheck === "failed") return "Connected, not verified";
     return "Connected";
   }
   if (result.state === "starting") {
@@ -681,6 +716,8 @@ function renderResult(result) {
     ? preferences.mode === "snowflake" ? "Tor may retry the Snowflake route" : "Tor may retry the bridge"
     : result?.state === "connected" && result?.bridgeActivity === "trying"
       ? preferences.mode === "snowflake" ? "Trying another volunteer proxy" : "Trying another bridge"
+      : result?.state === "connected" && result?.connectivityCheck === "failed"
+        ? "Tor reachability check failed · tap the center to disconnect"
       : result?.state === "connected" ? "Tap the center to disconnect"
     : result?.state === "starting"
       ? Number(result.currentBridgeIndex) > 0 ? `Crossing through Bridge ${Number(result.currentBridgeIndex)}`

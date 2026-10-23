@@ -168,6 +168,53 @@ class Helper:
             payload.update(self.live_statistics())
         return payload
 
+    @staticmethod
+    def windows_process_memory_bytes(pid: int) -> int | None:
+        import ctypes
+        from ctypes import wintypes
+
+        class ProcessMemoryCountersEx(ctypes.Structure):
+            _fields_ = [
+                ("cb", wintypes.DWORD),
+                ("PageFaultCount", wintypes.DWORD),
+                ("PeakWorkingSetSize", ctypes.c_size_t),
+                ("WorkingSetSize", ctypes.c_size_t),
+                ("QuotaPeakPagedPoolUsage", ctypes.c_size_t),
+                ("QuotaPagedPoolUsage", ctypes.c_size_t),
+                ("QuotaPeakNonPagedPoolUsage", ctypes.c_size_t),
+                ("QuotaNonPagedPoolUsage", ctypes.c_size_t),
+                ("PagefileUsage", ctypes.c_size_t),
+                ("PeakPagefileUsage", ctypes.c_size_t),
+                ("PrivateUsage", ctypes.c_size_t),
+            ]
+
+        kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+        psapi = ctypes.WinDLL("psapi", use_last_error=True)
+        open_process = kernel32.OpenProcess
+        open_process.argtypes = (wintypes.DWORD, wintypes.BOOL, wintypes.DWORD)
+        open_process.restype = wintypes.HANDLE
+        close_handle = kernel32.CloseHandle
+        close_handle.argtypes = (wintypes.HANDLE,)
+        close_handle.restype = wintypes.BOOL
+        get_process_memory_info = psapi.GetProcessMemoryInfo
+        get_process_memory_info.argtypes = (
+            wintypes.HANDLE, ctypes.POINTER(ProcessMemoryCountersEx), wintypes.DWORD
+        )
+        get_process_memory_info.restype = wintypes.BOOL
+
+        # PROCESS_QUERY_LIMITED_INFORMATION is sufficient for GetProcessMemoryInfo.
+        handle = open_process(0x1000, False, pid)
+        if not handle:
+            return None
+        try:
+            counters = ProcessMemoryCountersEx()
+            counters.cb = ctypes.sizeof(counters)
+            if get_process_memory_info(handle, ctypes.byref(counters), counters.cb):
+                return int(counters.WorkingSetSize)
+            return None
+        finally:
+            close_handle(handle)
+
     def live_statistics(self) -> dict:
         """Read Tor's cumulative network counters and the daemon's current RSS."""
         stats: dict[str, int] = {}
@@ -175,27 +222,33 @@ class Helper:
         try:
             port = int(port_file.read_text().strip().rsplit(":", 1)[-1])
             cookie = cookie_file.read_bytes()
-            if len(cookie) != 32:
-                return stats
-            with socket.create_connection(("127.0.0.1", port), timeout=.35) as conn:
-                conn.settimeout(.35)
-                conn.sendall(f"AUTHENTICATE {cookie.hex()}\r\n".encode())
-                if "250 OK" not in self.read_control_reply(conn):
-                    return stats
-                conn.sendall(b"GETINFO traffic/read traffic/written\r\n")
-                reply = self.read_control_reply(conn)
-            for key, field in (("traffic/read", "downloadBytes"), ("traffic/written", "uploadBytes")):
-                match = re.search(rf"250-{re.escape(key)}=(\d+)", reply)
-                if match:
-                    stats[field] = int(match.group(1))
+            if len(cookie) == 32:
+                with socket.create_connection(("127.0.0.1", port), timeout=.35) as conn:
+                    conn.settimeout(.35)
+                    conn.sendall(f"AUTHENTICATE {cookie.hex()}\r\n".encode())
+                    if "250 OK" in self.read_control_reply(conn):
+                        conn.sendall(b"GETINFO traffic/read traffic/written\r\n")
+                        reply = self.read_control_reply(conn)
+                        for key, field in (("traffic/read", "downloadBytes"), ("traffic/written", "uploadBytes")):
+                            match = re.search(rf"250-{re.escape(key)}=(\d+)", reply)
+                            if match:
+                                stats[field] = int(match.group(1))
         except (OSError, ValueError):
             pass
-        try:
-            raw = subprocess.check_output(["ps", "-o", "rss=", "-p", str(self.process.pid)], text=True, timeout=.4).strip()
-            if raw.isdigit():
-                stats["memoryBytes"] = int(raw) * 1024
-        except (OSError, subprocess.SubprocessError):
-            pass
+        if os.name == "nt":
+            try:
+                memory_bytes = self.windows_process_memory_bytes(self.process.pid)
+                if memory_bytes is not None:
+                    stats["memoryBytes"] = memory_bytes
+            except (OSError, AttributeError):
+                pass
+        else:
+            try:
+                raw = subprocess.check_output(["ps", "-o", "rss=", "-p", str(self.process.pid)], text=True, timeout=.4).strip()
+                if raw.isdigit():
+                    stats["memoryBytes"] = int(raw) * 1024
+            except (OSError, subprocess.SubprocessError):
+                pass
         return stats
 
     def start(self, mode: str, raw_bridges: str, selected_index,
@@ -230,13 +283,11 @@ class Helper:
             DATA.mkdir(parents=True, exist_ok=True)
             if os.name != "nt":
                 os.chmod(BASE, 0o700); os.chmod(DATA, 0o700)
-            control_lines = []
-            if targets:
-                for old in (DATA / "control-port", DATA / "control_auth_cookie"):
-                    try: old.unlink()
-                    except OSError: pass
-                control_lines = ["ControlPort auto", "ControlListenAddress 127.0.0.1",
-                                 f"ControlPortWriteToFile {tor_config_path(DATA / 'control-port')}", "CookieAuthentication 1"]
+            for old in (DATA / "control-port", DATA / "control_auth_cookie"):
+                try: old.unlink()
+                except OSError: pass
+            control_lines = ["ControlPort auto", "ControlListenAddress 127.0.0.1",
+                             f"ControlPortWriteToFile {tor_config_path(DATA / 'control-port')}", "CookieAuthentication 1"]
             launch_root = Path(os.environ.get("WINDIR", "C:/Windows")) / "Temp" if os.name == "nt" else Path("/tmp")
             launch_root.mkdir(parents=True, exist_ok=True)
             launch_dir = Path(tempfile.mkdtemp(prefix="torchrome-", dir=str(launch_root)))

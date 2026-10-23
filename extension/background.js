@@ -5,9 +5,45 @@ let pending = new Map();
 let nextId = 1;
 let lastLoggedStatus;
 let lastActionConnected;
+let connectivityGeneration = 0;
 let connectivityCheckConnectionId;
 let connectivityCheckState = "";
 let connectivityCheckPromise;
+let connectivityCheckAttempt = 0;
+let connectivityCheckRetryAt = 0;
+const CONNECTIVITY_CHECK_RETRY_DELAY_MS = 30_000;
+
+function resetConnectivityCheck() {
+  connectivityGeneration += 1;
+  connectivityCheckConnectionId = undefined;
+  connectivityCheckState = "";
+  connectivityCheckPromise = undefined;
+  connectivityCheckAttempt += 1;
+  connectivityCheckRetryAt = 0;
+}
+
+function trackConnectivityConnection(result) {
+  if (!result?.ok || result.state !== "connected") {
+    resetConnectivityCheck();
+    return connectivityGeneration;
+  }
+
+  const connectionId = result.connectedAt || "connected";
+  const currentStartedAt = Number(connectivityCheckConnectionId);
+  const incomingStartedAt = Number(connectionId);
+  if (Number.isFinite(currentStartedAt) && Number.isFinite(incomingStartedAt) && incomingStartedAt < currentStartedAt) {
+    return connectivityGeneration;
+  }
+  if (connectivityCheckConnectionId !== connectionId) {
+    connectivityGeneration += 1;
+    connectivityCheckConnectionId = connectionId;
+    connectivityCheckState = "";
+    connectivityCheckPromise = undefined;
+    connectivityCheckAttempt += 1;
+    connectivityCheckRetryAt = 0;
+  }
+  return connectivityGeneration;
+}
 
 async function checkTorReachability() {
   const controller = new AbortController();
@@ -31,30 +67,34 @@ async function checkTorReachability() {
   }
 }
 
-function checkConnectivityAfterConnect(result) {
-  if (result?.state !== "connected") {
-    connectivityCheckConnectionId = undefined;
-    connectivityCheckState = "";
-    connectivityCheckPromise = undefined;
-    return;
-  }
+function checkConnectivityAfterConnect(result, generation) {
+  if (generation !== connectivityGeneration || !result?.ok || result.state !== "connected") return;
   if (result.bridgeActivity === "trying") return;
 
   const connectionId = result.connectedAt || "connected";
-  if (connectivityCheckConnectionId === connectionId && (connectivityCheckState || connectivityCheckPromise)) return;
+  if (connectivityCheckConnectionId !== connectionId) return;
+  if (connectivityCheckConnectionId === connectionId) {
+    if (connectivityCheckState === "passed" || connectivityCheckPromise) return;
+    if (connectivityCheckState === "failed" && Date.now() < connectivityCheckRetryAt) return;
+  }
   connectivityCheckConnectionId = connectionId;
+  const attempt = ++connectivityCheckAttempt;
   connectivityCheckState = "pending";
   connectivityCheckPromise = checkTorReachability().then((reachable) => {
-    if (connectivityCheckConnectionId === connectionId) {
+    if (connectivityCheckConnectionId === connectionId && connectivityCheckAttempt === attempt) {
       connectivityCheckState = reachable ? "passed" : "failed";
+      connectivityCheckRetryAt = reachable ? 0 : Date.now() + CONNECTIVITY_CHECK_RETRY_DELAY_MS;
       connectivityCheckPromise = undefined;
     }
   });
 }
 
 function addConnectivityCheck(result) {
-  if (result?.state === "connected") {
-    result.connectivityCheck = connectivityCheckConnectionId ? connectivityCheckState || "pending" : "pending";
+  if (result?.ok && result.state === "connected") {
+    const connectionId = result.connectedAt || "connected";
+    result.connectivityCheck = connectivityCheckConnectionId === connectionId
+      ? connectivityCheckState || "pending"
+      : "pending";
   }
   return result;
 }
@@ -88,10 +128,13 @@ function connectHost() {
     if (message.id === 0) {
       logHelperResult("heartbeat", message);
       const connected = message.ok && message.state === "connected";
+      const generation = trackConnectivityConnection(message);
       if (connected) {
-        setTorProxy().then(() => checkConnectivityAfterConnect(message)).catch(() => {});
+        setTorProxy().then(() => {
+          if (generation === connectivityGeneration) checkConnectivityAfterConnect(message, generation);
+        }).catch(() => {});
       } else {
-        checkConnectivityAfterConnect(message);
+        checkConnectivityAfterConnect(message, generation);
       }
       setActionConnected(connected, connected && message.bridgeActivity === "trying").catch(() => {});
       return;
@@ -109,6 +152,7 @@ function connectHost() {
       : "Native helper disconnected. Restart Chrome and check the helper installation.";
     console.warn("[Tor extension] native helper disconnected", errorMessage);
     nativePort = undefined;
+    resetConnectivityCheck();
     setActionConnected(false).catch(() => {});
     chrome.alarms.clear("nativeHeartbeat");
     for (const resolve of pending.values()) resolve({ ok: false, error: errorMessage });
@@ -188,11 +232,12 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       const result = await request("status");
       logHelperResult("status", result);
       const connected = result.ok && result.state === "connected";
+      const generation = trackConnectivityConnection(result);
       if (connected) {
         await setTorProxy();
-        checkConnectivityAfterConnect(result);
+        if (generation === connectivityGeneration) checkConnectivityAfterConnect(result, generation);
       } else {
-        checkConnectivityAfterConnect(result);
+        checkConnectivityAfterConnect(result, generation);
       }
       await setActionConnected(connected, connected && result.bridgeActivity === "trying");
       sendResponse(addConnectivityCheck(result));
@@ -216,11 +261,12 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       });
       logHelperResult("start", result);
       const connected = result.ok && result.state === "connected";
+      const generation = trackConnectivityConnection(result);
       if (connected) {
         await setTorProxy();
-        checkConnectivityAfterConnect(result);
+        if (generation === connectivityGeneration) checkConnectivityAfterConnect(result, generation);
       } else {
-        checkConnectivityAfterConnect(result);
+        checkConnectivityAfterConnect(result, generation);
       }
       await setActionConnected(connected);
       sendResponse(addConnectivityCheck(result));

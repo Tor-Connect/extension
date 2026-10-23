@@ -325,7 +325,7 @@ final class Helper {
             try FileManager.default.createSymbolicLink(at: launchTransportURL, withDestinationURL: transportURL)
             let transportPath = launchTransportURL.path
             lock.lock(); transportLaunchDirectory = launchDirectory; lock.unlock()
-            let controlLines = configuredBridgeTargets.isEmpty ? [] : [
+            let controlLines = [
                 "ControlPort auto",
                 "ControlListenAddress 127.0.0.1",
                 "ControlPortWriteToFile \"\(dataDirectory.appendingPathComponent("control-port").path)\"",
@@ -341,10 +341,8 @@ final class Helper {
             ] + bridgeLines).joined(separator: "\n") + "\n"
             try config.write(to: configURL, atomically: true, encoding: .utf8)
             try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: configURL.path)
-            if !configuredBridgeTargets.isEmpty {
-                try? FileManager.default.removeItem(at: dataDirectory.appendingPathComponent("control-port"))
-                try? FileManager.default.removeItem(at: dataDirectory.appendingPathComponent("control_auth_cookie"))
-            }
+            try? FileManager.default.removeItem(at: dataDirectory.appendingPathComponent("control-port"))
+            try? FileManager.default.removeItem(at: dataDirectory.appendingPathComponent("control_auth_cookie"))
 
             let process = Process()
             process.executableURL = torURL

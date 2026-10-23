@@ -305,8 +305,7 @@ body.popup-page .connected-stats-summary { display: flex; width: 100%; min-width
 body.popup-page .connected-stats-summary[hidden] { display: none !important; }
 body.popup-page .orbit-card[data-state="connected"] .bridge-summary { min-height: 0; flex-direction: column; align-items: stretch; justify-content: flex-start; gap: 0; }
 body.popup-page .orbit-card[data-state="connected"] .route-identity,
-body.popup-page .orbit-card[data-state="connected"] .copy-bridge-button,
-body.popup-page .orbit-card[data-state="connected"] .reconnect-bridge-button { display: none !important; }
+body.popup-page .orbit-card[data-state="connected"] .copy-bridge-button { display: none !important; }
 body.popup-page .orbit-card[data-state="connected"] .connected-stats-summary { flex: none; }
 body.popup-page .summary-route-icon { display: flex; width: 40px; height: 40px; flex: none; align-items: center; justify-content: center; border: 2px solid #2bd576; border-radius: 50%; color: #2bd576; font: 12px "IBM Plex Mono", monospace; }
 body.popup-page .summary-route-icon.is-snowflake { font-size: 0; }
