@@ -124,7 +124,61 @@ final class Helper {
                 payload["bridgeCountryCode"] = country
             }
         }
+        payload.merge(liveStatistics()) { _, new in new }
         return payload
+    }
+
+    private func liveStatistics() -> [String: Any] {
+        var values: [String: Any] = [:]
+        let portURL = dataDirectory.appendingPathComponent("control-port")
+        let cookieURL = dataDirectory.appendingPathComponent("control_auth_cookie")
+        if let portText = try? String(contentsOf: portURL, encoding: .utf8),
+           let port = UInt16(portText.trimmingCharacters(in: .whitespacesAndNewlines).split(separator: ":").last ?? ""),
+           let cookie = try? Data(contentsOf: cookieURL), cookie.count == 32 {
+            let descriptor = socket(AF_INET, SOCK_STREAM, 0)
+            if descriptor >= 0 {
+                defer { close(descriptor) }
+                var timeout = timeval(tv_sec: 0, tv_usec: 350_000)
+                _ = setsockopt(descriptor, SOL_SOCKET, SO_RCVTIMEO, &timeout, socklen_t(MemoryLayout<timeval>.size))
+                var address = sockaddr_in()
+                address.sin_len = UInt8(MemoryLayout<sockaddr_in>.size)
+                address.sin_family = sa_family_t(AF_INET)
+                address.sin_port = port.bigEndian
+                address.sin_addr = in_addr(s_addr: inet_addr("127.0.0.1"))
+                let connected = withUnsafePointer(to: &address) { pointer in
+                    pointer.withMemoryRebound(to: sockaddr.self, capacity: 1) {
+                        Darwin.connect(descriptor, $0, socklen_t(MemoryLayout<sockaddr_in>.size))
+                    }
+                }
+                if connected == 0 {
+                    let hex = cookie.map { String(format: "%02x", $0) }.joined()
+                    if sendControlCommand("AUTHENTICATE \(hex)", to: descriptor),
+                       readControlReply(from: descriptor)?.contains("250 OK") == true,
+                       sendControlCommand("GETINFO traffic/read traffic/written", to: descriptor),
+                       let reply = readControlReply(from: descriptor) {
+                        for (key, field) in [("traffic/read", "downloadBytes"), ("traffic/written", "uploadBytes")] {
+                            if let range = reply.range(of: "250-\(key)=") {
+                                let digits = reply[range.upperBound...].prefix(while: \.isNumber)
+                                if let count = Int64(digits) { values[field] = count }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        if let pid = tor?.processIdentifier {
+            let process = Process()
+            let output = Pipe()
+            process.executableURL = URL(fileURLWithPath: "/bin/ps")
+            process.arguments = ["-o", "rss=", "-p", String(pid)]
+            process.standardOutput = output
+            if (try? process.run()) != nil {
+                let text = String(data: output.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8) ?? ""
+                process.waitUntilExit()
+                if let kb = Int64(text.trimmingCharacters(in: .whitespacesAndNewlines)) { values["memoryBytes"] = kb * 1024 }
+            }
+        }
+        return values
     }
 
     private func countryCode(for endpoint: String) -> String? {
@@ -271,7 +325,7 @@ final class Helper {
             try FileManager.default.createSymbolicLink(at: launchTransportURL, withDestinationURL: transportURL)
             let transportPath = launchTransportURL.path
             lock.lock(); transportLaunchDirectory = launchDirectory; lock.unlock()
-            let controlLines = configuredBridgeTargets.isEmpty ? [] : [
+            let controlLines = [
                 "ControlPort auto",
                 "ControlListenAddress 127.0.0.1",
                 "ControlPortWriteToFile \"\(dataDirectory.appendingPathComponent("control-port").path)\"",
@@ -287,10 +341,8 @@ final class Helper {
             ] + bridgeLines).joined(separator: "\n") + "\n"
             try config.write(to: configURL, atomically: true, encoding: .utf8)
             try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: configURL.path)
-            if !configuredBridgeTargets.isEmpty {
-                try? FileManager.default.removeItem(at: dataDirectory.appendingPathComponent("control-port"))
-                try? FileManager.default.removeItem(at: dataDirectory.appendingPathComponent("control_auth_cookie"))
-            }
+            try? FileManager.default.removeItem(at: dataDirectory.appendingPathComponent("control-port"))
+            try? FileManager.default.removeItem(at: dataDirectory.appendingPathComponent("control_auth_cookie"))
 
             let process = Process()
             process.executableURL = torURL
@@ -489,7 +541,7 @@ final class Helper {
 
     // Measures TCP connect time to the bridge endpoint. This is a reachability
     // estimate, not a Tor handshake or a guarantee that the bridge will work.
-    private func tcpLatency(endpoint: String) -> Int? {
+    private func tcpLatency(endpoint: String) -> Double? {
         let host: String
         let port: String
         if endpoint.hasPrefix("["), let close = endpoint.firstIndex(of: "]") {
@@ -530,7 +582,7 @@ final class Helper {
                         connected = getsockopt(fd, SOL_SOCKET, SO_ERROR, &socketError, &errorLength) == 0 && socketError == 0
                     }
                 }
-                let elapsed = Int((DispatchTime.now().uptimeNanoseconds - start) / 1_000_000)
+                let elapsed = Double(DispatchTime.now().uptimeNanoseconds - start) / 1_000_000
                 _ = close(fd)
                 if connected { return elapsed }
             }

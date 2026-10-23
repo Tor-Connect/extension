@@ -30,8 +30,16 @@ const setupDescriptionNode = document.querySelector("#setupDescription");
 const openFullScreenButton = document.querySelector("#openFullScreen");
 const openSettingsButton = document.querySelector("#openSettings");
 const bridgeSelectorNode = document.querySelector("#bridgeSelector");
+const statsToggleNode = document.querySelector("#statsToggle");
+const liveStatsNode = document.querySelector("#liveStats");
+const statsBackdropNode = document.querySelector("#statsBackdrop");
+const closeStatsNode = document.querySelector("#closeStats");
+let statsPollTimer;
+let lastStatsSample;
 const autoBridgeSelectionNode = document.querySelector("#autoBridgeSelection");
 let pollTimer;
+let initialStatusPending = true;
+let initialStatusRetries = 0;
 let preferences = { mode: "snowflake", bridges: "", autoBridgeSelection: true, selectedBridge: "", disabledBridges: [] };
 let currentState = "disconnected";
 let currentResult = {};
@@ -46,6 +54,110 @@ let connectedDurationStartedAt = 0;
 let connectedDurationInterval;
 let routeBridgeLine = "";
 let copyFeedbackTimer;
+
+function closeLiveStats() {
+  const wasOpen = !liveStatsNode.hidden;
+  statsToggleNode.setAttribute("aria-expanded", "false");
+  statsToggleNode.setAttribute("aria-label", "Open live statistics");
+  liveStatsNode.hidden = true;
+  statsBackdropNode.hidden = true;
+  if (statsPollTimer) clearInterval(statsPollTimer);
+  statsPollTimer = undefined;
+  if (wasOpen) (statsToggleNode.hidden ? connectionToggle : statsToggleNode).focus();
+}
+
+statsToggleNode.addEventListener("click", () => {
+  statsToggleNode.setAttribute("aria-expanded", "true");
+  statsToggleNode.setAttribute("aria-label", "Close live statistics");
+  liveStatsNode.hidden = false;
+  statsBackdropNode.hidden = false;
+  closeStatsNode.focus();
+  lastStatsSample = undefined;
+  refreshLiveStats();
+  statsPollTimer = setInterval(refreshLiveStats, 1000);
+});
+closeStatsNode.addEventListener("click", closeLiveStats);
+statsBackdropNode.addEventListener("click", closeLiveStats);
+
+liveStatsNode.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") {
+    event.preventDefault();
+    closeLiveStats();
+    return;
+  }
+  if (event.key !== "Tab") return;
+
+  const focusable = [...liveStatsNode.querySelectorAll("button:not([disabled]):not([hidden]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex='-1'])")]
+    .filter((node) => node.getClientRects().length);
+  if (!focusable.length) {
+    event.preventDefault();
+    closeStatsNode.focus();
+    return;
+  }
+  const first = focusable[0];
+  const last = focusable[focusable.length - 1];
+  if (event.shiftKey && document.activeElement === first) {
+    event.preventDefault();
+    last.focus();
+  } else if (!event.shiftKey && document.activeElement === last) {
+    event.preventDefault();
+    first.focus();
+  }
+});
+
+document.addEventListener("focusin", (event) => {
+  if (!liveStatsNode.hidden && !liveStatsNode.contains(event.target)) closeStatsNode.focus();
+});
+
+function formatBytes(value) {
+  if (!Number.isFinite(value)) return "—";
+  const units = ["B", "KB", "MB", "GB", "TB"];
+  let amount = value, unit = 0;
+  while (amount >= 1000 && unit < units.length - 1) { amount /= 1000; unit++; }
+  return `${amount.toFixed(unit ? 1 : 0)} ${units[unit]}`;
+}
+
+async function refreshLiveStats() {
+  if (liveStatsNode.hidden) return;
+  const result = await send("status");
+  updateLiveStats(result || {});
+}
+
+function updateLiveStats(result = {}) {
+  const now = Date.now();
+  const down = Number(result.downloadBytes), up = Number(result.uploadBytes);
+  document.querySelector("#downloadTotal").textContent = formatBytes(down);
+  document.querySelector("#uploadTotal").textContent = formatBytes(up);
+  const rate = (value, oldValue) => Number.isFinite(value) && Number.isFinite(oldValue) && lastStatsSample && now > lastStatsSample.time
+    ? formatBytes(Math.max(0, value - oldValue) * 1000 / (now - lastStatsSample.time)) + "/s" : "0 B/s";
+  const downRate = Number.isFinite(down) ? rate(down, lastStatsSample?.down) : "—";
+  const upRate = Number.isFinite(up) ? rate(up, lastStatsSample?.up) : "—";
+  document.querySelector("#downloadRate").textContent = downRate;
+  document.querySelector("#uploadRate").textContent = upRate;
+  document.querySelector("#statsMemory").textContent = formatBytes(Number(result.memoryBytes));
+  const snowflake = preferences.mode === "snowflake";
+  const routeIcon = document.querySelector("#statsRouteIcon");
+  routeIcon.innerHTML = snowflake
+    ? '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v18M4.2 7.5l15.6 9M4.2 16.5l15.6-9M9.5 4.8 12 7l2.5-2.2M9.5 19.2 12 17l2.5 2.2"/></svg>'
+    : (result.bridgeCountryCode || "—");
+  document.querySelector("#statsRouteName").textContent = snowflake ? "Snowflake" : (result.bridgeTransport || "Bridge");
+  document.querySelector("#statsRouteAddress").textContent = result.bridgeAddress || "—";
+  const summary = document.querySelector("#connectedStatsSummary");
+  summary.hidden = result.state !== "connected";
+  statsToggleNode.hidden = result.state !== "connected";
+  if (result.state !== "connected" && !liveStatsNode.hidden) closeLiveStats();
+  document.querySelector("#summaryRouteName").textContent = snowflake ? "Snowflake" : (result.currentBridgeIndex ? `Bridge ${result.currentBridgeIndex}` : "Bridge");
+  document.querySelector("#summaryRouteAddress").textContent = result.bridgeAddress || "";
+  document.querySelector("#summaryDownloadRate").textContent = Number.isFinite(down) ? downRate : "—";
+  document.querySelector("#summaryUploadRate").textContent = Number.isFinite(up) ? upRate : "—";
+  const summaryIcon = document.querySelector("#summaryRouteIcon");
+  summaryIcon.textContent = snowflake ? "" : (result.bridgeCountryCode || "—").toUpperCase();
+  summaryIcon.classList.toggle("is-snowflake", snowflake);
+  const copy = document.querySelector("#statsCopyAddress");
+  copy.hidden = !result.bridgeAddress;
+  copy.onclick = () => navigator.clipboard.writeText(result.bridgeAddress).catch(() => {});
+  if (Number.isFinite(down) || Number.isFinite(up)) lastStatsSample = { down, up, time: now };
+}
 
 const query = new URLSearchParams(location.search);
 const isTabView = query.get("view") === "tab";
@@ -538,9 +650,7 @@ function renderRoute(result = {}) {
       }
     }
   } else {
-    routeNameNode.textContent = "Snowflake";
-    routeDetailNode.textContent = "Snowflake transport";
-    routeDetailNode.hidden = false;
+    routeIdentityNode.hidden = true;
   }
 
   const reconnectAvailable = result.state === "connected"
@@ -555,9 +665,25 @@ function renderRoute(result = {}) {
 
 function renderResult(result) {
   currentResult = result || {};
+  const transientStartupFailure = initialStatusPending && (!currentResult.ok || currentResult.state === "failed") && currentResult.state !== "missing_runtime" && initialStatusRetries < 6;
+  if (transientStartupFailure) {
+    initialStatusRetries++;
+    popupMainNode.dataset.view = "connection";
+    setupPanelNode.hidden = true;
+    routeCardNode.hidden = false;
+    routeIdentityNode.hidden = true;
+    openSettingsButton.hidden = false;
+    setStatus("Checking connection…", "starting", "Waiting for the Tor helper");
+    setToggleState("starting");
+    if (pollTimer) clearTimeout(pollTimer);
+    pollTimer = setTimeout(async () => renderResult(await send("status")), 1000);
+    return;
+  }
+  initialStatusPending = false;
   renderErrorDetails(currentResult);
   syncBridgeAttemptTimer(currentResult.state);
   syncConnectedDuration(currentResult);
+  updateLiveStats(result);
   const helperUnavailable = /native helper unavailable|native messaging host not found|native host.*not registered|failed to start native messaging host|access to the specified native messaging host is forbidden/i.test(result?.error || "");
   if (helperUnavailable || result?.state === "missing_runtime") {
     popupMainNode.dataset.view = "cold-start";
@@ -579,6 +705,7 @@ function renderResult(result) {
   renderProgress(result);
   const statusKind = result?.state === "connected" && result?.bridgeActivity === "trying" ? "starting"
     : result?.state === "connected" && ["failed", "closed"].includes(result?.bridgeActivity) ? "error"
+      : result?.state === "connected" && result?.connectivityCheck === "failed" ? "connected-check-failed"
       : result?.state === "connected" ? "connected"
     : result?.state === "starting" ? "starting"
       : result?.state === "failed" || !result?.ok ? "error" : "";
@@ -603,7 +730,7 @@ function renderResult(result) {
   setStatus(preferences.mode === "manual" && !bridgeEntries().length && result?.state === "disconnected"
     ? "No bridges yet" : explain(result), statusKind, detail);
   setToggleState(result?.state || "disconnected", result?.bridgeActivity);
-  if (result?.state === "starting" || (result?.state === "connected" && preferences.mode === "manual")) pollForProgress();
+  if (result?.state === "starting" || result?.state === "connected") pollForProgress();
   else if (pollTimer) { clearTimeout(pollTimer); pollTimer = undefined; }
 }
 
