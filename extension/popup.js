@@ -492,7 +492,6 @@ function explain(result) {
   if (result.state === "connected") {
     if (result.bridgeActivity === "trying") return "Reconnecting…";
     if (result.bridgeActivity === "failed" || result.bridgeActivity === "closed") return "Connection interrupted";
-    if (result.connectivityCheck === "failed") return "Connected, not verified";
     return "Connected";
   }
   if (result.state === "starting") {
@@ -716,8 +715,6 @@ function renderResult(result) {
     ? preferences.mode === "snowflake" ? "Tor may retry the Snowflake route" : "Tor may retry the bridge"
     : result?.state === "connected" && result?.bridgeActivity === "trying"
       ? preferences.mode === "snowflake" ? "Trying another volunteer proxy" : "Trying another bridge"
-      : result?.state === "connected" && result?.connectivityCheck === "failed"
-        ? "Tor reachability check failed · tap the center to disconnect"
       : result?.state === "connected" ? "Tap the center to disconnect"
     : result?.state === "starting"
       ? Number(result.currentBridgeIndex) > 0 ? `Crossing through Bridge ${Number(result.currentBridgeIndex)}`
