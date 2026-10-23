@@ -164,7 +164,39 @@ class Helper:
                     if code: payload["bridgeCountryCode"] = code
         if self.bridge_activity: payload["bridgeActivity"] = self.bridge_activity
         payload["builtCircuitCount"] = len(self.built_circuits)
+        if self.process and self.process.poll() is None:
+            payload.update(self.live_statistics())
         return payload
+
+    def live_statistics(self) -> dict:
+        """Read Tor's cumulative network counters and the daemon's current RSS."""
+        stats: dict[str, int] = {}
+        port_file, cookie_file = DATA / "control-port", DATA / "control_auth_cookie"
+        try:
+            port = int(port_file.read_text().strip().rsplit(":", 1)[-1])
+            cookie = cookie_file.read_bytes()
+            if len(cookie) != 32:
+                return stats
+            with socket.create_connection(("127.0.0.1", port), timeout=.35) as conn:
+                conn.settimeout(.35)
+                conn.sendall(f"AUTHENTICATE {cookie.hex()}\r\n".encode())
+                if "250 OK" not in self.read_control_reply(conn):
+                    return stats
+                conn.sendall(b"GETINFO traffic/read traffic/written\r\n")
+                reply = self.read_control_reply(conn)
+            for key, field in (("traffic/read", "downloadBytes"), ("traffic/written", "uploadBytes")):
+                match = re.search(rf"250-{re.escape(key)}=(\d+)", reply)
+                if match:
+                    stats[field] = int(match.group(1))
+        except (OSError, ValueError):
+            pass
+        try:
+            raw = subprocess.check_output(["ps", "-o", "rss=", "-p", str(self.process.pid)], text=True, timeout=.4).strip()
+            if raw.isdigit():
+                stats["memoryBytes"] = int(raw) * 1024
+        except (OSError, subprocess.SubprocessError):
+            pass
+        return stats
 
     def start(self, mode: str, raw_bridges: str, selected_index,
               recovery_bridges: list[str] | None = None,

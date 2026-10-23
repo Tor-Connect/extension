@@ -101,6 +101,11 @@
         </button>
       </div>
       <div class="bridge-summary">
+        <div id="connectedStatsSummary" class="connected-stats-summary" hidden>
+          <span id="summaryRouteIcon" class="summary-route-icon" aria-hidden="true">—</span>
+          <span class="summary-route"><strong id="summaryRouteName">—</strong><small id="summaryRouteAddress">—</small></span>
+          <button id="statsToggle" class="summary-rates" type="button" aria-label="Open live statistics" aria-expanded="false" aria-controls="liveStats"><span><svg class="rate-arrow rate-arrow-down" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v15M6 13l6 6 6-6"/></svg><strong id="summaryDownloadRate">—</strong></span><span><svg class="rate-arrow rate-arrow-up" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20V5M6 11l6-6 6 6"/></svg><strong id="summaryUploadRate">—</strong></span></button>
+        </div>
         <div class="route-identity">
           <div class="route-title-line">
             <strong id="routeName" class="route-name">Checking…</strong>
@@ -117,6 +122,16 @@
           <span>Reconnect</span>
         </button>
       </div>
+      <button id="statsBackdrop" class="stats-backdrop" type="button" aria-label="Close live statistics" hidden></button>
+      <section id="liveStats" class="live-stats" role="dialog" aria-label="Live statistics" aria-modal="true" hidden>
+        <button id="closeStats" class="stats-close" type="button" aria-label="Close live statistics"><span></span>Live statistics</button>
+        <div class="stats-transfer">
+          <div><span class="stats-label"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v15M6 13l6 6 6-6"/></svg>Download</span><strong id="downloadTotal">—</strong><small id="downloadRate">—</small></div>
+          <div><span class="stats-label"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20V5M6 11l6-6 6 6"/></svg>Upload</span><strong id="uploadTotal">—</strong><small id="uploadRate">—</small></div>
+        </div>
+        <div class="stats-row"><span>Memory in use</span><strong id="statsMemory">—</strong></div>
+        <div class="stats-route"><span id="statsRouteIcon" aria-hidden="true">❄</span><span><strong id="statsRouteName">—</strong><small id="statsRouteAddress">—</small></span><button id="statsCopyAddress" type="button" aria-label="Copy bridge address" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h8"/></svg></button></div>
+      </section>
       <div id="emptyBridgeInfo" class="empty-bridge-info" hidden>
         <p>Bridges are private Tor entry points. Request some from the Tor Project, then add them in Settings.</p>
         <button id="addBridges" class="add-bridges-button" type="button">
