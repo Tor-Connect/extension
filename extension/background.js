@@ -117,6 +117,39 @@ function addConnectivityCheck(result) {
   return result;
 }
 
+async function applyProxyForConnectedResult(result, generation, { forceCheck = false } = {}) {
+  let proxyApplied;
+  try {
+    proxyApplied = await setTorProxy();
+  } catch (error) {
+    if (generation === connectivityGeneration) await setActionConnected(false);
+    throw error;
+  }
+
+  if (generation !== connectivityGeneration) return result;
+  if (!proxyApplied) {
+    await setActionConnected(false);
+    return {
+      ...result,
+      ok: false,
+      state: "failed",
+      error: "Firefox did not apply Tor's proxy settings. Another extension may control the proxy settings."
+    };
+  }
+
+  await setActionConnected(true, result.bridgeActivity === "trying");
+  if (forceCheck) {
+    connectivityCheckState = "";
+    connectivitySiteResults = [];
+    connectivityCheckRetryAt = 0;
+  }
+  if (generation === connectivityGeneration) {
+    const check = checkConnectivityAfterConnect(result, generation, { force: forceCheck });
+    if (forceCheck) await check;
+  }
+  return result;
+}
+
 function logHelperResult(command, result) {
   const entry = {
     command,
@@ -148,13 +181,11 @@ function connectHost() {
       const connected = message.ok && message.state === "connected";
       const generation = trackConnectivityConnection(message);
       if (connected) {
-        setTorProxy().then(() => {
-          if (generation === connectivityGeneration) checkConnectivityAfterConnect(message, generation);
-        }).catch(() => {});
+        applyProxyForConnectedResult(message, generation).catch(() => {});
       } else {
         checkConnectivityAfterConnect(message, generation);
+        setActionConnected(false).catch(() => {});
       }
-      setActionConnected(connected, connected && message.bridgeActivity === "trying").catch(() => {});
       return;
     }
     const resolve = pending.get(message.id);
@@ -227,7 +258,7 @@ setActionConnected(false).catch(() => {});
 
 async function setTorProxy() {
   if (globalThis.TOR_CONNECT_FIREFOX) {
-    await browser.proxy.settings.set({
+    return browser.proxy.settings.set({
       value: {
         proxyType: "manual",
         socks: `127.0.0.1:${PROXY_PORT}`,
@@ -235,7 +266,6 @@ async function setTorProxy() {
         proxyDNS: true
       }
     });
-    return;
   }
   await chrome.proxy.settings.set({
     value: {
@@ -244,6 +274,7 @@ async function setTorProxy() {
     },
     scope: "regular"
   });
+  return true;
 }
 
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
@@ -255,12 +286,13 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       const connected = result.ok && result.state === "connected";
       const generation = trackConnectivityConnection(result);
       if (connected) {
-        await setTorProxy();
-        if (generation === connectivityGeneration) checkConnectivityAfterConnect(result, generation);
+        const appliedResult = await applyProxyForConnectedResult(result, generation);
+        sendResponse(addConnectivityCheck(appliedResult));
+        return;
       } else {
         checkConnectivityAfterConnect(result, generation);
       }
-      await setActionConnected(connected, connected && result.bridgeActivity === "trying");
+      await setActionConnected(false);
       sendResponse(addConnectivityCheck(result));
       return;
     }
@@ -268,14 +300,11 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       const result = await request("status");
       const generation = trackConnectivityConnection(result);
       if (result.ok && result.state === "connected") {
-        await setTorProxy();
-        if (generation === connectivityGeneration) {
-          connectivityCheckState = "";
-          connectivitySiteResults = [];
-          connectivityCheckRetryAt = 0;
-          await checkConnectivityAfterConnect(result, generation, { force: true });
-        }
+        const appliedResult = await applyProxyForConnectedResult(result, generation, { forceCheck: true });
+        sendResponse(addConnectivityCheck(appliedResult));
+        return;
       }
+      await setActionConnected(false);
       sendResponse(addConnectivityCheck(result));
       return;
     }
@@ -299,12 +328,13 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       const connected = result.ok && result.state === "connected";
       const generation = trackConnectivityConnection(result);
       if (connected) {
-        await setTorProxy();
-        if (generation === connectivityGeneration) checkConnectivityAfterConnect(result, generation);
+        const appliedResult = await applyProxyForConnectedResult(result, generation);
+        sendResponse(addConnectivityCheck(appliedResult));
+        return;
       } else {
         checkConnectivityAfterConnect(result, generation);
       }
-      await setActionConnected(connected);
+      await setActionConnected(false);
       sendResponse(addConnectivityCheck(result));
       return;
     }
