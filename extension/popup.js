@@ -21,7 +21,6 @@ const emptyBridgeInfoNode = document.querySelector("#emptyBridgeInfo");
 const addBridgesButton = document.querySelector("#addBridges");
 const autoBridgeHintNode = document.querySelector("#autoBridgeHint");
 const copyBridgeButton = document.querySelector("#copyBridge");
-const reconnectBridgeButton = document.querySelector("#reconnectBridge");
 const connectionToggle = document.querySelector("#connectionToggle");
 const connectionProgress = document.querySelector("#connectionProgress");
 const popupMainNode = document.querySelector(".popup-main");
@@ -729,8 +728,6 @@ function renderRoute(result = {}) {
   routeIdentityNode.hidden = false;
   routeDetailNode.hidden = true;
   routeDetailNode.textContent = "";
-  reconnectBridgeButton.hidden = true;
-  reconnectBridgeButton.disabled = false;
   routeCardNode.dataset.state = result.state || "disconnected";
   routeCardNode.dataset.activity = result.bridgeActivity || "";
   routeCardNode.dataset.check = result.connectivityCheck || "";
@@ -806,14 +803,7 @@ function renderRoute(result = {}) {
     routeIdentityNode.hidden = true;
   }
 
-  const reconnectAvailable = result.state === "connected"
-    && preferences.mode === "manual"
-    && !preferences.autoBridgeSelection
-    && selectedPosition >= 0
-    && selectedPosition !== activePosition;
-  reconnectBridgeButton.hidden = !reconnectAvailable;
-  reconnectBridgeButton.disabled = !reconnectAvailable || result.state === "starting";
-  copyBridgeButton.hidden = reconnectAvailable || !routeBridgeLine;
+  copyBridgeButton.hidden = !routeBridgeLine;
 }
 
 function renderResult(result) {
@@ -997,20 +987,6 @@ copyBridgeButton.addEventListener("click", async () => {
   } finally {
     copyBridgeButton.disabled = false;
   }
-});
-
-reconnectBridgeButton.addEventListener("click", async () => {
-  reconnectBridgeButton.disabled = true;
-  connectionToggle.disabled = true;
-  setStatus("Reconnecting…", "starting");
-  const stopped = await send("disconnect");
-  if (!stopped?.ok) {
-    renderResult(stopped);
-    reconnectBridgeButton.disabled = false;
-    return;
-  }
-  beginBridgeAttemptTimer();
-  renderResult(await connectWithSavedPreferences());
 });
 
 autoBridgeSelectionNode.addEventListener("change", () => {
