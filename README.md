@@ -92,7 +92,15 @@ Report bugs or ask questions in [GitHub Issues](https://github.com/Tor-Connect/e
 
 ### Support development
 
-If Tor Connect is useful to you, consider supporting its development. You can donate BTC or ETH using these mainnet addresses:
+If Tor Connect is useful to you, consider supporting its development with a cryptocurrency donation or by sending BTC or ETH to these addresses:
 
 - **BTC (Bitcoin mainnet):** `bc1qdnyx6q2y239s372ew97cuvf04st0rkk4wjfsqu`
 - **ETH (Ethereum mainnet):** `0x3f00eb6ABA72c5ddFD8B313fD611993A68167921`
+
+<a href="https://nowpayments.io/donation?api_key=RP78ERM-TC4MSYZ-NFEY5RX-E871Q9J" target="_blank" rel="noreferrer noopener">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://nowpayments.io/images/embeds/donation-button-black.svg">
+    <source media="(prefers-color-scheme: light)" srcset="https://nowpayments.io/images/embeds/donation-button-white.svg">
+    <img src="https://nowpayments.io/images/embeds/donation-button-white.svg" alt="Crypto donation button by NOWPayments">
+  </picture>
+</a>
