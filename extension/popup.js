@@ -21,7 +21,6 @@ const emptyBridgeInfoNode = document.querySelector("#emptyBridgeInfo");
 const addBridgesButton = document.querySelector("#addBridges");
 const autoBridgeHintNode = document.querySelector("#autoBridgeHint");
 const copyBridgeButton = document.querySelector("#copyBridge");
-const reconnectBridgeButton = document.querySelector("#reconnectBridge");
 const connectionToggle = document.querySelector("#connectionToggle");
 const connectionProgress = document.querySelector("#connectionProgress");
 const popupMainNode = document.querySelector(".popup-main");
@@ -34,6 +33,14 @@ const statsToggleNode = document.querySelector("#statsToggle");
 const liveStatsNode = document.querySelector("#liveStats");
 const statsBackdropNode = document.querySelector("#statsBackdrop");
 const closeStatsNode = document.querySelector("#closeStats");
+const siteCheckSheetNode = document.querySelector("#siteCheckSheet");
+const siteCheckBackdropNode = document.querySelector("#siteCheckBackdrop");
+const closeSiteCheckNode = document.querySelector("#closeSiteCheck");
+const siteCheckBadgeNode = document.querySelector("#siteCheckBadge");
+const siteCheckSummaryNode = document.querySelector("#siteCheckSummary");
+const siteCheckRowsNode = document.querySelector("#siteCheckRows");
+const siteCheckCountNode = document.querySelector("#siteCheckCount");
+const nextRouteNode = document.querySelector("#nextRoute");
 let statsPollTimer;
 let lastStatsSample;
 const autoBridgeSelectionNode = document.querySelector("#autoBridgeSelection");
@@ -67,6 +74,7 @@ function closeLiveStats() {
 }
 
 statsToggleNode.addEventListener("click", () => {
+  if (!siteCheckSheetNode.hidden) closeSiteCheck();
   statsToggleNode.setAttribute("aria-expanded", "true");
   statsToggleNode.setAttribute("aria-label", "Close live statistics");
   liveStatsNode.hidden = false;
@@ -78,6 +86,77 @@ statsToggleNode.addEventListener("click", () => {
 });
 closeStatsNode.addEventListener("click", closeLiveStats);
 statsBackdropNode.addEventListener("click", closeLiveStats);
+
+function closeSiteCheck() {
+  const wasOpen = !siteCheckSheetNode.hidden;
+  siteCheckSheetNode.hidden = true;
+  siteCheckBackdropNode.hidden = true;
+  siteCheckBadgeNode.setAttribute("aria-expanded", "false");
+  siteCheckSummaryNode.setAttribute("aria-expanded", "false");
+  if (wasOpen) (siteCheckSummaryNode.hidden ? connectionToggle : siteCheckSummaryNode).focus();
+}
+
+function openSiteCheck() {
+  if (!liveStatsNode.hidden) closeLiveStats();
+  siteCheckSheetNode.hidden = false;
+  siteCheckBackdropNode.hidden = false;
+  siteCheckBadgeNode.setAttribute("aria-expanded", "true");
+  siteCheckSummaryNode.setAttribute("aria-expanded", "true");
+  closeSiteCheckNode.focus();
+}
+
+siteCheckBadgeNode.addEventListener("click", openSiteCheck);
+siteCheckSummaryNode.addEventListener("click", openSiteCheck);
+closeSiteCheckNode.addEventListener("click", closeSiteCheck);
+siteCheckBackdropNode.addEventListener("click", closeSiteCheck);
+document.querySelector("#retestSites").addEventListener("click", async (event) => {
+  const button = event.currentTarget;
+  if (button.disabled) return;
+  button.disabled = true;
+  currentResult = {
+    ...currentResult,
+    connectivityCheck: "pending",
+    siteChecks: SITE_CHECK_NAMES.map((site) => ({ site, state: "pending", latencyMs: null }))
+  };
+  renderResult(currentResult);
+  try { renderResult(await send("retestSites")); }
+  finally { button.disabled = false; }
+});
+nextRouteNode.addEventListener("click", async () => {
+  nextRouteNode.disabled = true;
+  closeSiteCheck();
+  if (preferences.mode === "manual") {
+    const entries = allBridgeEntries();
+    if (entries.length > 1) {
+      const enabledEntries = bridgeEntries();
+      const active = activeBridgePosition(currentResult, enabledEntries);
+      const nextLine = enabledEntries[(active + 1 + enabledEntries.length) % enabledEntries.length] || entries[(selectedBridgePosition(entries) + 1) % entries.length];
+      const next = entries.indexOf(nextLine);
+      await send("disconnect");
+      renderResult(await send("connect", { mode: "manual", bridges: entries[next], selectedBridgeIndex: next + 1 }));
+    } else if (entries.length === 1) {
+      await send("disconnect");
+      renderResult(await connectWithSavedPreferences());
+    }
+  } else {
+    await send("disconnect");
+    renderResult(await send("connect", { mode: "snowflake", bridges: "" }));
+  }
+  nextRouteNode.disabled = false;
+});
+
+siteCheckSheetNode.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") {
+    event.preventDefault();
+    closeSiteCheck();
+    return;
+  }
+  if (event.key !== "Tab") return;
+  const focusable = [...siteCheckSheetNode.querySelectorAll("button:not([disabled]):not([hidden])")];
+  const first = focusable[0], last = focusable.at(-1);
+  if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+  else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+});
 
 liveStatsNode.addEventListener("keydown", (event) => {
   if (event.key === "Escape") {
@@ -107,6 +186,7 @@ liveStatsNode.addEventListener("keydown", (event) => {
 
 document.addEventListener("focusin", (event) => {
   if (!liveStatsNode.hidden && !liveStatsNode.contains(event.target)) closeStatsNode.focus();
+  if (!siteCheckSheetNode.hidden && !siteCheckSheetNode.contains(event.target)) closeSiteCheckNode.focus();
 });
 
 function formatBytes(value) {
@@ -157,6 +237,73 @@ function updateLiveStats(result = {}) {
   copy.hidden = !result.bridgeAddress;
   copy.onclick = () => navigator.clipboard.writeText(result.bridgeAddress).catch(() => {});
   if (Number.isFinite(down) || Number.isFinite(up)) lastStatsSample = { down, up, time: now };
+  renderSiteCheck(result);
+}
+
+const SITE_CHECK_NAMES = ["youtube.com", "x.com", "instagram.com", "wikipedia.org"];
+function renderSiteCheck(result = {}) {
+  const sites = Array.isArray(result.siteChecks) ? result.siteChecks : [];
+  const connected = result.state === "connected"
+    && !["trying", "failed", "closed"].includes(result.bridgeActivity)
+    && ["pending", "passed", "failed"].includes(result.connectivityCheck);
+  const failures = sites.filter((site) => site.state === "failed").length;
+  const pending = result.connectivityCheck === "pending" || sites.some((site) => site.state === "pending");
+  siteCheckBadgeNode.hidden = !connected;
+  siteCheckSummaryNode.hidden = !connected;
+  const checkLabel = pending ? "Checking 4 sites" : failures ? `${failures} of ${sites.length || 4} sites blocked` : "All 4 sites reachable";
+  siteCheckBadgeNode.setAttribute("aria-label", `Review site check: ${checkLabel}`);
+  siteCheckSummaryNode.setAttribute("aria-label", `Review site check: ${checkLabel}`);
+  siteCheckBadgeNode.innerHTML = pending
+    ? '<span class="site-check-spinner" aria-hidden="true"></span>'
+    : failures
+      ? `<span>${failures}</span>`
+      : '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>';
+  siteCheckBadgeNode.classList.toggle("is-failed", failures > 0 && !pending);
+  siteCheckBadgeNode.classList.toggle("is-pending", pending);
+  siteCheckBadgeNode.classList.toggle("is-passed", !pending && !failures && result.connectivityCheck === "passed");
+  siteCheckSummaryNode.classList.toggle("is-failed", failures > 0 && !pending);
+  siteCheckSummaryNode.classList.toggle("is-pending", pending);
+  siteCheckSummaryNode.classList.toggle("is-passed", !pending && !failures && result.connectivityCheck === "passed");
+  if (pending) {
+    siteCheckSummaryNode.innerHTML = '<span class="site-check-spinner" aria-hidden="true"></span>Checking sites…';
+  } else if (failures) {
+    siteCheckSummaryNode.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4 3 20h18L12 4z"/><path d="M12 10v4m0 3.2v.1"/></svg>${failures} of ${sites.length || 4} sites blocked<svg class="site-check-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg>`;
+  } else if (result.connectivityCheck === "passed") {
+    siteCheckSummaryNode.textContent = "all sites reachable";
+  } else {
+    siteCheckSummaryNode.textContent = "Checking sites…";
+  }
+  const blockedSummary = failures ? `${failures} of ${sites.length || 4} sites blocked` : "All sites reachable";
+  siteCheckCountNode.textContent = pending ? "Checking 4 sites…" : failures ? blockedSummary : "All 4 sites reachable";
+  siteCheckCountNode.classList.toggle("has-failures", failures > 0 && !pending);
+  siteCheckSheetNode.classList.toggle("is-pending", pending);
+  siteCheckSheetNode.classList.toggle("is-failed", failures > 0 && !pending);
+  siteCheckSheetNode.classList.toggle("is-passed", !pending && !failures && result.connectivityCheck === "passed");
+  nextRouteNode.textContent = preferences.mode === "manual" ? "Next bridge" : "New proxy";
+  nextRouteNode.hidden = pending || failures === 0;
+  document.querySelector("#retestSites").disabled = pending;
+  siteCheckRowsNode.replaceChildren(...SITE_CHECK_NAMES.map((name) => {
+    const resultForSite = sites.find((site) => site.site === name) || { state: "pending" };
+    const row = document.createElement("div");
+    row.className = `site-check-row is-${resultForSite.state}`;
+    const icon = document.createElement("span");
+    icon.className = "site-check-result";
+    icon.setAttribute("aria-hidden", "true");
+    icon.innerHTML = resultForSite.state === "passed"
+      ? '<svg viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>'
+      : resultForSite.state === "failed"
+        ? '<svg viewBox="0 0 24 24"><path d="m7 7 10 10M17 7 7 17"/></svg>'
+        : '<span class="site-check-spinner"></span>';
+    const siteName = document.createElement("span");
+    siteName.className = "site-check-name";
+    siteName.textContent = name;
+    const meta = document.createElement("span");
+    meta.className = "site-check-meta";
+    meta.textContent = resultForSite.state === "passed" ? `${Math.max(0, Number(resultForSite.latencyMs) || 0)} ms` : resultForSite.state === "failed" ? "Blocked" : "Checking";
+    row.append(icon, siteName, meta);
+    return row;
+  }));
+  if (result.state !== "connected" && !siteCheckSheetNode.hidden) closeSiteCheck();
 }
 
 const query = new URLSearchParams(location.search);
@@ -174,7 +321,9 @@ function setStatus(text, kind = "", detail = "") {
   statusNode.dataset.kind = kind;
   statusDetailNode.textContent = detail;
   statusDetailNode.hidden = !detail;
-  metaSeparatorNode.hidden = !detail || (bridgeAttemptTimerNode.hidden && connectedDurationNode.hidden);
+  metaSeparatorNode.hidden = siteCheckSummaryNode.hidden
+    ? !detail || (bridgeAttemptTimerNode.hidden && connectedDurationNode.hidden)
+    : connectedDurationNode.hidden;
 }
 
 function send(type, extra = {}) {
@@ -570,6 +719,8 @@ function renderErrorDetails(result) {
 }
 
 function renderRoute(result = {}) {
+  if (initialStatusPending && routeCardNode.dataset.initialChecking === "true") return;
+  delete routeCardNode.dataset.initialChecking;
   bridgeAttemptTimerNode.hidden = result.state !== "starting";
   connectedDurationNode.hidden = result.state !== "connected";
   copyBridgeButton.hidden = true;
@@ -577,10 +728,10 @@ function renderRoute(result = {}) {
   routeIdentityNode.hidden = false;
   routeDetailNode.hidden = true;
   routeDetailNode.textContent = "";
-  reconnectBridgeButton.hidden = true;
-  reconnectBridgeButton.disabled = false;
   routeCardNode.dataset.state = result.state || "disconnected";
   routeCardNode.dataset.activity = result.bridgeActivity || "";
+  routeCardNode.dataset.check = result.connectivityCheck || "";
+  connectionToggle.dataset.check = result.connectivityCheck || "";
   routeCardNode.dataset.mode = preferences.mode;
   delete routeCardNode.dataset.route;
 
@@ -653,14 +804,7 @@ function renderRoute(result = {}) {
     routeIdentityNode.hidden = true;
   }
 
-  const reconnectAvailable = result.state === "connected"
-    && preferences.mode === "manual"
-    && !preferences.autoBridgeSelection
-    && selectedPosition >= 0
-    && selectedPosition !== activePosition;
-  reconnectBridgeButton.hidden = !reconnectAvailable;
-  reconnectBridgeButton.disabled = !reconnectAvailable || result.state === "starting";
-  copyBridgeButton.hidden = reconnectAvailable || !routeBridgeLine;
+  copyBridgeButton.hidden = !routeBridgeLine;
 }
 
 function renderResult(result) {
@@ -671,10 +815,18 @@ function renderResult(result) {
     popupMainNode.dataset.view = "connection";
     setupPanelNode.hidden = true;
     routeCardNode.hidden = false;
+    routeCardNode.dataset.state = "disconnected";
+    routeCardNode.dataset.mode = preferences.mode;
+    routeCardNode.dataset.activity = "";
+    routeCardNode.dataset.check = "";
+    routeCardNode.dataset.empty = String(preferences.mode === "manual" && bridgeEntries().length === 0);
+    routeCardNode.dataset.initialChecking = "true";
     routeIdentityNode.hidden = true;
     openSettingsButton.hidden = false;
     setStatus("Checking connection…", "starting", "Waiting for the Tor helper");
-    setToggleState("starting");
+    setToggleState("disconnected");
+    connectionToggle.dataset.initialChecking = "true";
+    renderConnectionMethodSwitch();
     if (pollTimer) clearTimeout(pollTimer);
     pollTimer = setTimeout(async () => renderResult(await send("status")), 1000);
     return;
@@ -716,6 +868,7 @@ function renderResult(result) {
     ? preferences.mode === "snowflake" ? "Tor may retry the Snowflake route" : "Tor may retry the bridge"
     : result?.state === "connected" && result?.bridgeActivity === "trying"
       ? preferences.mode === "snowflake" ? "Trying another volunteer proxy" : "Trying another bridge"
+      : result?.state === "connected" && ["pending", "passed", "failed"].includes(result?.connectivityCheck) ? ""
       : result?.state === "connected" ? "Tap the center to disconnect"
     : result?.state === "starting"
       ? Number(result.currentBridgeIndex) > 0 ? `Crossing through Bridge ${Number(result.currentBridgeIndex)}`
@@ -736,6 +889,7 @@ function renderResult(result) {
 
 function setToggleState(state, bridgeActivity) {
   currentState = state;
+  delete connectionToggle.dataset.initialChecking;
   renderBridgeSelector();
   connectionToggle.disabled = false;
   const visualState = state === "connected" && bridgeActivity === "trying" ? "reconnecting"
@@ -843,20 +997,6 @@ copyBridgeButton.addEventListener("click", async () => {
   } finally {
     copyBridgeButton.disabled = false;
   }
-});
-
-reconnectBridgeButton.addEventListener("click", async () => {
-  reconnectBridgeButton.disabled = true;
-  connectionToggle.disabled = true;
-  setStatus("Reconnecting…", "starting");
-  const stopped = await send("disconnect");
-  if (!stopped?.ok) {
-    renderResult(stopped);
-    reconnectBridgeButton.disabled = false;
-    return;
-  }
-  beginBridgeAttemptTimer();
-  renderResult(await connectWithSavedPreferences());
 });
 
 autoBridgeSelectionNode.addEventListener("change", () => {
