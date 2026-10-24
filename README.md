@@ -41,7 +41,7 @@ The extension’s setup page offers two ways to install the local Tor companion:
 
 The companion runs Tor locally. Chrome connects to its local SOCKS5 listener after Tor reports that it is ready. The companion is needed because Chrome extensions cannot install or launch a local Tor process by themselves.
 
-An experimental Firefox build can be created from the shared source with `python3 scripts/build-firefox-package.py`. See [Firefox build and setup](docs/FIREFOX.md) for the Firefox package and helper instructions. It is not yet published on Mozilla Add-ons.
+A Firefox build can be created from the shared source with `python3 scripts/build-firefox-package.py`. See [Firefox build and setup](docs/FIREFOX.md) for the Firefox package and helper instructions.
 
 ## Build from source
 
