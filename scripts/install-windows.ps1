@@ -29,8 +29,10 @@ if ($BundleDirectory) {
     [System.IO.File]::WriteAllText((Join-Path $runtime 'tor-path'), $torRelative, [System.Text.UTF8Encoding]::new($false))
     [System.IO.File]::WriteAllText((Join-Path $runtime 'transport-path'), $transportRelative, [System.Text.UTF8Encoding]::new($false))
 } elseif ($Firefox) {
-    $torRelative = [System.IO.File]::ReadAllText((Join-Path $runtime 'tor-path')).Trim()
-    $transportRelative = [System.IO.File]::ReadAllText((Join-Path $runtime 'transport-path')).Trim()
+    $torPathFile = Join-Path $runtime 'tor-path'
+    $transportPathFile = Join-Path $runtime 'transport-path'
+    $torRelative = if (Test-Path -LiteralPath $torPathFile -PathType Leaf) { [System.IO.File]::ReadAllText($torPathFile).Trim() } else { '' }
+    $transportRelative = if (Test-Path -LiteralPath $transportPathFile -PathType Leaf) { [System.IO.File]::ReadAllText($transportPathFile).Trim() } else { '' }
     if (-not $torRelative -or -not $transportRelative -or
         -not (Test-Path -LiteralPath (Join-Path (Join-Path $runtime 'bundle') $torRelative) -PathType Leaf) -or
         -not (Test-Path -LiteralPath (Join-Path (Join-Path $runtime 'bundle') $transportRelative) -PathType Leaf)) {
