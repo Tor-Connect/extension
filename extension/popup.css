@@ -319,6 +319,7 @@ body.popup-page .orbit-card[data-mode="snowflake"]:not([data-state="connected"])
 body.popup-page .orbit-card[data-mode="snowflake"][data-state="connected"] .orbit-flow { display: block; stroke: #2bd576; stroke-width: 3; stroke-dasharray: 6 8; animation: orbit-flow 1s linear infinite; }
 body.popup-page .snowflake-field { position: absolute; z-index: 1; inset: 0; display: none; pointer-events: none; }
 body.popup-page .orbit-card[data-mode="snowflake"] .snowflake-field { display: block; }
+body.popup-page .orbit-card[data-initial-checking="true"][data-mode="snowflake"] .snowflake-field { display: none; }
 body.popup-page .snowflake-particle { position: absolute; display: grid; width: 36px; height: 36px; place-items: center; border: 2px solid #d6dfda; border-radius: 50%; color: #66716b; background: #edf2ef; }
 body.popup-page .snowflake-particle svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 2; }
 body.popup-page .particle-1 { top: 20px; left: 142px; }

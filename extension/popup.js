@@ -656,6 +656,9 @@ function explain(result) {
 
 function summarizeConnectionError(error) {
   const message = typeof error === "string" ? error : "";
+  if (/proxy\.settings requires private browsing permission|private browsing permission/i.test(message)) {
+    return "Firefox permission needed";
+  }
   if (/address already in use|could not bind to|failed to bind|bind.*already in use/i.test(message)) {
     return "A local Tor port is already in use";
   }
@@ -674,7 +677,7 @@ function summarizeConnectionError(error) {
   if (/no such file|does not exist|doesn’t exist|not found/i.test(message)) {
     return "Tor files are missing";
   }
-  if (/native helper unavailable|native messaging host not found|native host.*not registered/i.test(message)) {
+  if (/native helper (?:unavailable|disconnected)|native messaging host not found|native host.*not registered/i.test(message)) {
     return "Tor helper isn’t available";
   }
   return "Tor couldn’t connect. Try again.";
@@ -682,6 +685,9 @@ function summarizeConnectionError(error) {
 
 function connectionErrorHint(error) {
   const message = typeof error === "string" ? error : "";
+  if (/proxy\.settings requires private browsing permission|private browsing permission/i.test(message)) {
+    return "Firefox requires this permission even in normal windows. Open menu ☰ → Extensions and Themes. On Tor Connect, click ⋯ → Manage. Under “Run in Private Windows,” select “Allow,” then return here and try again.";
+  }
   if (/address already in use|could not bind to|failed to bind|bind.*already in use/i.test(message)) {
     return "Another app or Chrome profile may already have a Tor connection open.";
   }
@@ -700,8 +706,8 @@ function connectionErrorHint(error) {
   if (/no such file|does not exist|doesn’t exist|not found/i.test(message)) {
     return "Run setup again to install the Tor files.";
   }
-  if (/native helper unavailable|native messaging host not found|native host.*not registered/i.test(message)) {
-    return "Set up Tor Connect on this device, then restart Chrome.";
+  if (/native helper (?:unavailable|disconnected)|native messaging host not found|native host.*not registered/i.test(message)) {
+    return "Set up Tor Connect on this device, then restart your browser.";
   }
   return "Try again. Open the details if it keeps happening.";
 }
@@ -836,7 +842,7 @@ function renderResult(result) {
   syncBridgeAttemptTimer(currentResult.state);
   syncConnectedDuration(currentResult);
   updateLiveStats(result);
-  const helperUnavailable = /native helper unavailable|native messaging host not found|native host.*not registered|failed to start native messaging host|access to the specified native messaging host is forbidden/i.test(result?.error || "");
+  const helperUnavailable = /native helper (?:unavailable|disconnected)|native messaging host not found|native host.*not registered|failed to start native messaging host|access to the specified native messaging host is forbidden/i.test(result?.error || "");
   if (helperUnavailable || result?.state === "missing_runtime") {
     popupMainNode.dataset.view = "cold-start";
     setupPanelNode.hidden = false;

@@ -4,7 +4,7 @@ let nativePort;
 let pending = new Map();
 let nextId = 1;
 let lastLoggedStatus;
-let lastActionConnected;
+let actionUpdateQueue = Promise.resolve();
 let connectivityGeneration = 0;
 let connectivityCheckConnectionId;
 let connectivityCheckState = "";
@@ -166,8 +166,8 @@ function connectHost() {
   nativePort.onDisconnect.addListener(() => {
     const hostError = chrome.runtime.lastError?.message;
     const errorMessage = hostError
-      ? `Native helper unavailable: ${hostError}. Check its installation and restart Chrome.`
-      : "Native helper disconnected. Restart Chrome and check the helper installation.";
+      ? `Native helper unavailable: ${hostError}. Check its installation and restart your browser.`
+      : "Native helper disconnected. Check its installation and restart your browser.";
     console.warn("[Tor extension] native helper disconnected", errorMessage);
     nativePort = undefined;
     resetConnectivityCheck();
@@ -198,12 +198,17 @@ function request(command, fields = {}, timeoutMs = 15000) {
 }
 
 async function clearProxy() {
+  if (globalThis.TOR_CONNECT_FIREFOX) {
+    await browser.proxy.settings.clear({});
+    return;
+  }
   await chrome.proxy.settings.clear({ scope: "regular" });
 }
 
 async function setActionConnected(connected, reconnecting = false) {
-  if (lastActionConnected !== connected) {
-    const variant = connected ? "connected" : "disconnected";
+  const variant = reconnecting ? "reconnecting" : connected ? "connected" : "disconnected";
+  const title = reconnecting ? "Reconnecting to Tor" : connected ? "Connected to Tor" : "Tor connection";
+  const update = actionUpdateQueue.then(async () => {
     await chrome.action.setIcon({
       path: {
         16: `icons/${variant}-16.png`,
@@ -211,29 +216,27 @@ async function setActionConnected(connected, reconnecting = false) {
         48: `icons/${variant}-48.png`
       }
     });
-    lastActionConnected = connected;
-  }
-  if (reconnecting) {
-    await chrome.action.setIcon({
-      path: {
-        16: "icons/reconnecting-16.png",
-        32: "icons/reconnecting-32.png",
-        48: "icons/reconnecting-48.png"
-      }
-    });
-  } else if (connected && lastActionConnected === connected) {
-    await chrome.action.setIcon({
-      path: {
-        16: "icons/connected-16.png",
-        32: "icons/connected-32.png",
-        48: "icons/connected-48.png"
-      }
-    });
-  }
-  await chrome.action.setTitle({ title: reconnecting ? "Reconnecting to Tor" : connected ? "Connected to Tor" : "Tor connection" });
+    await chrome.action.setTitle({ title });
+  });
+  actionUpdateQueue = update.catch(() => {});
+  return update;
 }
 
+// Start with the disconnected icon until a fresh helper status confirms Tor is connected.
+setActionConnected(false).catch(() => {});
+
 async function setTorProxy() {
+  if (globalThis.TOR_CONNECT_FIREFOX) {
+    await browser.proxy.settings.set({
+      value: {
+        proxyType: "manual",
+        socks: `127.0.0.1:${PROXY_PORT}`,
+        socksVersion: 5,
+        proxyDNS: true
+      }
+    });
+    return;
+  }
   await chrome.proxy.settings.set({
     value: {
       mode: "fixed_servers",

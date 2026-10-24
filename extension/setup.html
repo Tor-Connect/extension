@@ -80,10 +80,10 @@
 
     <div id="manualPanel" role="tabpanel" aria-labelledby="manualTab">
       <section>
-        <h2>Install it yourself</h2>
-        <p class="manual-intro">Download the Tor Expert Bundle from the Tor Project, then run the command for your computer. The command downloads Tor Connect’s small setup script and installs the local helper.</p>
+        <h2 id="manualTitle">Install it yourself</h2>
+        <p id="manualIntro" class="manual-intro">Download the Tor Expert Bundle from the Tor Project, then run the command for your computer. The command downloads Tor Connect’s small setup script and installs the local helper.</p>
         <div class="manual-downloads">
-          <a class="button secondary" href="https://www.torproject.org/download/tor/" target="_blank" rel="noreferrer">Download Tor Expert Bundle ↗</a>
+          <a id="bundleDownloadLink" class="button secondary" href="https://www.torproject.org/download/tor/" target="_blank" rel="noreferrer">Download Tor Expert Bundle ↗</a>
         </div>
       </section>
 
@@ -153,6 +153,7 @@
       </section>
     </div>
   </main>
+  <script src="platform-ui.js"></script>
   <script src="i18n.js"></script>
   <script src="theme.js"></script>
   <script src="setup.js"></script>
