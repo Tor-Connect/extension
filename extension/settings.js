@@ -632,7 +632,7 @@ function sendStatus() {
   chrome.runtime.sendMessage({ type: "status" }, (result) => {
     if (chrome.runtime.lastError) {
       isConnected = false;
-      setConnectionBadge("Connection unavailable", "error", "Could not check the Tor connection. Restart Chrome and check the helper installation.");
+      setConnectionBadge("Connection unavailable", "error", "Could not check the Tor connection. Restart your browser and check the helper installation.");
       diagnosticTextNode.textContent = chrome.runtime.lastError.message;
       hideChangeBanner();
       scheduleStatusRefresh();

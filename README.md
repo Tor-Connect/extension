@@ -8,13 +8,13 @@
 [![Build companion installers](https://github.com/Tor-Connect/extension/actions/workflows/build-installers.yml/badge.svg?branch=main)](https://github.com/Tor-Connect/extension/actions/workflows/build-installers.yml)
 [![Latest release](https://img.shields.io/github/v/release/Tor-Connect/extension?label=latest%20release)](https://github.com/Tor-Connect/extension/releases/latest)
 
-Tor Connect is a Chrome extension that routes Chrome through a Tor client running on your computer. Choose Snowflake or add your own Tor bridge lines. Your bridge settings are stored locally in your Chrome profile.
+Tor Connect is a browser extension that routes Chrome or Firefox through a Tor client running on your computer. Choose Snowflake or add your own Tor bridge lines. Your bridge settings are stored locally in your browser profile.
 
 > Tor Connect is not Tor Browser. It does not provide Tor Browser’s fingerprinting protections, and it does not route other apps on your computer through Tor.
 
 ## Features
 
-- Connect Chrome through Tor with Snowflake or saved bridge lines.
+- Connect Chrome or Firefox through Tor with Snowflake or saved bridge lines.
 - Keep bridge lines and connection preferences on your device.
 - Choose a bridge manually or let Tor try enabled bridges in order.
 - Import bridge lines from a text file or clipboard.
@@ -36,10 +36,12 @@ The Chrome Web Store listing is not published yet. When it is available, its lin
 
 The extension’s setup page offers two ways to install the local Tor companion:
 
-1. **Setup wizard:** download the installer for macOS, Windows, or Linux from [GitHub Releases](https://github.com/Tor-Connect/extension/releases). The installer includes a Tor Expert Bundle and registers the helper that connects Chrome to Tor.
+1. **Setup wizard:** download the installer for macOS, Windows, or Linux from [GitHub Releases](https://github.com/Tor-Connect/extension/releases). The installer includes a Tor Expert Bundle and registers the helper for Chrome and Firefox.
 2. **Manual installation:** download the Tor Expert Bundle from the [Tor Project](https://www.torproject.org/download/tor/), then use the operating-system instructions in the extension’s setup page. The generated command downloads the small Tor Connect setup script from this repository.
 
-The companion runs Tor locally. Chrome connects to its local SOCKS5 listener after Tor reports that it is ready. The companion is needed because Chrome extensions cannot install or launch a local Tor process by themselves.
+The companion runs Tor locally. Chrome and Firefox connect to its local SOCKS5 listener after Tor reports that it is ready. The companion is needed because browser extensions cannot install or launch a local Tor process by themselves.
+
+A Firefox build can be created from the shared source with `python3 scripts/build-firefox-package.py`. See [Firefox build and setup](docs/FIREFOX.md) for the Firefox package and helper instructions.
 
 ## Build from source
 
