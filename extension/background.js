@@ -9,6 +9,7 @@ let connectivityGeneration = 0;
 let connectivityCheckConnectionId;
 let connectivityCheckState = "";
 let connectivityCheckPromise;
+let connectivitySiteResults = [];
 let connectivityCheckAttempt = 0;
 let connectivityCheckRetryAt = 0;
 const CONNECTIVITY_CHECK_RETRY_DELAY_MS = 30_000;
@@ -18,6 +19,7 @@ function resetConnectivityCheck() {
   connectivityCheckConnectionId = undefined;
   connectivityCheckState = "";
   connectivityCheckPromise = undefined;
+  connectivitySiteResults = [];
   connectivityCheckAttempt += 1;
   connectivityCheckRetryAt = 0;
 }
@@ -39,54 +41,67 @@ function trackConnectivityConnection(result) {
     connectivityCheckConnectionId = connectionId;
     connectivityCheckState = "";
     connectivityCheckPromise = undefined;
+    connectivitySiteResults = [];
     connectivityCheckAttempt += 1;
     connectivityCheckRetryAt = 0;
   }
   return connectivityGeneration;
 }
 
-async function checkTorReachability() {
+const CONNECTIVITY_SITES = [
+  { site: "youtube.com", url: "https://www.youtube.com/" },
+  { site: "x.com", url: "https://x.com/" },
+  { site: "instagram.com", url: "https://www.instagram.com/" },
+  { site: "wikipedia.org", url: "https://www.wikipedia.org/" }
+];
+
+async function checkSiteReachability({ site, url }) {
   const controller = new AbortController();
+  const startedAt = Date.now();
   const timeout = setTimeout(() => controller.abort(), 8000);
   try {
-    const response = await fetch("https://check.torproject.org/api/ip", {
+    const response = await fetch(url, {
       method: "GET",
       cache: "no-store",
       credentials: "omit",
-      redirect: "error",
       referrerPolicy: "no-referrer",
       signal: controller.signal
     });
-    if (!response.ok) return false;
-    const result = await response.json();
-    return result?.IsTor === true || result?.isTor === true;
+    try { await response.body?.cancel(); } catch { /* The response headers already establish reachability. */ }
+    return { site, state: response.ok ? "passed" : "failed", latencyMs: Date.now() - startedAt };
   } catch {
-    return false;
+    return { site, state: "failed", latencyMs: null };
   } finally {
     clearTimeout(timeout);
   }
 }
 
-function checkConnectivityAfterConnect(result, generation) {
+async function checkSitesReachability() {
+  return Promise.all(CONNECTIVITY_SITES.map(checkSiteReachability));
+}
+
+function checkConnectivityAfterConnect(result, generation, { force = false } = {}) {
   if (generation !== connectivityGeneration || !result?.ok || result.state !== "connected") return;
   if (result.bridgeActivity === "trying") return;
 
   const connectionId = result.connectedAt || "connected";
   if (connectivityCheckConnectionId !== connectionId) return;
   if (connectivityCheckConnectionId === connectionId) {
-    if (connectivityCheckState === "passed" || connectivityCheckPromise) return;
+    if ((!force && connectivityCheckState === "passed") || connectivityCheckPromise) return;
     if (connectivityCheckState === "failed" && Date.now() < connectivityCheckRetryAt) return;
   }
   connectivityCheckConnectionId = connectionId;
   const attempt = ++connectivityCheckAttempt;
   if (connectivityCheckState !== "failed") connectivityCheckState = "pending";
-  connectivityCheckPromise = checkTorReachability().then((reachable) => {
+  connectivityCheckPromise = checkSitesReachability().then((siteResults) => {
     if (connectivityCheckConnectionId === connectionId && connectivityCheckAttempt === attempt) {
-      connectivityCheckState = reachable ? "passed" : "failed";
-      connectivityCheckRetryAt = reachable ? 0 : Date.now() + CONNECTIVITY_CHECK_RETRY_DELAY_MS;
+      connectivitySiteResults = siteResults;
+      connectivityCheckState = siteResults.every((site) => site.state === "passed") ? "passed" : "failed";
+      connectivityCheckRetryAt = connectivityCheckState === "passed" ? 0 : Date.now() + CONNECTIVITY_CHECK_RETRY_DELAY_MS;
       connectivityCheckPromise = undefined;
     }
   });
+  return connectivityCheckPromise;
 }
 
 function addConnectivityCheck(result) {
@@ -95,6 +110,9 @@ function addConnectivityCheck(result) {
     result.connectivityCheck = connectivityCheckConnectionId === connectionId
       ? connectivityCheckState || "pending"
       : "pending";
+    result.siteChecks = connectivityCheckConnectionId === connectionId && connectivitySiteResults.length
+      ? connectivitySiteResults
+      : CONNECTIVITY_SITES.map(({ site }) => ({ site, state: "pending", latencyMs: null }));
   }
   return result;
 }
@@ -240,6 +258,21 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
         checkConnectivityAfterConnect(result, generation);
       }
       await setActionConnected(connected, connected && result.bridgeActivity === "trying");
+      sendResponse(addConnectivityCheck(result));
+      return;
+    }
+    if (message.type === "retestSites") {
+      const result = await request("status");
+      const generation = trackConnectivityConnection(result);
+      if (result.ok && result.state === "connected") {
+        await setTorProxy();
+        if (generation === connectivityGeneration) {
+          connectivityCheckState = "";
+          connectivitySiteResults = [];
+          connectivityCheckRetryAt = 0;
+          await checkConnectivityAfterConnect(result, generation, { force: true });
+        }
+      }
       sendResponse(addConnectivityCheck(result));
       return;
     }

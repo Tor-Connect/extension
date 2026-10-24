@@ -58,6 +58,7 @@
           <span id="connectedDuration" class="connected-duration" aria-label="Connected duration" hidden></span>
           <span class="meta-separator" aria-hidden="true" hidden>·</span>
           <p id="statusDetail" class="status-detail" hidden></p>
+          <button id="siteCheckSummary" class="site-check-summary" type="button" aria-label="Review site check" aria-expanded="false" aria-controls="siteCheckSheet" hidden></button>
         </div>
         <details id="errorDetails" class="error-details" hidden>
           <summary>Show error details</summary>
@@ -82,6 +83,7 @@
           <span class="snowflake-particle particle-6"><svg viewBox="0 0 24 24"><path d="M12 3v18M4.2 7.5l15.6 9M4.2 16.5l15.6-9M9.5 4.8 12 7l2.5-2.2M9.5 19.2 12 17l2.5 2.2"/></svg></span>
         </div>
         <div id="orbitNodes" class="orbit-nodes" role="group" aria-label="Saved bridges"></div>
+        <button id="siteCheckBadge" class="site-check-badge" type="button" aria-label="Review site check" aria-expanded="false" aria-controls="siteCheckSheet" hidden></button>
         <div id="connectionMethodSwitch" class="connection-method-switch" role="radiogroup" aria-label="Connection method" data-mode="snowflake">
           <span class="connection-method-thumb" aria-hidden="true"></span>
           <button class="connection-method-option" type="button" role="radio" data-mode="snowflake" aria-label="Snowflake" title="Snowflake" aria-checked="true" tabindex="0">
@@ -122,6 +124,15 @@
           <span>Reconnect</span>
         </button>
       </div>
+      <button id="siteCheckBackdrop" class="stats-backdrop site-check-backdrop" type="button" aria-label="Close site check" hidden></button>
+      <section id="siteCheckSheet" class="live-stats site-check-sheet" role="dialog" aria-label="Site check" aria-modal="true" hidden>
+        <button id="closeSiteCheck" class="stats-close site-check-close" type="button" aria-label="Close site check"><span class="site-check-grip"></span><span class="site-check-title-group"><span class="site-check-heading">Site check</span><strong id="siteCheckCount">Checking sites…</strong></span></button>
+        <div id="siteCheckRows" class="site-check-rows"></div>
+        <div class="site-check-actions">
+          <button id="retestSites" class="site-check-retest" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 0 0-14-4.5L4 9M4 4v5h5M4 13a8 8 0 0 0 14 4.5L20 15M20 20v-5h-5"/></svg>Retest</button>
+          <button id="nextRoute" class="site-check-next" type="button">Next bridge</button>
+        </div>
+      </section>
       <button id="statsBackdrop" class="stats-backdrop" type="button" aria-label="Close live statistics" hidden></button>
       <section id="liveStats" class="live-stats" role="dialog" aria-label="Live statistics" aria-modal="true" hidden>
         <button id="closeStats" class="stats-close" type="button" aria-label="Close live statistics"><span></span>Live statistics</button>
