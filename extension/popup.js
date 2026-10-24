@@ -256,7 +256,7 @@ function renderSiteCheck(result = {}) {
   siteCheckBadgeNode.innerHTML = pending
     ? '<span class="site-check-spinner" aria-hidden="true"></span>'
     : failures
-      ? String(failures)
+      ? `<span>${failures}</span>`
       : '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>';
   siteCheckBadgeNode.classList.toggle("is-failed", failures > 0 && !pending);
   siteCheckBadgeNode.classList.toggle("is-pending", pending);
@@ -269,8 +269,7 @@ function renderSiteCheck(result = {}) {
   } else if (failures) {
     siteCheckSummaryNode.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4 3 20h18L12 4z"/><path d="M12 10v4m0 3.2v.1"/></svg>${failures} of ${sites.length || 4} sites blocked<svg class="site-check-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg>`;
   } else if (result.connectivityCheck === "passed") {
-    const duration = connectedDurationNode.textContent || "00:00";
-    siteCheckSummaryNode.innerHTML = `<span class="site-check-time">${duration}</span> · all sites reachable`;
+    siteCheckSummaryNode.textContent = "all sites reachable";
   } else {
     siteCheckSummaryNode.textContent = "Checking sites…";
   }
@@ -721,6 +720,8 @@ function renderErrorDetails(result) {
 }
 
 function renderRoute(result = {}) {
+  if (initialStatusPending && routeCardNode.dataset.initialChecking === "true") return;
+  delete routeCardNode.dataset.initialChecking;
   bridgeAttemptTimerNode.hidden = result.state !== "starting";
   connectedDurationNode.hidden = result.state !== "connected";
   copyBridgeButton.hidden = true;
@@ -731,6 +732,7 @@ function renderRoute(result = {}) {
   routeCardNode.dataset.state = result.state || "disconnected";
   routeCardNode.dataset.activity = result.bridgeActivity || "";
   routeCardNode.dataset.check = result.connectivityCheck || "";
+  connectionToggle.dataset.check = result.connectivityCheck || "";
   routeCardNode.dataset.mode = preferences.mode;
   delete routeCardNode.dataset.route;
 
@@ -814,10 +816,18 @@ function renderResult(result) {
     popupMainNode.dataset.view = "connection";
     setupPanelNode.hidden = true;
     routeCardNode.hidden = false;
+    routeCardNode.dataset.state = "disconnected";
+    routeCardNode.dataset.mode = preferences.mode;
+    routeCardNode.dataset.activity = "";
+    routeCardNode.dataset.check = "";
+    routeCardNode.dataset.empty = String(preferences.mode === "manual" && bridgeEntries().length === 0);
+    routeCardNode.dataset.initialChecking = "true";
     routeIdentityNode.hidden = true;
     openSettingsButton.hidden = false;
     setStatus("Checking connection…", "starting", "Waiting for the Tor helper");
-    setToggleState("starting");
+    setToggleState("disconnected");
+    connectionToggle.dataset.initialChecking = "true";
+    renderConnectionMethodSwitch();
     if (pollTimer) clearTimeout(pollTimer);
     pollTimer = setTimeout(async () => renderResult(await send("status")), 1000);
     return;
@@ -880,6 +890,7 @@ function renderResult(result) {
 
 function setToggleState(state, bridgeActivity) {
   currentState = state;
+  delete connectionToggle.dataset.initialChecking;
   renderBridgeSelector();
   connectionToggle.disabled = false;
   const visualState = state === "connected" && bridgeActivity === "trying" ? "reconnecting"

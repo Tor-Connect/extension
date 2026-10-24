@@ -204,8 +204,8 @@ body.popup-page .site-check-summary[hidden], body.popup-page .site-check-badge[h
 body.popup-page .site-check-summary.is-pending, body.popup-page .site-check-summary.is-passed { min-height: 17px; padding: 0; color: #8a948f; background: transparent; font-size: 12px; }
 body.popup-page .site-check-summary svg { width: 14px; height: 14px; flex: none; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
 body.popup-page .site-check-summary .site-check-chevron { width: 12px; height: 12px; stroke-width: 3; }
-body.popup-page .site-check-time { color: #a9b3ae; font: 12px "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace; }
 body.popup-page .site-check-spinner { display: block; width: 12px; height: 12px; flex: none; box-sizing: border-box; border: 2px solid #a9b3ae; border-right-color: transparent; border-radius: 50%; animation: site-check-spin .8s linear infinite; }
+body.popup-page .site-check-summary.is-pending .site-check-spinner { border-color: #2bd576; border-right-color: transparent; }
 body.popup-page .site-check-badge { position: absolute; z-index: 2; top: 95px; left: 181px; display: flex; width: 44px; height: 44px; align-items: center; justify-content: center; padding: 0; border: 0; border-radius: 50%; color: #ffc24d; background: transparent; cursor: pointer; font: 600 13px "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace; }
 body.popup-page .site-check-badge::before { position: absolute; width: 28px; height: 28px; border: 2px solid #ffc24d; border-radius: 50%; background: #2a1f08; box-shadow: 0 0 0 4px #080c0b; content: ""; }
 body.popup-page .site-check-badge > *, body.popup-page .site-check-badge > svg { position: relative; z-index: 1; }
@@ -278,6 +278,7 @@ body.popup-page .meta-separator { color: #6b7771; }
 body.popup-page .orbit-stage { position: relative; width: min(320px, 100%); height: 320px; flex: 0 0 auto; margin: 4px auto 0; }
 body.popup-page .orbit-diagram { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
 body.popup-page .orbit-outer, body.popup-page .orbit-inner, body.popup-page .orbit-spoke, body.popup-page .orbit-flow { fill: none; }
+body.popup-page .sonar-flash-ring { display: none; fill: none; }
 body.popup-page .orbit-outer { stroke: #cbd7d0; stroke-width: 2; stroke-dasharray: 3 9; stroke-linecap: round; }
 body.popup-page .orbit-inner { stroke: #dce4df; stroke-width: 2; }
 body.popup-page .orbit-spoke { stroke: #dce4df; stroke-width: 1.5; }
@@ -292,6 +293,26 @@ body.popup-page .orbit-card[data-state="connected"][data-activity="trying"] .orb
 body.popup-page .orbit-card[data-state="connected"][data-activity="failed"] .orbit-outer, body.popup-page .orbit-card[data-state="connected"][data-activity="closed"] .orbit-outer { stroke: #cc5a55; }
 body.popup-page .orbit-card[data-state="connected"][data-activity="failed"] .orbit-flow, body.popup-page .orbit-card[data-state="connected"][data-activity="closed"] .orbit-flow { stroke: #cc5a55; }
 body.popup-page .orbit-card[data-state="starting"] .orbit-flow { stroke: #2bd576; stroke-dasharray: 6 8; animation: orbit-flow 1s linear infinite; }
+body.popup-page .orbit-card[data-initial-checking="true"] .orbit-spoke,
+body.popup-page .orbit-card[data-initial-checking="true"] .orbit-nodes,
+body.popup-page .orbit-card[data-initial-checking="true"] .snowflake-field,
+body.popup-page .orbit-card[data-initial-checking="true"] .orbit-flow { display: none; }
+body.popup-page .orbit-card[data-initial-checking="true"] .orbit-outer { stroke: #3a4642; }
+body.popup-page .orbit-card[data-initial-checking="true"] .sonar-flash-ring { display: block; stroke: #2bd576; stroke-width: 2; opacity: .1; animation: sonar-ring-flash 2.7s ease-out infinite; }
+body.popup-page .sonar-ghost-nodes { position: absolute; z-index: 1; inset: 0; display: none; pointer-events: none; }
+body.popup-page .sonar-ghost-nodes span { position: absolute; width: 48px; height: 48px; border: 2px dashed #3a4642; border-radius: 50%; box-sizing: border-box; opacity: .1; animation: sonar-ring-flash .9s ease-out 2.7s infinite; }
+body.popup-page .sonar-ghost-nodes span:nth-child(1) { top: 14px; left: 136px; }
+body.popup-page .sonar-ghost-nodes span:nth-child(2) { top: 197px; left: 242px; }
+body.popup-page .sonar-ghost-nodes span:nth-child(3) { top: 197px; left: 30px; }
+body.popup-page .orbit-card[data-initial-checking="true"] .sonar-ghost-nodes { display: block; }
+body.popup-page .sonar-pulses { position: absolute; z-index: 1; top: 104px; left: 104px; display: none; width: 112px; height: 112px; pointer-events: none; }
+body.popup-page .sonar-pulses span { position: absolute; inset: 0; box-sizing: border-box; border: 2px solid #2bd576; border-radius: 50%; opacity: 0; animation: sonar-ping 2.7s cubic-bezier(.2,.6,.3,1) infinite; }
+body.popup-page .sonar-pulses span:nth-child(2) { animation-delay: .9s; }
+body.popup-page .sonar-pulses span:nth-child(3) { animation-delay: 1.8s; }
+body.popup-page .orbit-card[data-initial-checking="true"] .sonar-pulses { display: block; }
+@keyframes sonar-ping { 0% { transform: scale(1); opacity: .6; } 100% { transform: scale(2.2); opacity: 0; } }
+@keyframes sonar-ring-flash { 0% { opacity: .95; } 60%, 100% { opacity: .1; } }
+@keyframes sonar-breathe { 0%, 100% { opacity: .45; } 50% { opacity: 1; } }
 body.popup-page .orbit-card[data-mode="snowflake"] .orbit-spoke,
 body.popup-page .orbit-card[data-mode="snowflake"] .orbit-nodes { display: none; }
 body.popup-page .orbit-card[data-mode="snowflake"]:not([data-state="connected"]) .orbit-flow { display: none; }
@@ -335,7 +356,7 @@ body.popup-page .connection-mark { width: 64px; height: 64px; }
 body.popup-page button.power-button[data-mode="snowflake"] .connection-mark .mark-connected { stroke-width: 9; }
 body.popup-page button.power-button[data-state="connected"] { border-color: #2bd576; color: #2bd576; background: #e8f6ee; box-shadow: 0 0 0 8px #2bd57612, 0 0 40px #2bd57620; }
 body.popup-page button.power-button[data-state="connected"][data-check="failed"]:not([data-activity="trying"]):not([data-activity="failed"]):not([data-activity="closed"]) { border-color: #ffb020; color: #ffb020; background: #2a1f08; box-shadow: 0 0 0 8px rgb(255 176 32 / 8%), 0 0 40px rgb(255 176 32 / 12%); }
-body.popup-page button.power-button[data-state="starting"] { border-color: #bfdac9; color: #2bd576; background: #e7f3eb; }
+body.popup-page button.power-button[data-initial-checking="true"] { border-color: #bfdac9; color: #7d868f; background: #e7f3eb; animation: sonar-breathe 2.7s ease-in-out infinite; }
 body.popup-page button.power-button[data-state="reconnecting"] { border-color: #d99a28; color: #d99a28; background: #f7f0e2; }
 body.popup-page button.power-button[data-state="bridge-interrupted"], body.popup-page button.power-button[data-state="failed"] { border-color: #cc5a55; color: #cc5a55; background: #f8e9e7; }
 body.popup-page button.power-button[data-mode="snowflake"][data-state="starting"] .connection-mark .mark-connected,
@@ -344,6 +365,10 @@ body.popup-page button.power-button[data-mode="snowflake"][data-state="starting"
 body.popup-page button.power-button[data-mode="snowflake"][data-state="reconnecting"] .connection-mark .mark-connecting { display: block; }
 body.popup-page .power-button::after { display: none; }
 body.popup-page .power-button[data-state="starting"]::after { display: block; }
+body.popup-page button.power-button[data-initial-checking="true"]::after { display: none; }
+body.popup-page button.power-button[data-initial-checking="true"] .connection-mark .mark-connected,
+body.popup-page button.power-button[data-initial-checking="true"] .connection-mark .mark-connecting { display: none !important; }
+body.popup-page button.power-button[data-initial-checking="true"] .connection-mark .mark-broken { display: block !important; }
 body.popup-page .bridge-summary { display: flex; min-height: 42px; flex: 0 0 auto; align-items: center; justify-content: space-between; gap: 8px; margin-top: auto; padding-top: 4px; }
 body.popup-page .orbit-card[data-mode="snowflake"] .bridge-summary { display: flex; }
 body.popup-page .connected-stats-summary { display: flex; width: 100%; min-width: 0; align-items: center; gap: 10px; box-sizing: border-box; padding: 10px 12px; border: 1px solid #1d2421; border-radius: 16px; background: #0c1210; }
@@ -413,6 +438,8 @@ html[data-theme="dark"] body.popup-page .error-details pre { border-color: #442b
 html[data-theme="dark"] body.popup-page .connection-meta, html[data-theme="dark"] body.popup-page .status-detail { color: #8a948f; }
 html[data-theme="dark"] body.popup-page .bridge-attempt-timer, html[data-theme="dark"] body.popup-page .connected-duration { color: #a9b3ae; }
 html[data-theme="dark"] body.popup-page .orbit-outer { stroke: #2a3430; }
+html[data-theme="dark"] body.popup-page .orbit-card[data-initial-checking="true"] .orbit-outer { stroke: #3a4642; }
+html[data-theme="dark"] body.popup-page .orbit-card[data-initial-checking="true"] .sonar-flash-ring { stroke: #2bd576; }
 html[data-theme="dark"] body.popup-page .orbit-inner, html[data-theme="dark"] body.popup-page .orbit-spoke { stroke: #151c19; }
 html[data-theme="dark"] body.popup-page .orbit-card[data-state="connected"] .orbit-outer { stroke: #1c5b3b; }
 html[data-theme="dark"] body.popup-page .orbit-card[data-state="connected"][data-activity="trying"] .orbit-outer { stroke: #9b712e; }
@@ -444,6 +471,7 @@ html[data-theme="dark"] body.popup-page .orbit-card[data-state="connected"][data
 html[data-theme="dark"] body.popup-page .orbit-card[data-state="connected"][data-check="failed"]:not([data-activity="trying"]):not([data-activity="failed"]):not([data-activity="closed"]) .particle-3 { border-color: #ffb020; color: #ffb020; background: #2a1f08; box-shadow: 0 0 0 5px rgb(255 176 32 / 12%); }
 html[data-theme="dark"] body.popup-page button.power-button[data-state="connected"][data-check="failed"]:not([data-activity="trying"]):not([data-activity="failed"]):not([data-activity="closed"]) { border-color: #ffb020; color: #ffb020; background: #2a1f08; box-shadow: 0 0 0 8px rgb(255 176 32 / 8%), 0 0 40px rgb(255 176 32 / 28%); }
 html[data-theme="dark"] body.popup-page button.power-button[data-state="starting"] { border-color: #1e3a2c; color: #2bd576; background: #12261c; }
+html[data-theme="dark"] body.popup-page button.power-button[data-initial-checking="true"] { border-color: #2a3230; color: #7d868f; background: #121816; }
 html[data-theme="dark"] body.popup-page button.power-button[data-state="reconnecting"] { border-color: #9b712e; color: #e2a333; background: #242018; }
 html[data-theme="dark"] body.popup-page button.power-button[data-state="bridge-interrupted"], html[data-theme="dark"] body.popup-page button.power-button[data-state="failed"] { border-color: #5b3432; color: #ef7770; background: #271b1a; }
 html[data-theme="dark"] body.popup-page .route-name, html[data-theme="dark"] body.popup-page .auto-title { color: #eaf1ee; }
@@ -461,7 +489,9 @@ html[data-theme="dark"] body.popup-page a.setup-cta { color: #07110b; background
 html[data-theme="dark"] body.popup-page a.setup-cta:hover { background: #42e58a; }
 @media (prefers-reduced-motion: reduce) {
   body.popup-page .orbit-card[data-state="connected"] .orbit-flow { animation: none; }
-  body.popup-page .snowflake-particle, body.popup-page .power-button[data-progress-mode="indeterminate"]::after { animation: none !important; }
+  body.popup-page .snowflake-particle, body.popup-page .power-button[data-progress-mode="indeterminate"]::after,
+  body.popup-page .sonar-pulses span, body.popup-page .sonar-flash-ring,
+  body.popup-page .sonar-ghost-nodes span, body.popup-page button.power-button[data-initial-checking="true"] { animation: none !important; }
 }
 
 /* Method switch from the C Orbit connection-method design. */
@@ -579,6 +609,11 @@ body.popup-page button.add-bridges-button svg { width: 18px; height: 18px; flex:
 html[data-theme="light"] body.popup-page .connection-method-switch { border-color: #d6dfda; background: #e9efeb; box-shadow: 0 0 0 5px #f3f6f4; }
 html[data-theme="light"] body.popup-page .connection-method-thumb { background: #e8f6ee; }
 html[data-theme="light"] body.popup-page .orbit-empty-node { border-color: #d6dfda; color: #8a948f; background: #edf2ef; }
+html[data-theme="light"] body.popup-page .orbit-card[data-initial-checking="true"] .orbit-outer { stroke: #cbd7d0; }
+html[data-theme="light"] body.popup-page .orbit-card[data-initial-checking="true"] .sonar-flash-ring { stroke: #16804a; }
+html[data-theme="light"] body.popup-page .sonar-ghost-nodes span { border-color: #b8c7bf; }
+html[data-theme="light"] body.popup-page .sonar-pulses span { border-color: #16804a; }
+html[data-theme="light"] body.popup-page button.power-button[data-initial-checking="true"] { border-color: #d6dfda; color: #7d868f; background: #edf2ef; }
 html[data-theme="light"] body.popup-page .orbit-card[data-state="starting"] .snowflake-particle { border-color: #b8d9c4; color: #16804a; background: #edf8f1; }
 html[data-theme="light"] body.popup-page .orbit-card[data-empty="true"] button.power-button { border-color: #d6dfda; color: #8a948f; background: #edf2ef; }
 html[data-theme="light"] body.popup-page .orbit-card[data-empty="true"] button.power-button:hover { background: #e7eeea; }
@@ -840,6 +875,7 @@ html[data-theme="light"] body.popup-page .site-check-badge.is-pending::before { 
 html[data-theme="light"] body.popup-page .site-check-badge.is-passed { color: #06150d; }
 html[data-theme="light"] body.popup-page .site-check-badge.is-passed::before { border-color: #2bd576; background: #2bd576; }
 html[data-theme="light"] body.popup-page .site-check-spinner { border-color: #66716b; border-right-color: transparent; }
+html[data-theme="light"] body.popup-page .site-check-summary.is-pending .site-check-spinner { border-color: #16804a; border-right-color: transparent; }
 html[data-theme="light"] body.popup-page .orbit-card[data-state="connected"][data-check="failed"]:not([data-activity="trying"]):not([data-activity="failed"]):not([data-activity="closed"]) .orbit-outer { stroke: #bd8425; }
 html[data-theme="light"] body.popup-page .orbit-card[data-state="connected"][data-check="failed"]:not([data-activity="trying"]):not([data-activity="failed"]):not([data-activity="closed"]) .orbit-flow { stroke: #a66a00; }
 html[data-theme="light"] body.popup-page .orbit-card[data-state="connected"][data-check="failed"]:not([data-activity="trying"]):not([data-activity="failed"]):not([data-activity="closed"]) .orbit-node.is-active .orbit-country { border-color: #bd8425; color: #8a5600; background: #fff4d8; box-shadow: 0 0 0 5px rgb(189 132 37 / 15%); }
