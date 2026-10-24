@@ -18,9 +18,10 @@ document.querySelector("h1").textContent = `Connect ${browserName} through Tor`;
 document.querySelector("#setupIntro").textContent = `A small companion app installs Tor on this computer and connects it to ${browserName}. You only need to set it up once.`;
 const setupInstructions = document.querySelector("#setupInstructions");
 if (isFirefox) {
-  setupInstructions.textContent = "Use the manual setup command below to install Tor and connect Firefox.";
+  setupInstructions.textContent = "Download the Tor Expert Bundle, then use Manual installation to finish setting up Firefox.";
+  document.querySelector("#firefoxBundleDownload").hidden = false;
   document.querySelector("#installerUnavailable").hidden = true;
-  document.querySelector("#installerHelp").textContent = "Choose Manual installation below and run the setup command for your computer.";
+  document.querySelector("#installerHelp").textContent = "After downloading, choose Manual installation for the setup command.";
 } else if (platformName === "linux") {
   setupInstructions.textContent = "Download and install the Debian package. It includes Tor and connects it to Chrome.";
 } else if (platformName === "windows") {
