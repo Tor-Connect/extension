@@ -24,6 +24,7 @@ const useBridgeLinesButton = document.querySelector("#useBridgeLines");
 const clipboardStatusNode = document.querySelector("#clipboardStatus");
 const donationListNode = document.querySelector("#donationList");
 const donationStatusNode = document.querySelector("#donationStatus");
+document.querySelector("#appVersion").textContent = chrome.runtime.getManifest().version;
 const changeBanner = document.querySelector("#changeBanner");
 const changeBannerMessage = document.querySelector("#changeBannerMessage");
 const reconnectNowButton = document.querySelector("#reconnectNow");

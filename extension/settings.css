@@ -44,6 +44,7 @@ button:focus-visible, a:focus-visible, summary:focus-visible { outline: 3px soli
 .page-heading p, .section-heading p { margin: 0; color: #8a948f; line-height: 1.5; }
 .page-heading p { font-size: 15px; }
 .settings-section { display: flex; min-width: 0; flex-direction: column; gap: 20px; scroll-margin-top: 28px; }
+.app-version { margin: 0; color: #8a948f; font-size: 12px; }
 .section-heading { display: flex; flex-direction: column; gap: 6px; }
 .section-heading h2 { margin: 0; font-size: 22px; font-weight: 600; letter-spacing: -.02em; line-height: 1.25; }
 .section-heading p { font-size: 14px; }
@@ -215,6 +216,7 @@ html[data-theme="light"] .settings-nav a:hover { color: #1d2621; background: #ea
 html[data-theme="light"] .settings-nav a.active { color: #1d2621; background: #e8f3ec; }
 html[data-theme="light"] .nav-count { color: #64716b; background: #e5ebe7; }
 html[data-theme="light"] .page-heading p, html[data-theme="light"] .section-heading p { color: #66716b; }
+html[data-theme="light"] .app-version { color: #66716b; }
 html[data-theme="light"] .bridge-summary { border-color: #dce4df; background: #f8fbf9; }
 html[data-theme="light"] .bridge-summary-copy > span { color: #66716b; }
 html[data-theme="light"] .method-card { border-color: #dce4df; color: #1d2621; background: #fff; }
