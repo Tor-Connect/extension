@@ -12,6 +12,7 @@ app="$root_dir/dist/Tor Connect Setup.app"
 contents="$app/Contents"
 rm -rf "$app"
 mkdir -p "$contents/MacOS" "$contents/Resources"
+cp "$root_dir/brand-assets/tor-connect-store-icon-128.png" "$contents/Resources/TorConnectIcon.png"
 module_cache="$root_dir/dist/swift-module-cache"
 mkdir -p "$module_cache"
 

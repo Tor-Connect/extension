@@ -30,7 +30,7 @@ Source: "{#PayloadDir}\Register-NativeHost.ps1"; DestDir: "{app}"; Flags: ignore
 Source: "{#PayloadDir}\runtime\*"; DestDir: "{app}\runtime"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Run]
-Filename: "{sys}\WindowsPowerShell\v1.0\powershell.exe"; Parameters: "-NoProfile -ExecutionPolicy Bypass -File ""{app}\Register-NativeHost.ps1"" -ExtensionId ""{#ExtensionId}"""; Flags: runhidden waituntilterminated; StatusMsg: "Connecting Tor Connect to Chrome..."
+Filename: "{sys}\WindowsPowerShell\v1.0\powershell.exe"; Parameters: "-NoProfile -ExecutionPolicy Bypass -File ""{app}\Register-NativeHost.ps1"" -ExtensionId ""{#ExtensionId}"""; Flags: runhidden waituntilterminated; StatusMsg: "Connecting Tor Connect to your browser..."
 
 [UninstallRun]
 Filename: "{sys}\WindowsPowerShell\v1.0\powershell.exe"; Parameters: "-NoProfile -ExecutionPolicy Bypass -File ""{app}\Register-NativeHost.ps1"" -ExtensionId ""{#ExtensionId}"" -Uninstall"; Flags: runhidden waituntilterminated

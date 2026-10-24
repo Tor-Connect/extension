@@ -7,21 +7,23 @@ const platformName = platform.includes("win") ? "windows"
   : platform.includes("linux") ? "linux"
     : platform.includes("mac") ? "mac" : "unknown";
 const isFirefox = typeof browser !== "undefined" && typeof browser.runtime?.getBrowserInfo === "function";
-const browserName = isFirefox ? "Firefox" : "Chrome";
 document.querySelectorAll("[data-platform]").forEach((section) => {
   section.hidden = section.dataset.platform !== platformName;
 });
 document.querySelector("#setupEyebrow").textContent = platformName === "mac"
   ? "ONE-TIME MAC SETUP"
   : `ONE-TIME ${platformName.toUpperCase()} SETUP`;
-document.querySelector("h1").textContent = `Connect ${browserName} through Tor`;
-document.querySelector("#setupIntro").textContent = `A small companion app installs Tor on this computer and connects it to ${browserName}. You only need to set it up once.`;
+document.querySelector("h1").textContent = "Connect Chrome through Tor";
+document.querySelector("#setupIntro").textContent = "A small companion app installs Tor on this computer and connects it to Chrome. You only need to set it up once.";
 const setupInstructions = document.querySelector("#setupInstructions");
 if (isFirefox) {
-  setupInstructions.textContent = "Download the Tor Expert Bundle, then use Manual installation to finish setting up Firefox.";
-  document.querySelector("#firefoxBundleDownload").hidden = false;
-  document.querySelector("#installerUnavailable").hidden = true;
-  document.querySelector("#installerHelp").textContent = "After downloading, choose Manual installation for the setup command.";
+  setupInstructions.textContent = platformName === "linux"
+    ? "Download and install the Debian package. It includes Tor and connects it to Chrome."
+    : platformName === "windows"
+      ? "Download and open the Windows installer. It includes Tor and connects it to Chrome."
+      : platformName === "mac"
+        ? "Download and open the Mac setup app. It includes Tor and connects it to Chrome."
+        : "Open this page in Chrome on the computer you want to set up.";
 } else if (platformName === "linux") {
   setupInstructions.textContent = "Download and install the Debian package. It includes Tor and connects it to Chrome.";
 } else if (platformName === "windows") {
@@ -36,7 +38,7 @@ const installerByPlatform = {
   linux: ["#linuxInstallerDownload", linuxInstallerDownloadUrl, "Tor-Connect-Setup-Linux-x64.deb"]
 };
 const installer = installerByPlatform[platformName];
-if (installer && !isFirefox) {
+if (installer) {
   const [selector, url, filename] = installer;
   const link = document.querySelector(selector);
   if (url) {
@@ -48,7 +50,7 @@ if (installer && !isFirefox) {
 }
 if (platformName === "unknown") {
   document.querySelector("#setupEyebrow").textContent = "ONE-TIME SETUP";
-  document.querySelector("#installerHelp").textContent = `Open this page in ${browserName} on the computer you want to set up.`;
+  setupInstructions.textContent = `Open this page in ${isFirefox ? "Firefox" : "Chrome"} on the computer you want to set up.`;
 }
 
 const extensionId = globalThis.chrome?.runtime?.id || "<Chrome extension ID>";

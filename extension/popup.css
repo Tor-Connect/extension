@@ -898,4 +898,101 @@ html[data-theme="light"] body.popup-page .site-check-row.is-pending .site-check-
 html[data-theme="light"] body.popup-page .site-check-name { color: #252d29; }
 html[data-theme="light"] body.popup-page .site-check-meta { color: #66716b; }
 html[data-theme="light"] body.popup-page .site-check-row.is-failed .site-check-meta { color: #a66a00; }
+
+/* Firefox private-window permission recovery view. */
+body.popup-page .firefox-permission-panel { position: relative; display: flex; min-height: 0; flex: 1 1 auto; flex-direction: column; padding-top: 10px; color: #252d29; }
+body.popup-page .firefox-permission-panel[hidden] { display: none !important; }
+body.popup-page .firefox-permission-overview { flex: 0 0 auto; text-align: center; }
+body.popup-page .firefox-permission-overview h2 { margin: 0; color: #252d29; font-size: 26px; font-weight: 600; line-height: 1.25; letter-spacing: -.02em; }
+body.popup-page .firefox-permission-overview p { max-width: 300px; margin: 4px auto 0; color: #66716b; font-size: 13px; line-height: 1.45; }
+body.popup-page .firefox-permission-content { display: flex; flex: 1 1 auto; flex-direction: column; min-height: 0; }
+body.popup-page .permission-lock-stage { position: relative; display: grid; width: 320px; max-width: 100%; height: 176px; flex: 0 0 176px; place-items: center; margin: 6px auto 0; }
+body.popup-page .permission-orbit-rings { position: absolute; width: 100%; height: 100%; overflow: visible; fill: none; stroke-width: 2; }
+body.popup-page .permission-orbit-rings circle:first-child { stroke: #bd8425; stroke-dasharray: 3 9; stroke-linecap: round; }
+body.popup-page .permission-orbit-rings circle:last-child { stroke: #dce4df; }
+body.popup-page .permission-lock-mark { position: relative; display: grid; width: 96px; height: 96px; place-items: center; border: 2px solid #bd8425; border-radius: 50%; color: #a66a00; background: #fff4d8; box-shadow: 0 0 0 7px rgb(255 176 32 / 7%); transition: border-color .2s ease, color .2s ease, background-color .2s ease, box-shadow .2s ease; }
+body.popup-page .permission-lock-mark svg { width: 42px; height: 42px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+body.popup-page .permission-lock-mark .permission-check-icon { display: none; }
+body.popup-page .firefox-permission-steps { display: flex; flex-direction: column; margin: 8px 0 0; padding: 0; list-style: none; }
+body.popup-page .firefox-permission-steps li { display: flex; height: 40px; flex: 0 0 40px; align-items: center; gap: 12px; padding: 0; border-top: 1px solid #dce4df; color: #252d29; background: transparent; font-size: 14px; line-height: 1.35; }
+body.popup-page .firefox-permission-steps li:last-child { border-bottom: 1px solid #dce4df; }
+body.popup-page .permission-step-number { display: grid; width: 24px; height: 24px; flex: 0 0 24px; place-items: center; border: 1.5px solid #cbd7d0; border-radius: 50%; color: #66716b; font: 12px/1 "IBM Plex Mono", ui-monospace, monospace; }
+body.popup-page .firefox-permission-steps kbd { padding: 2px 8px; border: 0; border-radius: 8px; color: #252d29; background: #e9efeb; font: 13px/1.35 "IBM Plex Mono", ui-monospace, monospace; }
+body.popup-page .firefox-permission-steps li:nth-child(2) kbd { padding: 0 6px; }
+body.popup-page .firefox-permission-steps i { padding: 0; color: #8a948f; font-style: normal; }
+body.popup-page .firefox-permission-steps strong { color: #8a5600; font-weight: 600; }
+body.popup-page .permission-step-current .permission-step-number { border-color: #bd8425; color: #8a5600; }
+body.popup-page .firefox-permission-actions { flex: 0 0 auto; margin-top: auto; }
+body.popup-page button.permission-primary-action { display: flex; width: 100%; height: 52px; min-height: 52px; align-items: center; justify-content: center; gap: 8px; margin: 0; padding: 0 16px; border: 0; border-radius: 26px; color: #06150d; background: #2bd576; font: inherit; font-size: 15px; font-weight: 600; cursor: pointer; transition: background-color .15s ease, transform .15s ease; }
+body.popup-page button.permission-primary-action:hover:not(:disabled) { background: #20c76a; transform: translateY(-1px); }
+body.popup-page .permission-primary-action svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+body.popup-page .permission-primary-action .permission-copied-icon { display: none; }
+body.popup-page .permission-primary-action.is-copied { background: #136a49; }
+body.popup-page .permission-primary-action.is-copied .permission-copy-icon { display: none; }
+body.popup-page .permission-primary-action.is-copied .permission-copied-icon { display: block; }
+body.popup-page .firefox-permission-secondary-actions { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 4px; }
+body.popup-page .firefox-permission-secondary-actions button { display: inline-flex; width: auto; height: 44px; min-width: 0; min-height: 44px; align-items: center; justify-content: center; gap: 6px; margin: 0; padding: 0 8px; border: 0; border-radius: 8px; color: #66716b; background: transparent; font: inherit; font-size: 13px; font-weight: 500; cursor: pointer; }
+body.popup-page .firefox-permission-secondary-actions button:hover { color: #252d29; background: #e9efeb; }
+body.popup-page .firefox-permission-secondary-actions svg { width: 16px; height: 16px; flex: 0 0 auto; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+body.popup-page .permission-error-backdrop { position: fixed; z-index: 7; inset: 0; width: 100vw; height: 100vh; margin: 0; padding: 0; border: 0; border-radius: 0; background: rgb(20 29 25 / 44%); cursor: default; }
+body.popup-page .permission-error-sheet { position: fixed; z-index: 8; bottom: 0; left: 50%; display: flex; width: min(100vw, 360px); flex-direction: column; gap: 0; padding: 8px 20px 20px; border: 1px solid #dce4df; border-radius: 28px 28px 0 0; color: #252d29; background: #fff; box-shadow: 0 -20px 50px rgb(25 45 34 / 30%); transform: translateX(-50%); }
+body.popup-page .permission-error-sheet[hidden] { display: none !important; }
+body.popup-page button.permission-error-close { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; width: 100%; height: 44px; margin: 0; padding: 0; border: 0; color: #252d29; background: transparent; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
+body.popup-page .permission-error-close span { width: 36px; height: 4px; border-radius: 2px; background: #cbd7d0; }
+body.popup-page .permission-error-sheet pre { max-height: 92px; overflow: auto; margin: 8px 0 0; padding: 12px 14px; border: 1px solid #dce4df; border-radius: 14px; color: #59645e; background: #f3f6f4; font: 12px/1.5 "IBM Plex Mono", ui-monospace, monospace; white-space: pre-wrap; overflow-wrap: anywhere; }
+body.popup-page button.permission-copy-details { display: flex; width: 100%; height: 48px; min-height: 48px; align-items: center; justify-content: center; gap: 8px; margin: 12px 0 0; padding: 0; border: 1.5px solid #dce4df; border-radius: 24px; color: #252d29; background: #f3f6f4; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
+body.popup-page .permission-copy-details svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+body.popup-page .firefox-permission-panel.permission-granted .firefox-permission-content { justify-content: center; }
+body.popup-page .firefox-permission-panel.permission-granted .firefox-permission-overview h2 { color: #14864c; }
+body.popup-page .firefox-permission-panel.permission-granted .permission-lock-stage { width: 112px; height: 112px; flex-basis: 112px; margin: 0 auto; }
+body.popup-page .firefox-permission-panel.permission-granted .permission-orbit-rings,
+body.popup-page .firefox-permission-panel.permission-granted .firefox-permission-steps,
+body.popup-page .firefox-permission-panel.permission-granted .firefox-permission-actions { display: none; }
+body.popup-page .firefox-permission-panel.permission-granted .permission-lock-mark { width: 112px; height: 112px; border-color: #2bd576; color: #14864c; background: #e8f6ee; box-shadow: 0 0 0 8px rgb(43 213 118 / 8%), 0 0 40px rgb(43 213 118 / 30%); }
+body.popup-page .firefox-permission-panel.permission-granted .permission-lock-mark svg { width: 52px; height: 52px; stroke-width: 2.6; }
+body.popup-page .firefox-permission-panel.permission-granted .permission-lock-icon { display: none; }
+body.popup-page .firefox-permission-panel.permission-granted .permission-check-icon { display: block; }
+body.popup-page .firefox-permission-panel.permission-granted .permission-step-current { border-color: #9dddb8; background: #edf9f1; }
+body.popup-page .firefox-permission-panel.permission-granted .permission-step-current strong { color: #14864c; }
+body.popup-page .firefox-permission-panel.permission-granted .permission-step-current .permission-step-number { border-color: #2bd576; color: #fff; background: #18845b; }
+html[data-theme="dark"] body.popup-page .firefox-permission-panel { color: #eaf1ee; }
+html[data-theme="dark"] body.popup-page .firefox-permission-overview h2 { color: #eaf1ee; }
+html[data-theme="dark"] body.popup-page .firefox-permission-overview p { color: #8a948f; }
+html[data-theme="dark"] body.popup-page .permission-orbit-rings circle:first-child { stroke: #6b4a12; }
+html[data-theme="dark"] body.popup-page .permission-orbit-rings circle:last-child { stroke: #141b18; }
+html[data-theme="dark"] body.popup-page .permission-lock-mark { border-color: #6b4a12; color: #ffb020; background: #1a1407; box-shadow: 0 0 0 7px rgb(255 176 32 / 7%); }
+html[data-theme="dark"] body.popup-page .firefox-permission-steps li { border-color: #1d2421; color: #eaf1ee; background: transparent; }
+html[data-theme="dark"] body.popup-page .permission-step-number { border-color: #3a4642; color: #a9b3ae; }
+html[data-theme="dark"] body.popup-page .firefox-permission-steps kbd { color: #eaf1ee; background: #121816; }
+html[data-theme="dark"] body.popup-page .firefox-permission-steps i { color: #6b7771; }
+html[data-theme="dark"] body.popup-page .firefox-permission-steps strong { color: #ffc24d; }
+html[data-theme="dark"] body.popup-page .permission-step-current .permission-step-number { border-color: #ffb020; color: #ffb020; }
+html[data-theme="dark"] body.popup-page button.permission-primary-action { color: #06150d; background: #2bd576; }
+html[data-theme="dark"] body.popup-page button.permission-primary-action:hover:not(:disabled) { background: #42e58a; }
+html[data-theme="dark"] body.popup-page .permission-primary-action.is-copied { background: #42e58a; }
+html[data-theme="dark"] body.popup-page .firefox-permission-secondary-actions button { color: #8a948f; }
+html[data-theme="dark"] body.popup-page .firefox-permission-secondary-actions button:hover { color: #eaf1ee; background: #151c19; }
+html[data-theme="dark"] body.popup-page .permission-error-backdrop { background: rgb(0 0 0 / 66%); }
+html[data-theme="dark"] body.popup-page .permission-error-sheet { border-color: #262d2b; color: #eaf1ee; background: #0e1412; box-shadow: 0 -20px 50px rgb(0 0 0 / 50%); }
+html[data-theme="dark"] body.popup-page .permission-error-close { color: #eaf1ee; }
+html[data-theme="dark"] body.popup-page .permission-error-close span { background: #3a4642; }
+html[data-theme="dark"] body.popup-page .permission-error-sheet pre { border-color: #1d2421; color: #a9b3ae; background: #0c1210; }
+html[data-theme="dark"] body.popup-page button.permission-copy-details { border-color: #262d2b; color: #eaf1ee; background: #121816; }
+html[data-layout="tab"] body.popup-page .permission-error-sheet { width: min(100vw, 520px); }
+html[data-theme="dark"] body.popup-page .permission-error-close span { background: #3a4642; }
+html[data-theme="dark"] body.popup-page .firefox-permission-panel.permission-granted .permission-lock-mark { border-color: #2bd576; color: #2bd576; background: #10291c; box-shadow: 0 0 0 8px rgb(43 213 118 / 8%), 0 0 40px rgb(43 213 118 / 30%); }
+html[data-theme="dark"] body.popup-page .firefox-permission-panel.permission-granted .firefox-permission-overview h2 { color: #2bd576; }
+body.popup-page .firefox-permission-panel button:focus-visible { outline: 3px solid #596cf0; outline-offset: 2px; }
+html[data-theme="dark"] body.popup-page .firefox-permission-panel button:focus-visible { outline-color: #91a0ff; }
+body.popup-page .firefox-permission-panel button:disabled { opacity: .55; cursor: wait; }
+@media (max-height: 560px) {
+  body.popup-page .permission-lock-stage { height: 130px; flex-basis: 130px; }
+  body.popup-page .permission-lock-mark { width: 84px; height: 84px; }
+  body.popup-page .permission-lock-mark svg { width: 36px; height: 36px; }
+  body.popup-page .firefox-permission-steps li { height: 36px; flex-basis: 36px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  body.popup-page .permission-lock-mark,
+  body.popup-page button.permission-primary-action { transition: none; }
+}
 html[data-theme="light"] body.popup-page .site-check-actions .site-check-retest { border-color: #dce4df; color: #252d29; background: #f5f8f6; }

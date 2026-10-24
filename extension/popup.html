@@ -21,6 +21,43 @@
         <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M8 4H4v4M16 4h4v4M20 16v4h-4M4 16v4h4"/></svg>
       </button>
     </header>
+    <section id="firefoxPermissionPanel" class="firefox-permission-panel" aria-labelledby="firefoxPermissionTitle" hidden>
+      <div class="firefox-permission-overview" aria-live="polite">
+        <h2 id="firefoxPermissionTitle">One switch to flip</h2>
+        <p id="firefoxPermissionSubtitle">Firefox needs “Run in Private Windows” on to route your traffic, even in normal windows.</p>
+      </div>
+      <div class="firefox-permission-content">
+        <div class="permission-lock-stage" aria-hidden="true">
+          <svg class="permission-orbit-rings" viewBox="0 0 320 176"><circle cx="160" cy="88" r="68"/><circle cx="160" cy="88" r="86"/></svg>
+          <span class="permission-lock-mark">
+            <svg class="permission-lock-icon" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
+            <svg class="permission-check-icon" viewBox="0 0 24 24"><path d="m5 12 4.5 4.5L19 7.5"/></svg>
+          </span>
+        </div>
+        <ol class="firefox-permission-steps" aria-label="Steps to allow private windows">
+          <li><span class="permission-step-number">1</span><span>Open <kbd>about:addons</kbd></span></li>
+          <li><span class="permission-step-number">2</span><span>Tor Connect <i aria-hidden="true">›</i> <kbd>⋯</kbd> <i aria-hidden="true">›</i> Manage</span></li>
+          <li class="permission-step-current"><span class="permission-step-number">3</span><span>Run in Private Windows <i aria-hidden="true">›</i> <strong>Allow</strong></span></li>
+        </ol>
+      </div>
+      <div class="firefox-permission-actions">
+        <button id="copyAboutAddons" class="permission-primary-action" type="button">
+          <svg class="permission-copy-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h8"/></svg>
+          <svg class="permission-copied-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4.5 4.5L19 7.5"/></svg>
+          <span>Copy about:addons</span>
+        </button>
+        <div class="firefox-permission-secondary-actions">
+          <button id="keepPermissionStepsOpen" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/></svg>Keep steps open in a tab</button>
+          <button id="showPermissionErrorDetails" type="button" aria-expanded="false" aria-controls="permissionErrorSheet"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 7.6v.1"/></svg>Error details</button>
+        </div>
+      </div>
+      <button id="permissionErrorBackdrop" class="permission-error-backdrop" type="button" aria-label="Close error details" hidden></button>
+      <section id="permissionErrorSheet" class="permission-error-sheet" role="dialog" aria-label="Error details" aria-modal="true" hidden>
+        <button id="closePermissionErrorDetails" class="permission-error-close" type="button" aria-label="Close error details"><span></span>Error details</button>
+        <pre id="permissionErrorText"></pre>
+        <button id="copyPermissionErrorDetails" class="permission-copy-details" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h8"/></svg>Copy details</button>
+      </section>
+    </section>
     <section id="setupPanel" class="setup-panel" aria-labelledby="setupTitle" hidden>
       <div class="setup-orbit" aria-hidden="true">
         <svg class="setup-orbit-rings" viewBox="0 0 260 250" width="260" height="250">

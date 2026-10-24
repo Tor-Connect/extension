@@ -14,7 +14,7 @@ To build a specific release version:
 python3 scripts/build-firefox-package.py 0.7.0
 ```
 
-For local testing, load the generated ZIP from `about:debugging` → **This Firefox** → **Load Temporary Add-on**. The native helper must also be registered for Firefox. Firefox shares the Tor runtime installed for Chrome; the installer reuses it when its files are present, and only asks for the Tor Expert Bundle on a fresh or incomplete setup. The manual installer scripts support this with the `--firefox` option on macOS and Linux, or `-Firefox` on Windows:
+For local testing, load the generated ZIP from `about:debugging` → **This Firefox** → **Load Temporary Add-on**. The native helper must also be registered for Firefox. The setup wizard downloads the macOS, Windows, or Linux companion installer. It installs one shared Tor runtime and registers the helper with both Chrome and Firefox. Firefox uses its own native-messaging manifest and stable add-on ID. If you prefer a manual setup, the installer scripts support `--firefox` on macOS and Linux, or `-Firefox` on Windows:
 
 ```sh
 scripts/install-macos.sh --firefox /path/to/Tor-Expert-Bundle.tar.gz

@@ -18,7 +18,8 @@ command -v dpkg-deb >/dev/null || { echo "Install dpkg-deb to build the Linux pa
 package_root="$(mktemp -d "${TMPDIR:-/tmp}/tor-connect-deb.XXXXXX")"
 trap 'rm -rf "$package_root"' EXIT
 install -d "$package_root/DEBIAN" "$package_root/opt/tor-connect/runtime/bundle" \
-  "$package_root/etc/opt/chrome/native-messaging-hosts" "$output_dir"
+  "$package_root/etc/opt/chrome/native-messaging-hosts" \
+  "$package_root/usr/lib/mozilla/native-messaging-hosts" "$output_dir"
 
 python3 - "$bundle_archive" "$package_root/opt/tor-connect/runtime/bundle" <<'PY'
 import pathlib, sys, tarfile
@@ -66,6 +67,17 @@ pathlib.Path(path).write_text(json.dumps({
     "allowed_origins": [f"chrome-extension://{extension_id}/"],
 }, indent=2) + "\n", encoding="utf-8")
 PY
+python3 - "$package_root/usr/lib/mozilla/native-messaging-hosts/org.torconnect.torchrome.json" <<'PY'
+import json, pathlib, sys
+path = pathlib.Path(sys.argv[1])
+path.write_text(json.dumps({
+    "name": "org.torconnect.torchrome",
+    "description": "Local Tor connection helper",
+    "path": "/opt/tor-connect/tor-chrome-host",
+    "type": "stdio",
+    "allowed_extensions": ["{92FAAAD1-58C8-461B-8447-0A43AE6CF002}"],
+}, indent=2) + "\n", encoding="utf-8")
+PY
 
 cat > "$package_root/DEBIAN/control" <<CONTROL
 Package: tor-connect-setup
@@ -75,8 +87,8 @@ Priority: optional
 Architecture: amd64
 Depends: python3
 Maintainer: Tor Connect
-Description: Tor Connect companion runtime for Google Chrome
- Installs the Tor Expert Bundle and local Chrome native messaging helper.
+Description: Tor Connect companion runtime for Chrome and Firefox
+ Installs the Tor Expert Bundle and local browser native messaging helpers.
 CONTROL
 
 dpkg-deb --root-owner-group --build "$package_root" "$output_dir/Tor-Connect-Setup-Linux-x64.deb"
