@@ -13,23 +13,15 @@ document.querySelectorAll("[data-platform]").forEach((section) => {
 document.querySelector("#setupEyebrow").textContent = platformName === "mac"
   ? "ONE-TIME MAC SETUP"
   : `ONE-TIME ${platformName.toUpperCase()} SETUP`;
-document.querySelector("h1").textContent = "Connect Chrome through Tor";
-document.querySelector("#setupIntro").textContent = "A small companion app installs Tor on this computer and connects it to Chrome. You only need to set it up once.";
+document.querySelector("h1").textContent = "Connect your browser through Tor";
+document.querySelector("#setupIntro").textContent = "A small companion app installs Tor on this computer and connects it to your browser. You only need to set it up once.";
 const setupInstructions = document.querySelector("#setupInstructions");
-if (isFirefox) {
-  setupInstructions.textContent = platformName === "linux"
-    ? "Download and install the Debian package. It includes Tor and connects it to Chrome."
-    : platformName === "windows"
-      ? "Download and open the Windows installer. It includes Tor and connects it to Chrome."
-      : platformName === "mac"
-        ? "Download and open the Mac setup app. It includes Tor and connects it to Chrome."
-        : "Open this page in Chrome on the computer you want to set up.";
-} else if (platformName === "linux") {
-  setupInstructions.textContent = "Download and install the Debian package. It includes Tor and connects it to Chrome.";
+if (platformName === "linux") {
+  setupInstructions.textContent = "Download and install the Debian package. It includes Tor and connects it to your browser.";
 } else if (platformName === "windows") {
-  setupInstructions.textContent = "Download and open the Windows installer. It includes Tor and connects it to Chrome.";
+  setupInstructions.textContent = "Download and open the Windows installer. It includes Tor and connects it to your browser.";
 } else if (platformName === "mac") {
-  setupInstructions.textContent = "Download and open the Mac setup app. It includes Tor and connects it to Chrome.";
+  setupInstructions.textContent = "Download and open the Mac setup app. It includes Tor and connects it to your browser.";
 }
 
 const installerByPlatform = {
@@ -50,7 +42,7 @@ if (installer) {
 }
 if (platformName === "unknown") {
   document.querySelector("#setupEyebrow").textContent = "ONE-TIME SETUP";
-  setupInstructions.textContent = `Open this page in ${isFirefox ? "Firefox" : "Chrome"} on the computer you want to set up.`;
+  setupInstructions.textContent = "Open this page in your browser on the computer you want to set up.";
 }
 
 const extensionId = globalThis.chrome?.runtime?.id || "<Chrome extension ID>";
