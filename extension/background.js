@@ -126,9 +126,8 @@ async function applyProxyForConnectedResult(result, generation, { forceCheck = f
     throw error;
   }
 
-  if (generation !== connectivityGeneration) return result;
   if (!proxyApplied) {
-    await setActionConnected(false);
+    if (generation === connectivityGeneration) await setActionConnected(false);
     return {
       ...result,
       ok: false,
@@ -136,6 +135,7 @@ async function applyProxyForConnectedResult(result, generation, { forceCheck = f
       error: "Firefox did not apply Tor's proxy settings. Another extension may control the proxy settings."
     };
   }
+  if (generation !== connectivityGeneration) return result;
 
   await setActionConnected(true, result.bridgeActivity === "trying");
   if (forceCheck) {
