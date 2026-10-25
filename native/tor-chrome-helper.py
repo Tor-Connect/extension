@@ -18,6 +18,7 @@ import time
 from pathlib import Path
 
 HOST_NAME = "org.torconnect.torchrome"
+FIREFOX_ADDON_ID = "{92FAAAD1-58C8-461B-8447-0A43AE6CF002}"
 PROXY_PORT = 9050
 MAX_MESSAGE = 1_048_576
 MANUAL_BRIDGE_CONNECT_TIMEOUT = 5 * 60
@@ -735,10 +736,12 @@ def write_message(obj: dict) -> None:
 
 def main() -> int:
     extension_id_path = BASE / "extension-id"
-    try: expected = extension_id_path.read_text(encoding="utf-8").strip()
-    except OSError: return 2
-    origins = [arg for arg in sys.argv[1:] if arg.startswith("chrome-extension://")]
-    if not origins or origins[0].rstrip("/") != f"chrome-extension://{expected}": return 2
+    arguments = sys.argv[1:]
+    if FIREFOX_ADDON_ID not in arguments:
+        try: expected = extension_id_path.read_text(encoding="utf-8").strip()
+        except OSError: return 2
+        origins = [arg for arg in arguments if arg.startswith("chrome-extension://")]
+        if not origins or origins[0].rstrip("/") != f"chrome-extension://{expected}": return 2
     helper = Helper()
     while True:
         prefix = read_exact(sys.stdin.buffer, 4)

@@ -4,7 +4,7 @@ let nativePort;
 let pending = new Map();
 let nextId = 1;
 let lastLoggedStatus;
-let lastActionConnected;
+let actionUpdateQueue = Promise.resolve();
 let connectivityGeneration = 0;
 let connectivityCheckConnectionId;
 let connectivityCheckState = "";
@@ -117,6 +117,39 @@ function addConnectivityCheck(result) {
   return result;
 }
 
+async function applyProxyForConnectedResult(result, generation, { forceCheck = false } = {}) {
+  let proxyApplied;
+  try {
+    proxyApplied = await setTorProxy();
+  } catch (error) {
+    if (generation === connectivityGeneration) await setActionConnected(false);
+    throw error;
+  }
+
+  if (!proxyApplied) {
+    if (generation === connectivityGeneration) await setActionConnected(false);
+    return {
+      ...result,
+      ok: false,
+      state: "failed",
+      error: "Firefox did not apply Tor's proxy settings. Another extension may control the proxy settings."
+    };
+  }
+  if (generation !== connectivityGeneration) return result;
+
+  await setActionConnected(true, result.bridgeActivity === "trying");
+  if (forceCheck) {
+    connectivityCheckState = "";
+    connectivitySiteResults = [];
+    connectivityCheckRetryAt = 0;
+  }
+  if (generation === connectivityGeneration) {
+    const check = checkConnectivityAfterConnect(result, generation, { force: forceCheck });
+    if (forceCheck) await check;
+  }
+  return result;
+}
+
 function logHelperResult(command, result) {
   const entry = {
     command,
@@ -148,13 +181,11 @@ function connectHost() {
       const connected = message.ok && message.state === "connected";
       const generation = trackConnectivityConnection(message);
       if (connected) {
-        setTorProxy().then(() => {
-          if (generation === connectivityGeneration) checkConnectivityAfterConnect(message, generation);
-        }).catch(() => {});
+        applyProxyForConnectedResult(message, generation).catch(() => {});
       } else {
         checkConnectivityAfterConnect(message, generation);
+        setActionConnected(false).catch(() => {});
       }
-      setActionConnected(connected, connected && message.bridgeActivity === "trying").catch(() => {});
       return;
     }
     const resolve = pending.get(message.id);
@@ -166,8 +197,8 @@ function connectHost() {
   nativePort.onDisconnect.addListener(() => {
     const hostError = chrome.runtime.lastError?.message;
     const errorMessage = hostError
-      ? `Native helper unavailable: ${hostError}. Check its installation and restart Chrome.`
-      : "Native helper disconnected. Restart Chrome and check the helper installation.";
+      ? `Native helper unavailable: ${hostError}. Check its installation and restart your browser.`
+      : "Native helper disconnected. Check its installation and restart your browser.";
     console.warn("[Tor extension] native helper disconnected", errorMessage);
     nativePort = undefined;
     resetConnectivityCheck();
@@ -198,12 +229,17 @@ function request(command, fields = {}, timeoutMs = 15000) {
 }
 
 async function clearProxy() {
+  if (globalThis.TOR_CONNECT_FIREFOX) {
+    await browser.proxy.settings.clear({});
+    return;
+  }
   await chrome.proxy.settings.clear({ scope: "regular" });
 }
 
 async function setActionConnected(connected, reconnecting = false) {
-  if (lastActionConnected !== connected) {
-    const variant = connected ? "connected" : "disconnected";
+  const variant = reconnecting ? "reconnecting" : connected ? "connected" : "disconnected";
+  const title = reconnecting ? "Reconnecting to Tor" : connected ? "Connected to Tor" : "Tor connection";
+  const update = actionUpdateQueue.then(async () => {
     await chrome.action.setIcon({
       path: {
         16: `icons/${variant}-16.png`,
@@ -211,29 +247,26 @@ async function setActionConnected(connected, reconnecting = false) {
         48: `icons/${variant}-48.png`
       }
     });
-    lastActionConnected = connected;
-  }
-  if (reconnecting) {
-    await chrome.action.setIcon({
-      path: {
-        16: "icons/reconnecting-16.png",
-        32: "icons/reconnecting-32.png",
-        48: "icons/reconnecting-48.png"
-      }
-    });
-  } else if (connected && lastActionConnected === connected) {
-    await chrome.action.setIcon({
-      path: {
-        16: "icons/connected-16.png",
-        32: "icons/connected-32.png",
-        48: "icons/connected-48.png"
-      }
-    });
-  }
-  await chrome.action.setTitle({ title: reconnecting ? "Reconnecting to Tor" : connected ? "Connected to Tor" : "Tor connection" });
+    await chrome.action.setTitle({ title });
+  });
+  actionUpdateQueue = update.catch(() => {});
+  return update;
 }
 
+// Start with the disconnected icon until a fresh helper status confirms Tor is connected.
+setActionConnected(false).catch(() => {});
+
 async function setTorProxy() {
+  if (globalThis.TOR_CONNECT_FIREFOX) {
+    return browser.proxy.settings.set({
+      value: {
+        proxyType: "manual",
+        socks: `127.0.0.1:${PROXY_PORT}`,
+        socksVersion: 5,
+        proxyDNS: true
+      }
+    });
+  }
   await chrome.proxy.settings.set({
     value: {
       mode: "fixed_servers",
@@ -241,6 +274,7 @@ async function setTorProxy() {
     },
     scope: "regular"
   });
+  return true;
 }
 
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
@@ -252,12 +286,13 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       const connected = result.ok && result.state === "connected";
       const generation = trackConnectivityConnection(result);
       if (connected) {
-        await setTorProxy();
-        if (generation === connectivityGeneration) checkConnectivityAfterConnect(result, generation);
+        const appliedResult = await applyProxyForConnectedResult(result, generation);
+        sendResponse(addConnectivityCheck(appliedResult));
+        return;
       } else {
         checkConnectivityAfterConnect(result, generation);
       }
-      await setActionConnected(connected, connected && result.bridgeActivity === "trying");
+      await setActionConnected(false);
       sendResponse(addConnectivityCheck(result));
       return;
     }
@@ -265,14 +300,11 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       const result = await request("status");
       const generation = trackConnectivityConnection(result);
       if (result.ok && result.state === "connected") {
-        await setTorProxy();
-        if (generation === connectivityGeneration) {
-          connectivityCheckState = "";
-          connectivitySiteResults = [];
-          connectivityCheckRetryAt = 0;
-          await checkConnectivityAfterConnect(result, generation, { force: true });
-        }
+        const appliedResult = await applyProxyForConnectedResult(result, generation, { forceCheck: true });
+        sendResponse(addConnectivityCheck(appliedResult));
+        return;
       }
+      await setActionConnected(false);
       sendResponse(addConnectivityCheck(result));
       return;
     }
@@ -296,12 +328,13 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       const connected = result.ok && result.state === "connected";
       const generation = trackConnectivityConnection(result);
       if (connected) {
-        await setTorProxy();
-        if (generation === connectivityGeneration) checkConnectivityAfterConnect(result, generation);
+        const appliedResult = await applyProxyForConnectedResult(result, generation);
+        sendResponse(addConnectivityCheck(appliedResult));
+        return;
       } else {
         checkConnectivityAfterConnect(result, generation);
       }
-      await setActionConnected(connected);
+      await setActionConnected(false);
       sendResponse(addConnectivityCheck(result));
       return;
     }

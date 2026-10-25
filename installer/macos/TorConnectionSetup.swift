@@ -4,6 +4,8 @@ private struct InstallerConfig: Decodable {
     let extensionId: String
 }
 
+private let firefoxExtensionId = "{92FAAAD1-58C8-461B-8447-0A43AE6CF002}"
+
 @main
 private struct TorConnectionSetupApp {
     static func main() {
@@ -16,11 +18,13 @@ private struct TorConnectionSetupApp {
     }
 }
 
-private final class InstallerWindowController: NSObject, NSApplicationDelegate {
+private final class InstallerWindowController: NSObject, NSApplicationDelegate, NSWindowDelegate {
     private var window: NSWindow!
     private var installButton: NSButton!
+    private var cancelButton: NSButton!
     private var statusLabel: NSTextField!
     private var progress: NSProgressIndicator!
+    private var isInstalling = false
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         buildWindow()
@@ -28,50 +32,55 @@ private final class InstallerWindowController: NSObject, NSApplicationDelegate {
         NSApp.activate(ignoringOtherApps: true)
     }
 
+    func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { true }
+
+    func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+        isInstalling ? .terminateCancel : .terminateNow
+    }
+
+    func windowShouldClose(_ sender: NSWindow) -> Bool { !isInstalling }
+
     private func buildWindow() {
-        let frame = NSRect(x: 0, y: 0, width: 570, height: 570)
+        let frame = NSRect(x: 0, y: 0, width: 570, height: 540)
         window = NSWindow(contentRect: frame, styleMask: [.titled, .closable, .miniaturizable], backing: .buffered, defer: false)
         window.title = "Tor Connect Setup"
         window.center()
         window.isReleasedWhenClosed = false
+        window.delegate = self
 
         let root = NSView(frame: frame)
         root.wantsLayer = true
         root.layer?.backgroundColor = NSColor.windowBackgroundColor.cgColor
         window.contentView = root
 
-        let brandIcon = NSView(frame: NSRect(x: 30, y: 493, width: 46, height: 46))
-        brandIcon.wantsLayer = true
-        brandIcon.layer?.backgroundColor = NSColor(calibratedRed: 0.34, green: 0.27, blue: 0.79, alpha: 1).cgColor
-        brandIcon.layer?.cornerRadius = 23
+        let brandIcon = NSImageView(frame: NSRect(x: 30, y: 463, width: 46, height: 46))
+        brandIcon.imageScaling = .scaleProportionallyUpOrDown
+        brandIcon.image = Bundle.main.url(forResource: "TorConnectIcon", withExtension: "png")
+            .flatMap { NSImage(contentsOf: $0) }
         root.addSubview(brandIcon)
-        let iconText = label("T", size: 21, weight: .bold, color: .white)
-        iconText.frame = NSRect(x: 0, y: 9, width: 46, height: 28)
-        iconText.alignment = .center
-        brandIcon.addSubview(iconText)
 
         let title = label("Tor Connect", size: 18, weight: .semibold)
-        title.frame = NSRect(x: 88, y: 515, width: 230, height: 23)
+        title.frame = NSRect(x: 88, y: 485, width: 230, height: 23)
         root.addSubview(title)
         let eyebrow = label("COMPANION SETUP", size: 10, weight: .bold, color: .secondaryLabelColor)
-        eyebrow.frame = NSRect(x: 89, y: 498, width: 220, height: 14)
+        eyebrow.frame = NSRect(x: 89, y: 468, width: 220, height: 14)
         eyebrow.attributedStringValue = NSAttributedString(string: "COMPANION SETUP", attributes: [.kern: 1.4, .font: NSFont.systemFont(ofSize: 10, weight: .bold), .foregroundColor: NSColor.secondaryLabelColor])
         root.addSubview(eyebrow)
 
-        let divider = NSBox(frame: NSRect(x: 30, y: 473, width: 510, height: 1))
+        let divider = NSBox(frame: NSRect(x: 30, y: 443, width: 510, height: 1))
         divider.boxType = .separator
         root.addSubview(divider)
 
-        let heading = label("Connect Chrome through Tor", size: 28, weight: .bold)
-        heading.frame = NSRect(x: 30, y: 411, width: 500, height: 38)
+        let heading = label("Set up Tor Connect", size: 25, weight: .bold)
+        heading.frame = NSRect(x: 30, y: 393, width: 500, height: 38)
         root.addSubview(heading)
-        let intro = label("Install Tor and connect it to Chrome in one step. Tor runs locally on this Mac.", size: 14, weight: .regular, color: .secondaryLabelColor)
-        intro.frame = NSRect(x: 30, y: 365, width: 500, height: 40)
+        let intro = label("Install Tor and connect your browser in one step.", size: 14, weight: .regular, color: .secondaryLabelColor)
+        intro.frame = NSRect(x: 30, y: 346, width: 500, height: 24)
         intro.lineBreakMode = .byWordWrapping
         intro.maximumNumberOfLines = 2
         root.addSubview(intro)
 
-        let card = NSView(frame: NSRect(x: 30, y: 221, width: 510, height: 122))
+        let card = NSView(frame: NSRect(x: 30, y: 217, width: 510, height: 122))
         card.wantsLayer = true
         card.layer?.backgroundColor = NSColor.controlBackgroundColor.cgColor
         card.layer?.cornerRadius = 14
@@ -81,7 +90,7 @@ private final class InstallerWindowController: NSObject, NSApplicationDelegate {
 
         let bundleIcon = NSImageView(frame: NSRect(x: 17, y: 65, width: 38, height: 38))
         bundleIcon.image = NSImage(systemSymbolName: "shippingbox", accessibilityDescription: "Tor bundle")
-        bundleIcon.contentTintColor = NSColor(calibratedRed: 0.34, green: 0.27, blue: 0.79, alpha: 1)
+        bundleIcon.contentTintColor = .systemGreen
         card.addSubview(bundleIcon)
         let bundleTitle = label("Tor Expert Bundle", size: 14, weight: .semibold)
         bundleTitle.frame = NSRect(x: 67, y: 80, width: 380, height: 19)
@@ -94,37 +103,26 @@ private final class InstallerWindowController: NSObject, NSApplicationDelegate {
         bundleNotice.frame = NSRect(x: 17, y: 17, width: 450, height: 18)
         card.addSubview(bundleNotice)
 
-        let privacy = label("Tor runs on this Mac. Your bridge lines stay on this Mac.", size: 12, weight: .medium, color: .secondaryLabelColor)
-        privacy.frame = NSRect(x: 30, y: 191, width: 500, height: 18)
-        let shield = NSImageView(frame: NSRect(x: 30, y: 191, width: 15, height: 16))
-        shield.image = NSImage(systemSymbolName: "lock.shield", accessibilityDescription: "Private on this Mac")
-        shield.contentTintColor = NSColor.systemGreen
-        root.addSubview(shield)
-        privacy.frame.origin.x = 52
-        root.addSubview(privacy)
-
-        let extensionIdLabel = label("Chrome extension ID", size: 11, weight: .medium, color: .secondaryLabelColor)
-        extensionIdLabel.frame = NSRect(x: 30, y: 158, width: 126, height: 16)
-        root.addSubview(extensionIdLabel)
-        let extensionIdValue = label(configuredExtensionId, size: 10, weight: .regular, color: .secondaryLabelColor)
-        extensionIdValue.font = NSFont.monospacedSystemFont(ofSize: 10, weight: .regular)
-        extensionIdValue.frame = NSRect(x: 158, y: 158, width: 382, height: 16)
-        root.addSubview(extensionIdValue)
-
         statusLabel = label("", size: 12, weight: .medium, color: .secondaryLabelColor)
-        statusLabel.frame = NSRect(x: 54, y: 105, width: 485, height: 38)
+        statusLabel.frame = NSRect(x: 54, y: 148, width: 485, height: 38)
         statusLabel.lineBreakMode = .byWordWrapping
         statusLabel.maximumNumberOfLines = 2
         root.addSubview(statusLabel)
-        progress = NSProgressIndicator(frame: NSRect(x: 30, y: 116, width: 16, height: 16))
+        progress = NSProgressIndicator(frame: NSRect(x: 30, y: 159, width: 16, height: 16))
         progress.style = .spinning
         progress.isDisplayedWhenStopped = false
         root.addSubview(progress)
 
-        installButton = NSButton(title: "Install for Chrome", target: self, action: #selector(install))
+        cancelButton = NSButton(title: "Cancel", target: self, action: #selector(cancel))
+        cancelButton.bezelStyle = .rounded
+        cancelButton.keyEquivalent = "\u{1b}"
+        cancelButton.frame = NSRect(x: 314, y: 42, width: 100, height: 36)
+        root.addSubview(cancelButton)
+
+        installButton = NSButton(title: "Install", target: self, action: #selector(install))
         installButton.bezelStyle = .rounded
         installButton.keyEquivalent = "\r"
-        installButton.frame = NSRect(x: 385, y: 47, width: 155, height: 36)
+        installButton.frame = NSRect(x: 426, y: 42, width: 114, height: 36)
         root.addSubview(installButton)
     }
 
@@ -144,31 +142,39 @@ private final class InstallerWindowController: NSObject, NSApplicationDelegate {
     }
 
     @objc private func install() {
+        isInstalling = true
         installButton.isEnabled = false
-        statusLabel.stringValue = "Installing Tor and registering the Chrome helper…"
+        cancelButton.isEnabled = false
+        statusLabel.stringValue = "Installing Tor and registering browser helpers…"
         progress.startAnimation(nil)
         DispatchQueue.global(qos: .userInitiated).async {
             do {
                 try LocalInstaller.install()
                 DispatchQueue.main.async {
+                    self.isInstalling = false
                     self.progress.stopAnimation(nil)
                     self.statusLabel.textColor = .systemGreen
-                    self.statusLabel.stringValue = "Setup complete. Restart Chrome to connect."
+                    self.statusLabel.stringValue = "Setup complete. Restart your browser to connect."
                     self.installButton.title = "Done"
                     self.installButton.isEnabled = true
                     self.installButton.target = self
                     self.installButton.action = #selector(self.finish)
+                    self.cancelButton.isHidden = true
                 }
             } catch {
                 DispatchQueue.main.async {
+                    self.isInstalling = false
                     self.progress.stopAnimation(nil)
                     self.statusLabel.textColor = .systemRed
                     self.statusLabel.stringValue = error.localizedDescription
                     self.installButton.isEnabled = true
+                    self.cancelButton.isEnabled = true
                 }
             }
         }
     }
+
+    @objc private func cancel() { NSApp.terminate(nil) }
 
     @objc private func finish() { NSApp.terminate(nil) }
 }
@@ -221,11 +227,14 @@ private enum LocalInstaller {
         let installedBundle = runtime.appendingPathComponent("bundle", isDirectory: true)
         let stagedBundle = runtime.appendingPathComponent("bundle-new-\(UUID().uuidString)", isDirectory: true)
         let backupBundle = runtime.appendingPathComponent("bundle-old-\(UUID().uuidString)", isDirectory: true)
-        let nativeHosts = FileManager.default.homeDirectoryForCurrentUser
+        let chromeNativeHosts = FileManager.default.homeDirectoryForCurrentUser
             .appendingPathComponent("Library/Application Support/Google/Chrome/NativeMessagingHosts", isDirectory: true)
+        let firefoxNativeHosts = FileManager.default.homeDirectoryForCurrentUser
+            .appendingPathComponent("Library/Application Support/Mozilla/NativeMessagingHosts", isDirectory: true)
 
         try FileManager.default.createDirectory(at: runtime, withIntermediateDirectories: true)
-        try FileManager.default.createDirectory(at: nativeHosts, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: chromeNativeHosts, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: firefoxNativeHosts, withIntermediateDirectories: true)
         try FileManager.default.copyItem(at: extracted, to: stagedBundle)
         defer { try? FileManager.default.removeItem(at: stagedBundle) }
         let torRelative = try relativePath(of: tor, inside: extracted)
@@ -264,17 +273,22 @@ private enum LocalInstaller {
                    runtime.appendingPathComponent("transport-path").path,
                    support.appendingPathComponent("extension-id").path])
 
-        let manifest = NativeHostManifest(
-            name: "org.torconnect.torchrome",
-            description: "Local Tor connection helper",
-            path: helper.path,
-            type: "stdio",
-            allowed_origins: ["chrome-extension://\(config.extensionId)/"]
-        )
-        let data = try JSONEncoder.pretty.encode(manifest)
-        let manifestURL = nativeHosts.appendingPathComponent("org.torconnect.torchrome.json")
-        try data.write(to: manifestURL, options: .atomic)
-        try chmod(["600", manifestURL.path])
+        let chromeManifest: [String: Any] = [
+            "name": "org.torconnect.torchrome",
+            "description": "Local Tor connection helper",
+            "path": helper.path,
+            "type": "stdio",
+            "allowed_origins": ["chrome-extension://\(config.extensionId)/"]
+        ]
+        let firefoxManifest: [String: Any] = [
+            "name": "org.torconnect.torchrome",
+            "description": "Local Tor connection helper",
+            "path": helper.path,
+            "type": "stdio",
+            "allowed_extensions": [firefoxExtensionId]
+        ]
+        try writeManifest(chromeManifest, to: chromeNativeHosts.appendingPathComponent("org.torconnect.torchrome.json"))
+        try writeManifest(firefoxManifest, to: firefoxNativeHosts.appendingPathComponent("org.torconnect.torchrome.json"))
     }
 
     private static func findExecutable(named name: String, in root: URL) -> URL? {
@@ -326,6 +340,12 @@ private enum LocalInstaller {
         try Data((value + "\n").utf8).write(to: url, options: .atomic)
     }
 
+    private static func writeManifest(_ manifest: [String: Any], to url: URL) throws {
+        let data = try JSONSerialization.data(withJSONObject: manifest, options: [.prettyPrinted, .sortedKeys])
+        try data.write(to: url, options: .atomic)
+        try chmod(["600", url.path])
+    }
+
     private static func chmod(_ arguments: [String]) throws { _ = try run("/bin/chmod", arguments) }
 
     private static func run(_ executable: String, _ arguments: [String]) throws -> String {
@@ -345,22 +365,6 @@ private enum LocalInstaller {
             throw SetupError(message?.isEmpty == false ? message! : "A required install step failed.")
         }
         return String(data: outData, encoding: .utf8) ?? ""
-    }
-}
-
-private struct NativeHostManifest: Encodable {
-    let name: String
-    let description: String
-    let path: String
-    let type: String
-    let allowed_origins: [String]
-}
-
-private extension JSONEncoder {
-    static var pretty: JSONEncoder {
-        let encoder = JSONEncoder()
-        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-        return encoder
     }
 }
 

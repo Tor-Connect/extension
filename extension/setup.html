@@ -51,7 +51,6 @@
       <a id="windowsInstallerDownload" class="button secondary" hidden>Download the Windows installer</a>
       <a id="linuxInstallerDownload" class="button secondary" hidden>Download the Debian/Ubuntu package</a>
       <button id="installerUnavailable" class="button secondary" type="button" disabled>Installer not available yet</button>
-      <p id="installerHelp" class="hint">You only need to set this up once. Your bridge lines stay on this computer.</p>
     </section>
 
     <details data-platform="mac">
@@ -80,10 +79,10 @@
 
     <div id="manualPanel" role="tabpanel" aria-labelledby="manualTab">
       <section>
-        <h2>Install it yourself</h2>
-        <p class="manual-intro">Download the Tor Expert Bundle from the Tor Project, then run the command for your computer. The command downloads Tor Connect’s small setup script and installs the local helper.</p>
+        <h2 id="manualTitle">Install it yourself</h2>
+        <p id="manualIntro" class="manual-intro">Download the Tor Expert Bundle from the Tor Project, then run the command for your computer. The command downloads Tor Connect’s small setup script and installs the local helper.</p>
         <div class="manual-downloads">
-          <a class="button secondary" href="https://www.torproject.org/download/tor/" target="_blank" rel="noreferrer">Download Tor Expert Bundle ↗</a>
+          <a id="bundleDownloadLink" class="button secondary" href="https://www.torproject.org/download/tor/" target="_blank" rel="noreferrer">Download Tor Expert Bundle ↗</a>
         </div>
       </section>
 
@@ -117,7 +116,7 @@
           <summary>View command</summary>
           <pre id="macManualCommand" dir="ltr"></pre>
         </details>
-        <p class="hint">The script removes download quarantine and ad hoc signs the local Tor files macOS needs to load. No Apple developer certificate is used. Restart Chrome after setup.</p>
+        <p class="hint">The script removes download quarantine and ad hoc signs the local Tor files macOS needs to load. No Apple developer certificate is used. Restart your browser after setup.</p>
       </section>
       <section id="windowsOsPanel" class="os-panel" role="tabpanel" aria-labelledby="windowsOsTab" data-os="windows" hidden>
         <h2>Windows · PowerShell</h2>
@@ -133,7 +132,7 @@
           <summary>View command</summary>
           <pre id="windowsManualCommand" dir="ltr"></pre>
         </details>
-        <p class="hint">Restart Chrome after setup to load the local Tor helper.</p>
+        <p class="hint">Restart your browser after setup to load the local Tor helper.</p>
       </section>
       <section id="linuxOsPanel" class="os-panel" role="tabpanel" aria-labelledby="linuxOsTab" data-os="linux" hidden>
         <h2>Linux · Terminal</h2>
@@ -149,10 +148,11 @@
           <summary>View command</summary>
           <pre id="linuxManualCommand" dir="ltr"></pre>
         </details>
-        <p class="hint">Restart Chrome after setup to load the local Tor helper.</p>
+        <p class="hint">Restart your browser after setup to load the local Tor helper.</p>
       </section>
     </div>
   </main>
+  <script src="platform-ui.js"></script>
   <script src="i18n.js"></script>
   <script src="theme.js"></script>
   <script src="setup.js"></script>

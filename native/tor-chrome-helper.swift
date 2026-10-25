@@ -983,12 +983,18 @@ func writeMessage(_ object: [String: Any]) {
     FileHandle.standardOutput.write(prefix + data)
 }
 
-guard CommandLine.arguments.count > 1,
-      let expectedExtensionID = try? String(contentsOf: extensionIDURL, encoding: .utf8).trimmingCharacters(in: .whitespacesAndNewlines),
-      let callerOrigin = URL(string: CommandLine.arguments[1]),
-      callerOrigin.scheme == "chrome-extension",
-      callerOrigin.host == expectedExtensionID,
-      callerOrigin.path.isEmpty || callerOrigin.path == "/" else { exit(2) }
+let firefoxAddonID = "{92FAAAD1-58C8-461B-8447-0A43AE6CF002}"
+let callerArguments = Array(CommandLine.arguments.dropFirst())
+let isFirefoxCaller = callerArguments.contains(firefoxAddonID)
+let isChromeCaller = callerArguments.contains { argument in
+    guard argument.hasPrefix("chrome-extension://"),
+          let callerOrigin = URL(string: argument),
+          let expectedExtensionID = try? String(contentsOf: extensionIDURL, encoding: .utf8).trimmingCharacters(in: .whitespacesAndNewlines) else { return false }
+    return callerOrigin.scheme == "chrome-extension"
+        && callerOrigin.host == expectedExtensionID
+        && (callerOrigin.path.isEmpty || callerOrigin.path == "/")
+}
+guard isChromeCaller || isFirefoxCaller else { exit(2) }
 let helper = Helper()
 while let prefix = readExact(4) {
     let length = prefix.withUnsafeBytes { $0.load(as: UInt32.self).littleEndian }

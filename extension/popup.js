@@ -28,6 +28,18 @@ const setupPanelNode = document.querySelector("#setupPanel");
 const setupDescriptionNode = document.querySelector("#setupDescription");
 const openFullScreenButton = document.querySelector("#openFullScreen");
 const openSettingsButton = document.querySelector("#openSettings");
+const firefoxPermissionPanelNode = document.querySelector("#firefoxPermissionPanel");
+const firefoxPermissionTitleNode = document.querySelector("#firefoxPermissionTitle");
+const firefoxPermissionSubtitleNode = document.querySelector("#firefoxPermissionSubtitle");
+const copyAboutAddonsButton = document.querySelector("#copyAboutAddons");
+const keepPermissionStepsOpenButton = document.querySelector("#keepPermissionStepsOpen");
+const showPermissionErrorDetailsButton = document.querySelector("#showPermissionErrorDetails");
+const permissionErrorBackdropNode = document.querySelector("#permissionErrorBackdrop");
+const permissionErrorSheetNode = document.querySelector("#permissionErrorSheet");
+const closePermissionErrorDetailsButton = document.querySelector("#closePermissionErrorDetails");
+const permissionErrorTextNode = document.querySelector("#permissionErrorText");
+const copyPermissionErrorDetailsButton = document.querySelector("#copyPermissionErrorDetails");
+const isFirefoxExtension = typeof browser !== "undefined" && typeof browser.runtime?.getBrowserInfo === "function";
 const bridgeSelectorNode = document.querySelector("#bridgeSelector");
 const statsToggleNode = document.querySelector("#statsToggle");
 const liveStatsNode = document.querySelector("#liveStats");
@@ -61,6 +73,125 @@ let connectedDurationStartedAt = 0;
 let connectedDurationInterval;
 let routeBridgeLine = "";
 let copyFeedbackTimer;
+let firefoxPermissionPollTimer;
+let firefoxPermissionSuccessTimer;
+
+function closePermissionErrorDetails(restoreFocus = true) {
+  const wasOpen = !permissionErrorSheetNode.hidden;
+  permissionErrorSheetNode.hidden = true;
+  permissionErrorBackdropNode.hidden = true;
+  showPermissionErrorDetailsButton.setAttribute("aria-expanded", "false");
+  if (restoreFocus && wasOpen) showPermissionErrorDetailsButton.focus();
+}
+
+function openPermissionErrorDetails() {
+  permissionErrorTextNode.textContent = "Private browsing access is off for this add-on. Firefox blocks proxy control until it is allowed.";
+  permissionErrorBackdropNode.hidden = false;
+  permissionErrorSheetNode.hidden = false;
+  showPermissionErrorDetailsButton.setAttribute("aria-expanded", "true");
+  closePermissionErrorDetailsButton.focus();
+}
+
+async function copyPermissionText(text, button) {
+  button.disabled = true;
+  try {
+    const allowed = await new Promise((resolve) => chrome.permissions.request({ permissions: ["clipboardWrite"] }, resolve));
+    if (!allowed) throw new Error("Clipboard permission was not granted");
+    await navigator.clipboard.writeText(text);
+    button.classList.add("is-copied");
+    button.setAttribute("aria-label", "Copied");
+    window.setTimeout(() => {
+      button.classList.remove("is-copied");
+      button.removeAttribute("aria-label");
+    }, 1500);
+  } catch {
+    button.title = "Could not copy text";
+    window.setTimeout(() => { button.removeAttribute("title"); }, 1800);
+  } finally {
+    button.disabled = false;
+  }
+}
+
+function hasFirefoxPrivateWindowAccess() {
+  const checkAccess = browser.extension?.isAllowedIncognitoAccess;
+  return typeof checkAccess === "function"
+    ? checkAccess.call(browser.extension).catch(() => false)
+    : Promise.resolve(false);
+}
+
+function stopFirefoxPermissionWatch() {
+  if (firefoxPermissionPollTimer) clearTimeout(firefoxPermissionPollTimer);
+  if (firefoxPermissionSuccessTimer) clearTimeout(firefoxPermissionSuccessTimer);
+  firefoxPermissionPollTimer = undefined;
+  firefoxPermissionSuccessTimer = undefined;
+}
+
+async function watchFirefoxPermission() {
+  if (firefoxPermissionPanelNode.hidden) return;
+  if (await hasFirefoxPrivateWindowAccess()) {
+    stopFirefoxPermissionWatch();
+    firefoxPermissionPanelNode.classList.add("permission-granted");
+    firefoxPermissionTitleNode.textContent = "Allowed";
+    firefoxPermissionSubtitleNode.textContent = "You’re all set.";
+    firefoxPermissionSuccessTimer = window.setTimeout(() => {
+      firefoxPermissionPanelNode.hidden = true;
+      firefoxPermissionPanelNode.classList.remove("permission-granted");
+      firefoxPermissionTitleNode.textContent = "One switch to flip";
+      firefoxPermissionSubtitleNode.textContent = "Firefox needs “Run in Private Windows” on to route your traffic, even in normal windows.";
+      renderResult({ ok: true, state: "disconnected" });
+    }, 1600);
+    return;
+  }
+  firefoxPermissionPollTimer = window.setTimeout(watchFirefoxPermission, 1400);
+}
+
+function showFirefoxPermission() {
+  stopFirefoxPermissionWatch();
+  closePermissionErrorDetails(false);
+  permissionErrorTextNode.textContent = "Private browsing access is off for this add-on. Firefox blocks proxy control until it is allowed.";
+  popupMainNode.dataset.view = "firefox-permission";
+  firefoxPermissionPanelNode.hidden = false;
+  firefoxPermissionPanelNode.classList.remove("permission-granted");
+  firefoxPermissionTitleNode.textContent = "One switch to flip";
+  firefoxPermissionSubtitleNode.textContent = "Firefox needs “Run in Private Windows” on to route your traffic, even in normal windows.";
+  setupPanelNode.hidden = true;
+  routeCardNode.hidden = true;
+  openSettingsButton.hidden = true;
+  setToggleState("disconnected");
+  if (pollTimer) { clearTimeout(pollTimer); pollTimer = undefined; }
+  watchFirefoxPermission();
+}
+
+function hideFirefoxPermission() {
+  stopFirefoxPermissionWatch();
+  closePermissionErrorDetails(false);
+  firefoxPermissionPanelNode.hidden = true;
+  firefoxPermissionPanelNode.classList.remove("permission-granted");
+}
+
+copyAboutAddonsButton.addEventListener("click", () => copyPermissionText("about:addons", copyAboutAddonsButton));
+keepPermissionStepsOpenButton.addEventListener("click", () => openFullScreenButton.click());
+showPermissionErrorDetailsButton.addEventListener("click", openPermissionErrorDetails);
+closePermissionErrorDetailsButton.addEventListener("click", () => closePermissionErrorDetails());
+permissionErrorBackdropNode.addEventListener("click", () => closePermissionErrorDetails());
+copyPermissionErrorDetailsButton.addEventListener("click", () => copyPermissionText(permissionErrorTextNode.textContent, copyPermissionErrorDetailsButton));
+permissionErrorSheetNode.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") {
+    event.preventDefault();
+    closePermissionErrorDetails();
+  } else if (event.key === "Tab") {
+    const focusable = [...permissionErrorSheetNode.querySelectorAll("button:not(:disabled), [href], [tabindex]:not([tabindex='-1'])")];
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
+  }
+});
 
 function closeLiveStats() {
   const wasOpen = !liveStatsNode.hidden;
@@ -656,6 +787,9 @@ function explain(result) {
 
 function summarizeConnectionError(error) {
   const message = typeof error === "string" ? error : "";
+  if (/proxy\.settings requires private browsing permission|private browsing permission/i.test(message)) {
+    return "Firefox permission needed";
+  }
   if (/address already in use|could not bind to|failed to bind|bind.*already in use/i.test(message)) {
     return "A local Tor port is already in use";
   }
@@ -674,7 +808,7 @@ function summarizeConnectionError(error) {
   if (/no such file|does not exist|doesn’t exist|not found/i.test(message)) {
     return "Tor files are missing";
   }
-  if (/native helper unavailable|native messaging host not found|native host.*not registered/i.test(message)) {
+  if (/native helper (?:unavailable|disconnected)|native messaging host not found|native host.*not registered/i.test(message)) {
     return "Tor helper isn’t available";
   }
   return "Tor couldn’t connect. Try again.";
@@ -682,6 +816,9 @@ function summarizeConnectionError(error) {
 
 function connectionErrorHint(error) {
   const message = typeof error === "string" ? error : "";
+  if (/proxy\.settings requires private browsing permission|private browsing permission/i.test(message)) {
+    return "Firefox requires this permission even in normal windows. Open menu ☰ → Extensions and Themes. On Tor Connect, click ⋯ → Manage. Under “Run in Private Windows,” select “Allow,” then return here and try again.";
+  }
   if (/address already in use|could not bind to|failed to bind|bind.*already in use/i.test(message)) {
     return "Another app or Chrome profile may already have a Tor connection open.";
   }
@@ -700,8 +837,8 @@ function connectionErrorHint(error) {
   if (/no such file|does not exist|doesn’t exist|not found/i.test(message)) {
     return "Run setup again to install the Tor files.";
   }
-  if (/native helper unavailable|native messaging host not found|native host.*not registered/i.test(message)) {
-    return "Set up Tor Connect on this device, then restart Chrome.";
+  if (/native helper (?:unavailable|disconnected)|native messaging host not found|native host.*not registered/i.test(message)) {
+    return "Set up Tor Connect on this device, then restart your browser.";
   }
   return "Try again. Open the details if it keeps happening.";
 }
@@ -809,6 +946,17 @@ function renderRoute(result = {}) {
 
 function renderResult(result) {
   currentResult = result || {};
+  const currentError = currentResult.error || currentResult.message || "";
+  if (isFirefoxExtension && /proxy\.settings requires private browsing permission|private browsing permission/i.test(currentError)) {
+    initialStatusPending = false;
+    renderErrorDetails(currentResult);
+    syncBridgeAttemptTimer(currentResult.state);
+    syncConnectedDuration(currentResult);
+    updateLiveStats(currentResult);
+    showFirefoxPermission();
+    return;
+  }
+  hideFirefoxPermission();
   const transientStartupFailure = initialStatusPending && (!currentResult.ok || currentResult.state === "failed") && currentResult.state !== "missing_runtime" && initialStatusRetries < 6;
   if (transientStartupFailure) {
     initialStatusRetries++;
@@ -836,7 +984,7 @@ function renderResult(result) {
   syncBridgeAttemptTimer(currentResult.state);
   syncConnectedDuration(currentResult);
   updateLiveStats(result);
-  const helperUnavailable = /native helper unavailable|native messaging host not found|native host.*not registered|failed to start native messaging host|access to the specified native messaging host is forbidden/i.test(result?.error || "");
+  const helperUnavailable = /native helper (?:unavailable|disconnected)|native messaging host not found|native host.*not registered|failed to start native messaging host|access to the specified native messaging host is forbidden/i.test(result?.error || "");
   if (helperUnavailable || result?.state === "missing_runtime") {
     popupMainNode.dataset.view = "cold-start";
     setupPanelNode.hidden = false;
