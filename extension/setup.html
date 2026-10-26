@@ -7,9 +7,12 @@
   <link rel="stylesheet" href="setup.css">
 </head>
 <body>
-  <main>
-    <div class="setup-heading">
-      <p id="setupEyebrow" class="eyebrow">ONE-TIME SETUP</p>
+  <main class="setup-shell">
+    <header class="setup-heading">
+      <a class="brand" href="#" aria-label="Tor Connect setup">
+        <svg viewBox="0 0 128 128" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="10" stroke-linecap="round"><path d="M20 88h88M20 88a44 44 0 0 1 88 0M35 88a29 29 0 0 1 58 0M50 88a14 14 0 0 1 28 0"/></g></svg>
+        <span>Tor Connect</span>
+      </a>
       <div class="setup-heading-actions">
         <div class="language-picker">
           <button id="languageSelect" class="language-picker-trigger" type="button" aria-label="Language" aria-haspopup="listbox" aria-controls="languageOptions" aria-expanded="false">
@@ -34,125 +37,143 @@
           <svg class="theme-icon theme-icon-dark" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.2 15.2A8.5 8.5 0 0 1 8.8 3.8 8.5 8.5 0 1 0 20.2 15.2Z"/></svg>
         </button>
       </div>
-    </div>
-    <h1>Connect Chrome through Tor</h1>
-    <p id="setupIntro" class="intro">A small companion app installs Tor on this computer and links it to Chrome.</p>
+    </header>
 
-    <div class="setup-tabs" role="tablist" aria-label="Setup method">
-      <button id="manualTab" class="setup-tab active" type="button" role="tab" aria-selected="true" aria-controls="manualPanel">Manual installation</button>
-      <button id="guidedTab" class="setup-tab" type="button" role="tab" aria-selected="false" aria-controls="guidedPanel">Setup wizard</button>
-    </div>
-
-    <div id="guidedPanel" role="tabpanel" aria-labelledby="guidedTab" hidden>
-    <section>
-      <h2>Install Tor Connect for this computer</h2>
-      <p id="setupInstructions">Download and open the Tor Connect installer for your computer. It installs Tor and connects it to Chrome.</p>
-      <a id="macInstallerDownload" class="button secondary" hidden>Download the Mac setup app</a>
-      <a id="windowsInstallerDownload" class="button secondary" hidden>Download the Windows installer</a>
-      <a id="linuxInstallerDownload" class="button secondary" hidden>Download the Debian/Ubuntu package</a>
-      <button id="installerUnavailable" class="button secondary" type="button" disabled>Installer not available yet</button>
-    </section>
-
-    <details data-platform="mac">
-      <summary>If macOS blocks the setup app</summary>
-      <p>Apple hasn’t notarized Tor Connect Setup, so macOS may block it.</p>
-      <ol>
-        <li>Try opening Tor Connect Setup once, then close the warning.</li>
-        <li>Open <strong>Apple menu → System Settings → Privacy &amp; Security</strong>. Under <strong>Security</strong>, click <strong>Open Anyway</strong> next to Tor Connect Setup.</li>
-        <li>Confirm, then open Tor Connect Setup again.</li>
-      </ol>
-      <p>Only continue if you downloaded it from the <a href="https://github.com/Tor-Connect/extension/releases/latest" target="_blank" rel="noreferrer">official Tor Connect release</a>.</p>
-    </details>
-
-    <details>
-      <summary>Why is a separate setup app needed?</summary>
-      <p>Chrome extensions cannot install or start Tor on their own. The Tor Connect setup app installs Tor on this computer and connects it to the extension.</p>
-    </details>
-    <details data-platform="mac">
-      <summary>If macOS says “Permission denied”</summary>
-      <p>First verify that the Tor bundle came from the official Tor Project and verify its signature. If it is verified, remove the quarantine flag from the installed copy in Terminal:</p>
-      <pre>xattr -dr com.apple.quarantine "$HOME/Library/Application Support/TorChrome/runtime/bundle"</pre>
-      <p>This removes quarantine only from this Tor bundle; it does not disable Gatekeeper globally.</p>
-      <a href="https://support.torproject.org/little-t-tor/getting-started/verifying/" target="_blank" rel="noreferrer">Tor Project signature verification instructions ↗</a>
-    </details>
-    </div>
-
-    <div id="manualPanel" role="tabpanel" aria-labelledby="manualTab">
-      <section>
-        <h2 id="manualTitle">Install it yourself</h2>
-        <p id="manualIntro" class="manual-intro">Download the Tor Expert Bundle from the Tor Project, then run the command for your computer. The command downloads Tor Connect’s small setup script and installs the local helper.</p>
-        <div class="manual-downloads">
-          <a id="bundleDownloadLink" class="button secondary" href="https://www.torproject.org/download/tor/" target="_blank" rel="noreferrer">Download Tor Expert Bundle ↗</a>
+    <div class="setup-hero-layout">
+      <section class="setup-intro-panel" aria-labelledby="setupTitle">
+        <div class="eyebrow-row"><p id="setupEyebrow" class="eyebrow">ONE-TIME SETUP</p><span id="osDetected" class="os-detected">Detecting device…</span></div>
+        <h1 id="setupTitle">Connect your browser through Tor</h1>
+        <p id="setupIntro" class="intro">A small companion app installs Tor on this computer and links it to your browser. You only do this once.</p>
+        <div class="setup-tabs" role="tablist" aria-label="Setup method" data-active="0">
+          <span class="setup-tab-thumb" aria-hidden="true"></span>
+          <button id="guidedTab" class="setup-tab active" type="button" role="tab" aria-selected="true" aria-controls="guidedPanel">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11M7 11l5 5 5-5M5 20h14"/></svg>Setup app
+          </button>
+          <button id="manualTab" class="setup-tab" type="button" role="tab" aria-selected="false" aria-controls="manualPanel">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="m7 10 3 2.5-3 2.5M13 15h4"/></svg>Terminal
+          </button>
         </div>
       </section>
 
-      <div class="os-tabs" role="tablist" aria-label="Choose your operating system">
-        <button id="macOsTab" class="os-tab" type="button" role="tab" aria-selected="false" aria-controls="macOsPanel">
-          <svg class="os-icon apple-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12.2 7.2c-1.3-1.1-3.4-1-4.7-.3-3.5 1.8-2.9 7.4-.7 11.3.9 1.6 2 2.5 3 2 1.4-.7 2.7-.7 4.1 0 1 .5 2.1-.3 3-1.9 1.1-1.8 1.8-3.8 1.8-5.6-2.4-.8-3.1-3.8-1.1-5.4-1.7-1.1-3.5-.8-5.4-.1z"/><path d="M12.8 6.1c-.1-2 1.3-3.7 3.6-4.1.2 2.1-1.2 3.7-3.6 4.1z"/></svg>
-          <span>macOS</span>
-        </button>
-        <button id="windowsOsTab" class="os-tab" type="button" role="tab" aria-selected="false" aria-controls="windowsOsPanel">
-          <svg class="os-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 5.2 10.6 4v7.2H2V5.2Zm10.1-1.4L22 2.4v8.8h-9.9V3.8ZM2 12.8h8.6V20L2 18.8v-6Zm10.1 0H22v8.8l-9.9-1.4v-7.4Z"/></svg>
-          <span>Windows</span>
-        </button>
-        <button id="linuxOsTab" class="os-tab" type="button" role="tab" aria-selected="false" aria-controls="linuxOsPanel">
-          <svg class="os-icon linux-icon" viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="13" rx="7" ry="9"/><ellipse class="penguin-belly" cx="12" cy="15" rx="4.2" ry="5.8"/><circle class="penguin-eye" cx="9.5" cy="8.5" r=".8"/><circle class="penguin-eye" cx="14.5" cy="8.5" r=".8"/><path class="penguin-beak" d="m10.5 10.2 1.5 1.2 1.5-1.2-1.5-.8z"/><path class="penguin-feet" d="M6 20.5 3.5 22h5l1-1.5zm8 0 1 1.5h5L17.5 20.5z"/></svg>
-          <span>Linux</span>
-        </button>
+      <section class="connection-card" aria-label="Setup connection steps">
+        <svg class="connection-lines" viewBox="0 0 640 330" aria-hidden="true"><path class="connection-line-done" d="M154 130h122"/><path class="connection-line-pending" d="M364 130h122"/></svg>
+        <div class="connection-node node-browser is-done"><span class="node-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M3 9.5h18"/></svg></span><strong>Your browser</strong><small>Extension found</small></div>
+        <div id="helperNode" class="connection-node node-helper"><span class="node-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="m7 10 3 2.5-3 2.5M13 15h4"/></svg></span><strong>Setup helper</strong><small id="helperNodeStatus">Not installed yet</small></div>
+        <div id="torNode" class="connection-node node-tor"><span class="node-icon tor-mark"><svg viewBox="0 0 128 128" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="9" stroke-linecap="round"><path d="M20 88h88M20 88a44 44 0 0 1 88 0M35 88a29 29 0 0 1 58 0M50 88a14 14 0 0 1 28 0"/></g></svg></span><strong>Tor</strong><small>Not started yet</small></div>
+        <div class="connection-status" aria-live="polite"><span id="connectionStatusIcon" class="connection-status-icon" aria-hidden="true"></span><span id="connectionStatusText">Waiting for you to install the helper</span></div>
+      </section>
+    </div>
+
+    <div id="guidedPanel" class="steps-grid" role="tabpanel" aria-labelledby="guidedTab">
+      <section class="step-card is-current" data-step="1" aria-labelledby="appStepOneTitle">
+        <div class="step-heading"><span class="step-number">1</span><h2 id="appStepOneTitle">Download the setup app</h2></div>
+        <p id="setupInstructions" class="step-copy">It includes Tor and sets up the helper for your browser.</p>
+        <div class="download-actions">
+          <a id="macInstallerDownload" class="button primary" hidden><svg class="download-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11m-5-5 5 5 5-5M5 20h14"/></svg><span>Download Mac setup app</span></a>
+          <a id="windowsInstallerDownload" class="button primary" hidden><svg class="download-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11m-5-5 5 5 5-5M5 20h14"/></svg><span>Download Windows installer</span></a>
+          <a id="linuxInstallerDownload" class="button primary" hidden><svg class="download-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11m-5-5 5 5 5-5M5 20h14"/></svg><span>Download Debian package</span></a>
+          <button id="installerUnavailable" class="button primary" type="button" disabled>Installer not available yet</button>
+        </div>
+      </section>
+      <section class="step-card is-pending" data-step="2" aria-labelledby="appStepTwoTitle">
+        <div class="step-heading"><span class="step-number">2</span><h2 id="appStepTwoTitle">Open it</h2></div>
+        <p class="step-copy">Open Tor Connect Setup and follow the prompt. You only do this once.</p>
+        <button id="detectSetupApp" class="button primary" type="button">I opened it</button>
+        <button id="blockedInlineHelp" class="blocked-inline-help" type="button" aria-expanded="false" aria-controls="setupHelpPanel"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 2.8 20h18.4L12 3Z"/><path d="M12 9v4m0 3h.01"/></svg><span>macOS blocked the setup app</span><svg class="warning-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg></button>
+      </section>
+      <section class="step-card is-pending" data-step="3" aria-labelledby="appStepThreeTitle">
+        <div class="step-heading"><span class="step-number">3</span><h2 id="appStepThreeTitle">Come back here</h2></div>
+        <p class="step-copy">After you open the app, this page checks for the helper.</p>
+        <p id="appHelperStatus" class="helper-pill" role="status" aria-live="polite">Not detected yet</p>
+      </section>
+    </div>
+
+    <div id="manualPanel" class="steps-grid terminal-grid" role="tabpanel" aria-labelledby="manualTab" hidden>
+      <section class="step-card is-current" data-step="1" aria-labelledby="termStepOneTitle">
+        <div class="step-heading"><span class="step-number">1</span><h2 id="termStepOneTitle">Get the Tor Expert Bundle</h2></div>
+        <p class="step-copy">Download the bundle from the Tor Project. The command in step 2 will ask you to select it.</p>
+        <a id="bundleDownloadLink" class="button secondary" href="https://www.torproject.org/download/tor/" target="_blank" rel="noreferrer">Download Tor Expert Bundle <span aria-hidden="true">↗</span></a>
+      </section>
+      <section class="step-card terminal-step is-pending" data-step="2" aria-labelledby="termStepTwoTitle">
+        <div class="step-heading"><span class="step-number">2</span><h2 id="termStepTwoTitle">Paste one command</h2></div>
+        <p id="terminalStepCopy" class="step-copy">Open Terminal, paste the command and press Return.</p>
+        <div class="terminal-command-controls">
+          <div class="os-tabs" role="tablist" aria-label="Choose your operating system">
+            <button id="macOsTab" class="os-tab" type="button" role="tab" aria-selected="false" aria-controls="macOsPanel">macOS</button>
+            <button id="windowsOsTab" class="os-tab" type="button" role="tab" aria-selected="false" aria-controls="windowsOsPanel">Windows</button>
+            <button id="linuxOsTab" class="os-tab" type="button" role="tab" aria-selected="false" aria-controls="linuxOsPanel">Linux</button>
+          </div>
+          <span id="terminalTarget" class="terminal-target">in Terminal</span>
+        </div>
+        <p id="manualUnknownPlatform" class="hint" hidden>We couldn’t detect your operating system. Choose a tab to see its instructions.</p>
+        <section id="macOsPanel" class="os-panel terminal-os-panel" role="tabpanel" aria-labelledby="macOsTab" data-os="mac" hidden>
+          <div class="terminal-command-bar"><span class="terminal-prompt" aria-hidden="true">$</span><pre id="macManualCommand" dir="ltr"></pre><button id="copyMacManualCommand" class="terminal-copy-button" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="13" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h3"/></svg><span>Copy</span></button></div>
+          <span id="macCommandStatus" class="copy-status sr-only" role="status" aria-live="polite"></span>
+        </section>
+        <section id="windowsOsPanel" class="os-panel terminal-os-panel" role="tabpanel" aria-labelledby="windowsOsTab" data-os="windows" hidden>
+          <div class="terminal-command-bar"><span class="terminal-prompt" aria-hidden="true">PS&gt;</span><pre id="windowsManualCommand" dir="ltr"></pre><button id="copyWindowsManualCommand" class="terminal-copy-button" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="13" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h3"/></svg><span>Copy</span></button></div>
+          <span id="windowsCommandStatus" class="copy-status sr-only" role="status" aria-live="polite"></span>
+        </section>
+        <section id="linuxOsPanel" class="os-panel terminal-os-panel" role="tabpanel" aria-labelledby="linuxOsTab" data-os="linux" hidden>
+          <div class="terminal-command-bar"><span class="terminal-prompt" aria-hidden="true">$</span><pre id="linuxManualCommand" dir="ltr"></pre><button id="copyLinuxManualCommand" class="terminal-copy-button" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="13" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h3"/></svg><span>Copy</span></button></div>
+          <span id="linuxCommandStatus" class="copy-status sr-only" role="status" aria-live="polite"></span>
+        </section>
+      </section>
+      <section class="step-card is-pending" data-step="3" aria-labelledby="termStepThreeTitle">
+        <div class="step-heading"><span class="step-number">3</span><h2 id="termStepThreeTitle">Come back here</h2></div>
+        <p class="step-copy">This page notices the helper by itself. Nothing to click.</p>
+        <p id="terminalHelperStatus" class="helper-pill" role="status" aria-live="polite">Not detected yet</p>
+      </section>
+    </div>
+
+    <section class="stuck-section" aria-labelledby="stuckTitle">
+      <div class="stuck-heading">
+        <h2 id="stuckTitle">STUCK?</h2>
+        <div class="stuck-chips">
+          <button id="blockedHelpChip" class="help-chip" type="button" data-help-chip="blocked" aria-controls="setupHelpPanel">macOS blocked the setup app</button>
+          <button id="permissionHelpChip" class="help-chip" type="button" data-help-chip="permission" aria-controls="setupHelpPanel">Permission denied</button>
+          <button id="whyHelpChip" class="help-chip" type="button" data-help-chip="why" aria-controls="setupHelpPanel">Why a separate setup app?</button>
+        </div>
       </div>
-      <p id="manualUnknownPlatform" class="hint" hidden>We couldn’t detect your operating system. Choose a tab to see its instructions.</p>
-
-      <section id="macOsPanel" class="os-panel" role="tabpanel" aria-labelledby="macOsTab" data-os="mac" hidden>
-        <h2>Mac · Terminal</h2>
-        <p>Copy the setup command and paste it into Terminal. A file window will open so you can choose the Tor Expert Bundle you downloaded.</p>
-        <div class="command-actions">
-          <button id="copyMacManualCommand" class="button" type="button">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="13" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h3"/></svg>
-            <span>Copy setup command</span>
-          </button>
-          <span id="macCommandStatus" class="copy-status" role="status" aria-live="polite"></span>
-        </div>
-        <details class="command-details">
-          <summary>View command</summary>
-          <pre id="macManualCommand" dir="ltr"></pre>
-        </details>
-        <p class="hint">The script removes download quarantine and ad hoc signs the local Tor files macOS needs to load. No Apple developer certificate is used. Restart your browser after setup.</p>
-      </section>
-      <section id="windowsOsPanel" class="os-panel" role="tabpanel" aria-labelledby="windowsOsTab" data-os="windows" hidden>
-        <h2>Windows · PowerShell</h2>
-        <p>Extract the Tor Expert Bundle, then copy the setup command and paste it into PowerShell. A folder window will open so you can choose where you extracted it. Setup downloads the Chrome helper from GitHub.</p>
-        <div class="command-actions">
-          <button id="copyWindowsManualCommand" class="button" type="button">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="13" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h3"/></svg>
-            <span>Copy setup command</span>
-          </button>
-          <span id="windowsCommandStatus" class="copy-status" role="status" aria-live="polite"></span>
-        </div>
-        <details class="command-details">
-          <summary>View command</summary>
-          <pre id="windowsManualCommand" dir="ltr"></pre>
-        </details>
-        <p class="hint">Restart your browser after setup to load the local Tor helper.</p>
-      </section>
-      <section id="linuxOsPanel" class="os-panel" role="tabpanel" aria-labelledby="linuxOsTab" data-os="linux" hidden>
-        <h2>Linux · Terminal</h2>
-        <p>Extract the Tor Expert Bundle, then copy the setup command and paste it into Terminal. A folder window will open so you can choose where you extracted it. Python 3 is required.</p>
-        <div class="command-actions">
-          <button id="copyLinuxManualCommand" class="button" type="button">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="13" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h3"/></svg>
-            <span>Copy setup command</span>
-          </button>
-          <span id="linuxCommandStatus" class="copy-status" role="status" aria-live="polite"></span>
-        </div>
-        <details class="command-details">
-          <summary>View command</summary>
-          <pre id="linuxManualCommand" dir="ltr"></pre>
-        </details>
-        <p class="hint">Restart your browser after setup to load the local Tor helper.</p>
-      </section>
-    </div>
+      <div id="setupHelpPanel" class="setup-help-panel" role="region" aria-labelledby="stuckTitle" aria-live="polite" hidden>
+        <article data-help-content="blocked" data-platform="mac" hidden>
+          <h3>If macOS blocks the setup app</h3>
+          <p>Open it once, then go to <strong>Apple menu → System Settings → Privacy &amp; Security</strong>. Under <strong>Security</strong>, choose <strong>Open Anyway</strong> next to Tor Connect Setup and open the app again.</p>
+          <p>Only continue if you downloaded it from the <a href="https://github.com/Tor-Connect/extension/releases/latest" target="_blank" rel="noreferrer">official Tor Connect release</a>.</p>
+        </article>
+        <article data-help-content="blocked" data-platform="windows" hidden>
+          <h3>Windows blocked the setup app</h3>
+          <p>If SmartScreen appears, click <strong>More info</strong>, then <strong>Run anyway</strong>. Continue only if you downloaded Tor Connect Setup from the <a href="https://github.com/Tor-Connect/extension/releases/latest" target="_blank" rel="noreferrer">official Tor Connect release</a>.</p>
+        </article>
+        <article data-help-content="blocked" data-platform="linux" hidden>
+          <h3>The Linux installer won’t open</h3>
+          <p>Tor Connect’s Linux setup package is for Debian or Ubuntu on x64. Open the downloaded <code>.deb</code> file with your system’s software installer.</p>
+        </article>
+        <article data-help-content="permission" data-platform="mac" hidden>
+          <h3>macOS says “Permission denied”</h3>
+          <p>Verify the Tor bundle came from the Tor Project and check its signature. If it is verified, remove the quarantine flag from the installed copy in Terminal:</p>
+          <pre>xattr -dr com.apple.quarantine "$HOME/Library/Application Support/TorChrome/runtime/bundle"</pre>
+          <p>This removes quarantine only from this Tor bundle; it does not disable Gatekeeper globally.</p>
+          <a href="https://support.torproject.org/little-t-tor/getting-started/verifying/" target="_blank" rel="noreferrer">Tor Project signature verification instructions ↗</a>
+        </article>
+        <article data-help-content="permission" data-platform="windows" hidden>
+          <h3>PowerShell says scripts are disabled</h3>
+          <p>Allow scripts for this PowerShell window only, then run the setup command again:</p>
+          <pre>Set-ExecutionPolicy -Scope Process -ExecutionPolicy RemoteSigned</pre>
+        </article>
+        <article data-help-content="permission" data-platform="linux" hidden>
+          <h3>Permission denied in Terminal</h3>
+          <p>Run the copied command in your own Terminal window. The manual setup script installs the helper in your user folder and does not need administrator access.</p>
+        </article>
+        <article data-help-content="why">
+          <h3>Why is a separate setup app needed?</h3>
+          <p>Browser extensions cannot install or start Tor on their own. The setup app installs Tor on this computer and connects it to your browser.</p>
+        </article>
+      </div>
+    </section>
   </main>
   <script src="platform-ui.js"></script>
+  <script src="i18n-translations.js"></script>
   <script src="i18n.js"></script>
   <script src="theme.js"></script>
   <script src="setup.js"></script>

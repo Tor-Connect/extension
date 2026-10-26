@@ -15,13 +15,26 @@ document.querySelector("#setupEyebrow").textContent = platformName === "mac"
   : `ONE-TIME ${platformName.toUpperCase()} SETUP`;
 document.querySelector("h1").textContent = "Connect your browser through Tor";
 document.querySelector("#setupIntro").textContent = "A small companion app installs Tor on this computer and connects it to your browser. You only need to set it up once.";
+document.querySelector("#osDetected").textContent = platformName === "unknown"
+  ? "Choose your device"
+  : `${platformName === "mac" ? "macOS" : platformName[0].toUpperCase() + platformName.slice(1)} detected`;
+document.querySelector("#blockedHelpChip").textContent = platformName === "mac" ? "macOS blocked the setup app"
+  : platformName === "windows" ? "Windows blocked the setup app"
+    : platformName === "linux" ? "The Linux installer won’t open" : "The setup app won’t open";
+document.querySelector("#blockedInlineHelp span").textContent = platformName === "mac" ? "macOS blocked the setup app"
+  : platformName === "windows" ? "Windows blocked the setup app"
+    : platformName === "linux" ? "The Linux installer won’t open" : "The setup app won’t open";
+document.querySelector("#permissionHelpChip").textContent = platformName === "windows" ? "PowerShell says scripts are disabled"
+  : platformName === "mac" ? "macOS says “Permission denied”"
+    : platformName === "linux" ? "Terminal says “Permission denied”" : "Permission denied";
+document.querySelector("#whyHelpChip").textContent = "Why a separate setup app?";
 const setupInstructions = document.querySelector("#setupInstructions");
 if (platformName === "linux") {
-  setupInstructions.textContent = "Download and install the Debian package. It includes Tor and connects it to your browser.";
+  setupInstructions.textContent = "It includes Tor and sets up the helper for your browser.";
 } else if (platformName === "windows") {
-  setupInstructions.textContent = "Download and open the Windows installer. It includes Tor and connects it to your browser.";
+  setupInstructions.textContent = "It includes Tor and sets up the helper for your browser.";
 } else if (platformName === "mac") {
-  setupInstructions.textContent = "Download and open the Mac setup app. It includes Tor and connects it to your browser.";
+  setupInstructions.textContent = "It includes Tor and sets up the helper for your browser.";
 }
 
 const installerByPlatform = {
@@ -147,7 +160,9 @@ const commandCopyOptions = [
 ];
 commandCopyOptions.forEach(([buttonSelector, commandSelector, statusSelector, successMessage]) => {
   const button = document.querySelector(buttonSelector);
+  const buttonLabel = button.querySelector("span");
   const status = document.querySelector(statusSelector);
+  let copiedTimer;
   button.addEventListener("click", async () => {
     button.disabled = true;
     status.textContent = "";
@@ -162,8 +177,14 @@ commandCopyOptions.forEach(([buttonSelector, commandSelector, statusSelector, su
       await navigator.clipboard.writeText(document.querySelector(commandSelector).textContent);
       status.textContent = successMessage;
       status.dataset.kind = "success";
+      // Change button label to "Copied" for 1400ms, matching the design
+      buttonLabel.textContent = "Copied";
+      clearTimeout(copiedTimer);
+      copiedTimer = setTimeout(() => { buttonLabel.textContent = "Copy"; }, 1400);
+      // Start auto-polling and trigger "Listening…" state on the connection card
+      startTerminalPoll();
     } catch {
-      status.textContent = "Could not copy the command. Open “View command” to copy it manually.";
+      status.textContent = "Could not copy the command. Select the command text to copy it manually.";
       status.dataset.kind = "error";
     } finally {
       button.disabled = false;
@@ -213,7 +234,26 @@ const setupTabs = [
   [document.querySelector("#guidedTab"), document.querySelector("#guidedPanel")],
   [document.querySelector("#manualTab"), document.querySelector("#manualPanel")]
 ];
-setupTabs.forEach(([tab, panel]) => {
+const guidedSetupPanel = document.querySelector("#guidedPanel");
+const terminalSetupPanel = document.querySelector("#manualPanel");
+function setStepProgress(panel, currentStep, completeThrough = currentStep - 1) {
+  panel.querySelectorAll(".step-card[data-step]").forEach((card) => {
+    const step = Number(card.dataset.step);
+    const done = step <= completeThrough;
+    card.classList.toggle("is-done", done);
+    card.classList.toggle("is-current", !done && step === currentStep);
+    card.classList.toggle("is-pending", !done && step > currentStep);
+    card.querySelector(".step-number").textContent = done ? "✓" : String(step);
+  });
+}
+setStepProgress(guidedSetupPanel, 1, 0);
+setStepProgress(terminalSetupPanel, 1, 0);
+document.querySelectorAll("#macInstallerDownload, #windowsInstallerDownload, #linuxInstallerDownload").forEach((link) => {
+  link.addEventListener("click", () => setStepProgress(guidedSetupPanel, 2, 1));
+});
+document.querySelector("#bundleDownloadLink").addEventListener("click", () => setStepProgress(terminalSetupPanel, 2, 1));
+const setupTabsContainer = document.querySelector(".setup-tabs");
+setupTabs.forEach(([tab, panel], index) => {
   tab.addEventListener("click", () => {
     setupTabs.forEach(([otherTab, otherPanel]) => {
       const selected = otherTab === tab;
@@ -221,5 +261,117 @@ setupTabs.forEach(([tab, panel]) => {
       otherTab.setAttribute("aria-selected", String(selected));
       otherPanel.hidden = !selected;
     });
+    setupTabsContainer.dataset.active = String(index);
   });
+});
+
+const setupApi = globalThis.browser || globalThis.chrome;
+const appDetectButton = document.querySelector("#detectSetupApp");
+const appHelperStatus = document.querySelector("#appHelperStatus");
+const terminalHelperStatus = document.querySelector("#terminalHelperStatus");
+const connectionCard = document.querySelector(".connection-card");
+const helperNode = document.querySelector("#helperNode");
+const torNode = document.querySelector("#torNode");
+const helperNodeStatus = document.querySelector("#helperNodeStatus");
+const connectionStatus = document.querySelector("#connectionStatusText");
+let helperCheckGeneration = 0;
+
+const connectionLinePending = document.querySelector(".connection-line-pending");
+function setHelperVisualState(state) {
+  connectionCard.classList.toggle("is-detecting", state === "checking");
+  helperNode.classList.toggle("is-active", state === "checking");
+  helperNode.classList.toggle("is-done", state === "ready");
+  torNode.classList.toggle("is-done", state === "ready");
+  connectionLinePending.classList.toggle("connection-line-done", state === "ready");
+  connectionLinePending.classList.toggle("connection-line-pending", state !== "ready");
+  const statusBar = document.querySelector(".connection-status");
+  statusBar.classList.toggle("is-success", state === "ready");
+  statusBar.classList.toggle("is-error", false);
+  helperNodeStatus.textContent = state === "checking" ? "Listening…"
+    : state === "ready" ? "Found" : "Not installed yet";
+  torNode.querySelector("small").textContent = state === "ready" ? "Ready" : "Not started";
+  connectionStatus.textContent = state === "ready"
+    ? "Helper found. Tor is ready. You can close this tab."
+    : state === "checking" ? "Listening for the helper…"
+      : "Waiting for you to install the helper";
+}
+
+async function requestHelperStatus() {
+  if (!setupApi?.runtime?.sendMessage) throw new Error("Setup status is unavailable.");
+  return setupApi.runtime.sendMessage({ type: "status" });
+}
+
+// Auto-polling: starts when triggered, runs until helper found or generation changes.
+async function pollForHelper(statusNode, activeSetupPanel) {
+  const generation = ++helperCheckGeneration;
+  statusNode.textContent = "Listening…";
+  statusNode.dataset.kind = "";
+  setHelperVisualState("checking");
+  while (generation === helperCheckGeneration) {
+    try {
+      const result = await requestHelperStatus();
+      if (generation !== helperCheckGeneration) return;
+      if (result?.ok) {
+        statusNode.textContent = "Helper found";
+        statusNode.dataset.kind = "success";
+        setHelperVisualState("ready");
+        setStepProgress(activeSetupPanel, 4, 3);
+        return;
+      }
+    } catch { /* keep polling */ }
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+  }
+}
+
+// Guided path: "I opened it" button starts the poll.
+appDetectButton.addEventListener("click", () => {
+  setStepProgress(guidedSetupPanel, 2, 1);
+  appDetectButton.disabled = true;
+  appDetectButton.textContent = "Checking…";
+  pollForHelper(appHelperStatus, guidedSetupPanel).then(() => {
+    if (appHelperStatus.dataset.kind !== "success") {
+      appDetectButton.disabled = false;
+      appDetectButton.textContent = "I opened it";
+    }
+  });
+});
+
+// Terminal path: poll starts automatically when copy is triggered (see copy handler above).
+// Exposed so the copy handler can call it.
+function startTerminalPoll() {
+  setStepProgress(terminalSetupPanel, 3, 2);
+  pollForHelper(terminalHelperStatus, terminalSetupPanel);
+}
+
+const helpPanel = document.querySelector("#setupHelpPanel");
+const helpChips = [...document.querySelectorAll("[data-help-chip]")];
+const helpContent = [...document.querySelectorAll("[data-help-content]")];
+helpChips.forEach((chip) => {
+  chip.setAttribute("aria-expanded", "false");
+  chip.addEventListener("click", () => {
+    const helpKey = chip.dataset.helpChip;
+    const isOpen = chip.getAttribute("aria-expanded") === "true";
+    helpChips.forEach((item) => item.setAttribute("aria-expanded", "false"));
+    document.querySelector("#blockedInlineHelp").setAttribute("aria-expanded", "false");
+    if (isOpen) {
+      helpPanel.hidden = true;
+      return;
+    }
+    const content = helpContent.find((item) => item.dataset.helpContent === helpKey &&
+      (!item.dataset.platform || item.dataset.platform === platformName));
+    if (!content) return;
+    helpContent.forEach((item) => { item.hidden = item !== content; });
+    chip.setAttribute("aria-expanded", "true");
+    if (helpKey === "blocked") document.querySelector("#blockedInlineHelp").setAttribute("aria-expanded", "true");
+    helpPanel.hidden = false;
+  });
+});
+document.querySelector("#blockedInlineHelp").addEventListener("click", () => {
+  const blockedChip = document.querySelector("#blockedHelpChip");
+  if (blockedChip.getAttribute("aria-expanded") === "true") {
+    helpPanel.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  } else {
+    blockedChip.click();
+    helpPanel.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }
 });
