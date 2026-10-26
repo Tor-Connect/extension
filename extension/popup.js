@@ -894,7 +894,7 @@ function renderRoute(result = {}) {
     else if (!preferences.autoBridgeSelection) shownPosition = selectedPosition;
   }
   renderBridgeCountry(result, shownPosition);
-  snowflakeInfoNode.hidden = preferences.mode !== "snowflake";
+  snowflakeInfoNode.hidden = preferences.mode !== "snowflake" || result.state === "connected";
   if (preferences.mode === "snowflake") {
     snowflakeInfoTextNode.textContent = result.state === "failed"
       ? "Couldn’t connect. Check the error details or try again."
