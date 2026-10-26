@@ -32,7 +32,7 @@ These images are rendered from the interactive design mockups and show the inten
 
 ## Install
 
-The Chrome Web Store listing is not published yet. When it is available, its link will be added here.
+Install Tor Connect from the [Chrome Web Store](https://chromewebstore.google.com/detail/tor-connect/bpakflmhpekikajckcncjgknbjebhkjm).
 
 The extension’s setup page offers two ways to install the local Tor companion:
 

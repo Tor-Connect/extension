@@ -38,6 +38,7 @@
       --accent:       #2BD576;
       --accent-dk:    #22c268;
       --accent-bg:    #06150D;
+      --accent-text:  #06150D;
       --step-num:     #1C5B3B;
       --warn-bg:      #1A1407;
       --warn-bd:      #6B4A12;
@@ -62,9 +63,10 @@
       --text-muted:#4A5E54;
       --text-dim:  #6B8077;
       --text-mid:  #3A5248;
-      --accent:    #1DA85A;
-      --accent-dk: #178A49;
-      --accent-bg: #DDF4E8;
+      --accent:      #1DA85A;
+      --accent-dk:   #178A49;
+      --accent-bg:   #DDF4E8;
+      --accent-text: #0A2E18;
       --step-num:  #5DBF8A;
       --warn-bg:   #FFF8EC;
       --warn-bd:   #E8C070;
@@ -138,7 +140,7 @@
       height: 44px; padding: 0 20px;
       display: flex; align-items: center; gap: 8px;
       border: 0; border-radius: 22px;
-      background: var(--accent); color: var(--accent-bg);
+      background: var(--accent); color: var(--accent-text);
       font-size: 14px; font-weight: 600;
       text-decoration: none;
     }
@@ -147,7 +149,7 @@
       height: 60px; padding: 0 28px;
       display: flex; align-items: center; gap: 12px;
       border: 0; border-radius: 30px;
-      background: var(--accent); color: var(--accent-bg);
+      background: var(--accent); color: var(--accent-text);
       font-size: 17px; font-weight: 600;
       text-decoration: none;
     }
@@ -163,7 +165,7 @@
 
     /* ── Hero ───────────────────────────────────── */
     .hero { display: flex; align-items: center; justify-content: space-between; margin-top: 88px; gap: 40px; }
-    .hero-copy { width: 560px; flex: none; max-width: 560px; }
+    .hero-copy { width: 560px; flex: 0 1 560px; min-width: 0; }
     .eyebrow { display: flex; align-items: center; gap: 10px; font-family: 'IBM Plex Mono', monospace; font-size: 13px; letter-spacing: .14em; color: var(--accent); }
     h1 { margin-top: 22px; font-size: 72px; font-weight: 600; letter-spacing: -.04em; line-height: .98; }
     .hero-sub { margin-top: 26px; font-size: 20px; line-height: 1.5; color: var(--text-mid); max-width: 500px; }
@@ -206,7 +208,7 @@
     .connect-btn {
       flex: none; height: 48px; padding: 0 22px;
       border: 1.5px solid var(--accent); border-radius: 24px;
-      background: var(--accent); color: var(--accent-bg);
+      background: var(--accent); color: var(--accent-text);
       font-size: 15px; font-weight: 600;
       transition: background .3s ease;
     }
@@ -339,7 +341,7 @@
       height: 56px; padding: 0 26px;
       display: flex; align-items: center; gap: 10px;
       border: 0; border-radius: 28px;
-      background: var(--accent); color: var(--accent-bg);
+      background: var(--accent); color: var(--accent-text);
       font-size: 16px; font-weight: 600; text-decoration: none;
     }
     .cta-chrome:hover { background: var(--accent-dk); }
@@ -361,6 +363,14 @@
     .footer-links { display: flex; gap: 28px; }
     .footer-links a:hover { color: var(--text); }
 
+    /* ── Tablet hero fix (901px – 1100px) ───────── */
+    @media (min-width: 901px) and (max-width: 1100px) {
+      .inner { padding: 0 40px; }
+      .hero-copy { width: auto; flex-basis: 400px; }
+      h1 { font-size: 56px; }
+      .hero-sub { font-size: 18px; }
+    }
+
     /* ── Mobile ─────────────────────────────────── */
     @media (max-width: 900px) {
       .inner { padding: 0 16px; }
@@ -381,13 +391,13 @@
 
       h1 { font-size: 44px; }
       .hero-sub { font-size: 17px; }
-      .hero { flex-direction: column; margin-top: 36px; gap: 28px; }
-      .hero-copy { width: 100%; }
+      .hero { flex-direction: column; margin-top: 36px; gap: 40px; }
+      .hero-copy { width: 100%; flex-basis: auto; }
       .btn-chrome-lg { width: 100%; justify-content: center; height: 56px; }
       .btn-ff { display: none; }
       .hero-btns { flex-direction: column; align-items: stretch; }
       .ff-mobile { display: block; margin-top: 10px; text-align: center; font-size: 14px; color: var(--text-dim); }
-      .mockup { width: 100%; }
+      .mockup { width: 100%; box-shadow: 0 16px 40px var(--shadow); }
       .tiles { grid-template-columns: repeat(2, 1fr); }
       .ring-btn { width: 72px; height: 72px; }
       .ring-btn svg { width: 42px; height: 42px; }
@@ -396,7 +406,6 @@
       .connect-btn { height: 44px; padding: 0 14px; }
 
       #how { margin-top: 64px; }
-      .route-wrap { display: none; }
       .route-mobile { display: flex; flex-direction: column; gap: 0; margin-top: 28px; }
       .route-step { display: flex; gap: 18px; align-items: flex-start; padding-bottom: 36px; position: relative; }
       .route-step-icon {
@@ -456,9 +465,14 @@
 
     /* Show/hide route layouts */
     .route-mobile { display: none; }
-    @media (max-width: 900px) {
+    /* Show desktop diagram only when inner can fit 1280px (viewport ≥ 1440px) */
+    @media (max-width: 1439px) {
       .route-wrap { display: none; }
       .route-mobile { display: flex; }
+    }
+    @media (min-width: 1440px) {
+      .route-wrap { display: block; }
+      .route-mobile { display: none; }
     }
   </style>
 </head>
@@ -843,6 +857,9 @@
 
     // mockup dynamic strings (used by applyPhase)
     if (typeof rebuildFAQ === 'function') rebuildFAQ(t.faq);
+
+    // refresh mockup labels for the current phase without restarting timers
+    if (typeof refreshMockupLabels === 'function') refreshMockupLabels();
   }
 
   /* ── Lang picker dropdown ────────────────────── */
@@ -966,7 +983,7 @@
     // tiles (staggered when opening)
     tileEls.forEach(function (t, i) {
       if (open) {
-        setTimeout(function () { t.classList.add('open'); updateChip(t, true); }, i * 130);
+        at(i * 130, function () { t.classList.add('open'); updateChip(t, true); });
       } else {
         t.classList.remove('open');
         updateChip(t, false);
@@ -988,6 +1005,17 @@
       icon.setAttribute('stroke-width', '2.4');
       label.textContent = tc.mockup_chip_blocked;
     }
+  }
+
+  function refreshMockupLabels() {
+    var t = window.I18N[currentLang] || window.I18N.en;
+    var open = phase === 'open';
+    var conn = phase === 'connecting';
+    statusText.style.color = open ? G : '';
+    statusText.textContent = open ? t.mockup_status_on : (conn ? t.mockup_status_connecting : t.mockup_status_off);
+    statusSub.textContent  = open ? t.mockup_sub_on    : (conn ? t.mockup_sub_connecting    : t.mockup_sub_off);
+    connectBtn.textContent = open ? t.mockup_btn_disconnect : (conn ? t.mockup_btn_connecting : t.mockup_btn_connect);
+    tileEls.forEach(function (tile) { updateChip(tile, tile.classList.contains('open')); });
   }
 
   function autoLoop() {

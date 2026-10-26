@@ -28,7 +28,7 @@
   --surface-soft: #0e1412;
   --ink: #eaf1ee;
   --muted: #a9b3ae;
-  --dim: #6b7771;
+  --dim: #8a9490;
   --line: #1d2421;
   --line-strong: #262d2b;
   --accent: #2bd576;
@@ -50,7 +50,7 @@ html[data-theme="light"] {
   --surface-soft: #f7f9f8;
   --ink: #252d29;
   --muted: #66736e;
-  --dim: #89958f;
+  --dim: #5a6762;
   --line: #dce4df;
   --line-strong: #cbd8d1;
   --accent: #18845b;
