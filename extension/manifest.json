@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Tor Connect",
-  "version": "0.10.0",
+  "version": "0.10.1",
   "description": "Route Chrome through a local Tor client.",
   "icons": {
     "16": "icons/disconnected-16.png",
