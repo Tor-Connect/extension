@@ -96,12 +96,22 @@ fi`;
   document.querySelector("#windowsManualCommand").textContent =
     `$ErrorActionPreference = 'Stop'
 $script = Join-Path $env:TEMP 'tor-connect-install-windows.ps1'
-Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/Tor-Connect/extension/main/scripts/install-windows.ps1' -OutFile $script
-$runtime = Join-Path $env:LOCALAPPDATA 'TorChrome\runtime'
-$torRelative = if (Test-Path -LiteralPath (Join-Path $runtime 'tor-path')) { (Get-Content -LiteralPath (Join-Path $runtime 'tor-path') -Raw).Trim() } else { '' }
-$transportRelative = if (Test-Path -LiteralPath (Join-Path $runtime 'transport-path')) { (Get-Content -LiteralPath (Join-Path $runtime 'transport-path') -Raw).Trim() } else { '' }
+Invoke-WebRequest \`
+  -Uri 'https://raw.githubusercontent.com/Tor-Connect/extension/main/scripts/install-windows.ps1' \`
+  -OutFile $script
+$runtime = Join-Path $env:LOCALAPPDATA 'TorChrome\\runtime'
+$torPathFile = Join-Path $runtime 'tor-path'
+$transportPathFile = Join-Path $runtime 'transport-path'
+$torRelative = if (Test-Path -LiteralPath $torPathFile) {
+  (Get-Content -LiteralPath $torPathFile -Raw).Trim()
+} else { '' }
+$transportRelative = if (Test-Path -LiteralPath $transportPathFile) {
+  (Get-Content -LiteralPath $transportPathFile -Raw).Trim()
+} else { '' }
 $bundleRoot = Join-Path $runtime 'bundle'
-if ($torRelative -and $transportRelative -and (Test-Path -LiteralPath (Join-Path $bundleRoot $torRelative)) -and (Test-Path -LiteralPath (Join-Path $bundleRoot $transportRelative))) {
+$torOk = $torRelative -and (Test-Path -LiteralPath (Join-Path $bundleRoot $torRelative))
+$transportOk = $transportRelative -and (Test-Path -LiteralPath (Join-Path $bundleRoot $transportRelative))
+if ($torOk -and $transportOk) {
   & powershell.exe -ExecutionPolicy Bypass -File $script -Firefox
 } else {
   Add-Type -AssemblyName System.Windows.Forms
@@ -110,7 +120,10 @@ if ($torRelative -and $transportRelative -and (Test-Path -LiteralPath (Join-Path
   $dialog.ShowNewFolderButton = $false
   $downloads = Join-Path $HOME 'Downloads'
   if (Test-Path -LiteralPath $downloads) { $dialog.SelectedPath = $downloads }
-  if ($dialog.ShowDialog() -ne [System.Windows.Forms.DialogResult]::OK) { $dialog.Dispose(); throw 'Setup canceled.' }
+  if ($dialog.ShowDialog() -ne [System.Windows.Forms.DialogResult]::OK) {
+    $dialog.Dispose()
+    throw 'Setup canceled.'
+  }
   $bundleDirectory = $dialog.SelectedPath
   $dialog.Dispose()
   & powershell.exe -ExecutionPolicy Bypass -File $script -Firefox -BundleDirectory "$bundleDirectory"
