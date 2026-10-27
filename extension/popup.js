@@ -856,7 +856,11 @@ function renderErrorDetails(result) {
 }
 
 function renderRoute(result = {}) {
-  if (initialStatusPending && routeCardNode.dataset.initialChecking === "true") return;
+  if (initialStatusPending && routeCardNode.dataset.initialChecking === "true") {
+    snowflakeInfoNode.hidden = preferences.mode !== "snowflake";
+    snowflakeInfoTextNode.textContent = "Connect through volunteer proxies. No bridge lines to add.";
+    return;
+  }
   delete routeCardNode.dataset.initialChecking;
   bridgeAttemptTimerNode.hidden = result.state !== "starting";
   connectedDurationNode.hidden = result.state !== "connected";
