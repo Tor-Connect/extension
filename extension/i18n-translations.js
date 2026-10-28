@@ -69,7 +69,7 @@
       "The bridge connection is interrupted": "اتصال پل قطع شده است",
       "country unknown": "کشور نامشخص",
       "Chrome remains Chrome": "Chrome همان Chrome می‌ماند",
-      "This extension does not provide Tor Browser’s fingerprinting protections, and some sites and features may not work through Tor.": "این افزونه محافظت‌های Tor Browser در برابر شناسایی اثرانگشت مرورگر را ارائه نمی‌دهد؛ بعضی وب‌سایت‌ها و قابلیت‌ها نیز ممکن است از طریق Tor کار نکنند.",
+      "This extension does not provide Tor Browser's fingerprinting protections, and some sites and features may not work through Tor.": "این افزونه محافظت‌های Tor Browser در برابر شناسایی اثرانگشت مرورگر را ارائه نمی‌دهد؛ بعضی وب‌سایت‌ها و قابلیت‌ها نیز ممکن است از طریق Tor کار نکنند.",
       "Read the privacy policy ↗": "مطالعه سیاست حریم خصوصی ↗",
       "Connection details": "جزئیات اتصال",
       "Bridge, transport and uptime": "پل، روش انتقال و مدت اتصال",
