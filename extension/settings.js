@@ -56,7 +56,7 @@ function send(type, extra = {}) {
 }
 
 function allEnabledLines(lines = bridgeLines) {
-  return lines.filter((line) => !disabledBridgeLines.has(line));
+  return lines.filter((line) => !disabledBridgeLines.has(line) && isBridgeLineValid(line));
 }
 
 function markSaveState(message, kind = "") {
@@ -277,6 +277,17 @@ function parseBridgeLine(line) {
   };
 }
 
+const KNOWN_TRANSPORTS = new Set(["obfs4", "webtunnel", "snowflake", "meek_lite", "meek"]);
+const ADDRESS_RE = /^(\[[\da-f:]+\]|[\d.a-zA-Z-]+):\d{1,5}$/i;
+
+function isBridgeLineValid(line) {
+  const parts = line.trim().split(/\s+/);
+  const offset = parts[0] === "Bridge" ? 1 : 0;
+  const first = parts[offset] || "";
+  // Valid if first token is a known transport name or a host:port address
+  return KNOWN_TRANSPORTS.has(first.toLowerCase()) || ADDRESS_RE.test(first);
+}
+
 function bridgeNumberForLine(line, index) {
   const originalIndex = bridgeLines.indexOf(line);
   return (originalIndex >= 0 ? originalIndex : index) + 1;
@@ -333,6 +344,9 @@ function renderBridgeList() {
     number.setAttribute("aria-label", `Bridge ${numberLabel}${connected ? ", currently in use" : ""}`);
     if (connected) number.title = "Currently connected bridge";
 
+    const valid = isBridgeLineValid(line);
+    if (!valid) item.dataset.invalid = "true";
+
     const main = document.createElement("div");
     main.className = "bridge-main";
     const primary = document.createElement("div");
@@ -344,6 +358,12 @@ function renderBridgeList() {
     address.className = "bridge-address";
     address.textContent = parts.address;
     primary.append(transport, address);
+    if (!valid) {
+      const invalidBadge = document.createElement("span");
+      invalidBadge.className = "bridge-invalid";
+      invalidBadge.textContent = "Invalid";
+      primary.append(invalidBadge);
+    }
 
     const countryCode = countryResults.get(line);
     if (countryCode) {
@@ -390,9 +410,10 @@ function renderBridgeList() {
     toggle.type = "button";
     toggle.className = "bridge-toggle";
     toggle.setAttribute("role", "switch");
-    toggle.setAttribute("aria-checked", String(enabled));
+    toggle.setAttribute("aria-checked", String(enabled && valid));
     toggle.setAttribute("aria-label", `Use Bridge ${numberLabel}`);
-    toggle.title = enabled ? "Bridge is included in connections" : "Bridge is excluded from connections";
+    toggle.title = !valid ? "Bridge line is invalid" : enabled ? "Bridge is included in connections" : "Bridge is excluded from connections";
+    toggle.disabled = !valid;
     toggle.addEventListener("click", () => {
       if (enabled && selectedMode === "manual" && allEnabledLines().length <= 1) {
         showClipboardStatus("Keep at least one bridge enabled when using bridge lines.", "error");
@@ -643,7 +664,9 @@ pingButton.addEventListener("click", () => {
       renderBridgeList();
     }, Math.max(0, remainingBusyTime));
   };
-  chrome.runtime.sendMessage({ type: "pingBridges", bridges: bridgeLines.join("\n") }, (result) => {
+  const validLines = allEnabledLines();
+  if (!validLines.length) { finishPinging(); return; }
+  chrome.runtime.sendMessage({ type: "pingBridges", bridges: validLines.join("\n") }, (result) => {
     if (chrome.runtime.lastError || !result?.ok || !Array.isArray(result.results)) {
       showClipboardStatus(result?.error || "Could not ping bridges.", "error");
       finishPinging();
