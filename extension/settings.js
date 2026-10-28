@@ -267,12 +267,14 @@ function countryFlag(countryCode) {
 function parseBridgeLine(line) {
   const parts = line.trim().split(/\s+/);
   const offset = parts[0] === "Bridge" ? 1 : 0;
-  const fingerprint = parts[offset + 2] || "";
+  const first = parts[offset] || "";
+  // Vanilla bridge: first token is an address, not a transport name
+  const vanilla = !KNOWN_TRANSPORTS.has(first.toLowerCase()) && ADDRESS_RE.test(first);
   const iat = line.match(/\biat-mode=(\S+)/i)?.[1];
   return {
-    transport: parts[offset] || "Bridge",
-    address: parts[offset + 1] || "",
-    fingerprint,
+    transport: vanilla ? "none" : (first || "Bridge"),
+    address: vanilla ? first : (parts[offset + 1] || ""),
+    fingerprint: vanilla ? (parts[offset + 1] || "") : (parts[offset + 2] || ""),
     iat
   };
 }
@@ -689,6 +691,10 @@ pingButton.addEventListener("click", () => {
     }));
     pingResults = latencies;
     bridgeLines = [...bridgeLines].sort((a, b) => {
+      const aValid = isBridgeLineValid(a), bValid = isBridgeLineValid(b);
+      if (!aValid && !bValid) return 0;
+      if (!aValid) return 1;
+      if (!bValid) return -1;
       const pa = pingResults.get(a), pb = pingResults.get(b);
       if (pa === null) return pb === null ? 0 : 1;
       if (pb === null) return -1;

@@ -491,10 +491,12 @@ final class Helper {
             .filter { !$0.isEmpty }
         guard lines.count <= 20 else { return nil }
         let allowed = CharacterSet(charactersIn: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 .:/?=&,+_-[]")
+        let addressPattern = #"^(\[[\da-fA-F:]+\]|[\d.]+):\d{1,5}$"#
         for line in lines {
             guard line.unicodeScalars.allSatisfy({ allowed.contains($0) }),
                   let first = line.split(separator: " ").first,
-                  ["obfs4", "webtunnel", "snowflake"].contains(String(first)),
+                  ["obfs4", "webtunnel", "snowflake"].contains(String(first))
+                      || String(first).range(of: addressPattern, options: .regularExpression) != nil,
                   !line.contains("#"), !line.contains("\"") else { return nil }
         }
         return lines
@@ -510,7 +512,11 @@ final class Helper {
             guard parts.count >= 2 else {
                 return ["line": line, "latencyMs": NSNull()]
             }
-            let endpoint = String(parts[1])
+            let knownTransports = ["obfs4", "webtunnel", "snowflake"]
+            // Vanilla bridges: "IP:port fingerprint" — first token is the address.
+            // Named-transport bridges: "transport IP:port ..." — second token is the address.
+            let endpoint = knownTransports.contains(String(parts[0]).lowercased())
+                ? String(parts[1]) : String(parts[0])
             var result: [String: Any] = ["line": line]
             if let latency = tcpLatency(endpoint: endpoint) { result["latencyMs"] = latency }
             else { result["latencyMs"] = NSNull() }
@@ -592,18 +598,24 @@ final class Helper {
     }
 
     private func parseBridgeTargets(from lines: [String], indexOffset: Int = 0) -> [BridgeTarget] {
-        lines.enumerated().compactMap { offset, line in
+        let knownTransports = ["obfs4", "webtunnel", "snowflake"]
+        return lines.enumerated().compactMap { offset, line in
             let parts = line.split(whereSeparator: \.isWhitespace)
             let start = parts.first == "Bridge" ? 1 : 0
-            guard parts.count >= start + 3 else { return nil }
-            let fingerprintCandidate = String(parts[start + 2]).lowercased()
+            guard parts.count >= start + 2 else { return nil }
+            let first = String(parts[start]).lowercased()
+            let vanilla = !knownTransports.contains(first)
+            let transport = vanilla ? "none" : first
+            let address = vanilla ? first : String(parts[start + 1]).lowercased()
+            let fpRaw = vanilla ? String(parts[start + 1]) : (parts.count > start + 2 ? String(parts[start + 2]) : "")
+            let fingerprintCandidate = fpRaw.lowercased()
             let fingerprint = fingerprintCandidate.range(of: #"^[0-9a-f]{40}$"#, options: .regularExpression) != nil
                 ? fingerprintCandidate
                 : nil
             return BridgeTarget(
                 index: offset + 1 + indexOffset,
-                transport: String(parts[start]).lowercased(),
-                address: String(parts[start + 1]).lowercased(),
+                transport: transport,
+                address: address,
                 fingerprint: fingerprint
             )
         }

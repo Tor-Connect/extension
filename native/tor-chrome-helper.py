@@ -32,9 +32,16 @@ BUNDLE = Path(os.environ.get("TORCHROME_BUNDLE", RUNTIME / "bundle")).expanduser
 DATA = BASE / "data"
 
 
+KNOWN_TRANSPORTS = {"obfs4", "webtunnel", "snowflake", "meek_lite", "meek"}
+
 def bridge_endpoint(line: str) -> str | None:
     fields = line.split()
     offset = 1 if fields and fields[0] == "Bridge" else 0
+    if not fields or len(fields) <= offset: return None
+    first = fields[offset]
+    # Vanilla bridge: first token is address, not a transport name
+    if first.lower() not in KNOWN_TRANSPORTS:
+        return first
     return fields[offset + 1] if len(fields) > offset + 1 else None
 
 
@@ -64,11 +71,13 @@ def parse_bridges(raw: str) -> list[str] | None:
     if not lines or len(lines) > 20:
         return None
     allowed = re.compile(r"^[a-zA-Z0-9 .:/?=&,+_\-\[\]]+$")
+    address_re = re.compile(r"^(\[[\da-fA-F:]+\]|[\d.]+):\d{1,5}$")
     for line in lines:
         normalized = line[7:].strip() if line.startswith("Bridge ") else line
         if not allowed.fullmatch(normalized) or "#" in normalized or '"' in normalized:
             return None
-        if normalized.split()[0] not in {"obfs4", "webtunnel", "snowflake"}:
+        first = normalized.split()[0]
+        if first not in {"obfs4", "webtunnel", "snowflake"} and not address_re.match(first):
             return None
     return lines
 
@@ -485,10 +494,16 @@ class Helper:
         for number, line in enumerate(lines, start=1):
             fields = line.split()
             start = 1 if fields and fields[0] == "Bridge" else 0
-            if len(fields) < start + 3: continue
-            fingerprint = fields[start + 2].lower()
-            targets.append({"index": number + offset, "transport": fields[start].lower(),
-                            "address": fields[start + 1].lower(),
+            if len(fields) < start + 2: continue
+            first = fields[start].lower()
+            # Vanilla bridge: first token is address, not transport name
+            vanilla = first not in KNOWN_TRANSPORTS
+            transport = "none" if vanilla else first
+            address = first if vanilla else fields[start + 1].lower()
+            fp_field = fields[start + 1] if vanilla else (fields[start + 2] if len(fields) > start + 2 else "")
+            fingerprint = fp_field.lower()
+            targets.append({"index": number + offset, "transport": transport,
+                            "address": address,
                             "fingerprint": fingerprint if re.fullmatch(r"[0-9a-f]{40}", fingerprint) else None})
         return targets
 
