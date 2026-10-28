@@ -666,14 +666,28 @@ pingButton.addEventListener("click", () => {
   };
   const validLines = allEnabledLines();
   if (!validLines.length) { finishPinging(); return; }
-  chrome.runtime.sendMessage({ type: "pingBridges", bridges: validLines.join("\n") }, (result) => {
+  chrome.runtime.sendMessage({ type: "pingBridges", bridges: validLines.join("\n") }, async (result) => {
     if (chrome.runtime.lastError || !result?.ok || !Array.isArray(result.results)) {
       showClipboardStatus(result?.error || "Could not ping bridges.", "error");
       finishPinging();
       return;
     }
-    pingResults = new Map(result.results.map(({ line, latencyMs }) => [line, Number.isFinite(latencyMs) ? latencyMs : null]));
+    const latencies = new Map(result.results.map(({ line, latencyMs }) => [line, Number.isFinite(latencyMs) ? latencyMs : null]));
     countryResults = new Map(result.results.map(({ line, countryCode }) => [line, countryCode || ""]));
+    // For WebTunnel bridges the native helper pings the placeholder IP (always null).
+    // Measure latency in JS by fetching the url= host directly.
+    await Promise.all(result.results.map(async ({ line }) => {
+      if (latencies.get(line) !== null) return;
+      const urlMatch = line.match(/\burl=https:\/\/([^/\s]+)/i);
+      if (!urlMatch) return;
+      const host = urlMatch[1];
+      const start = Date.now();
+      try {
+        await fetch(`https://${host}`, { method: "HEAD", mode: "no-cors", signal: AbortSignal.timeout(4500) });
+        latencies.set(line, Date.now() - start);
+      } catch { /* still null = timed out */ }
+    }));
+    pingResults = latencies;
     bridgeLines = [...bridgeLines].sort((a, b) => {
       const pa = pingResults.get(a), pb = pingResults.get(b);
       if (pa === null) return pb === null ? 0 : 1;
