@@ -267,25 +267,34 @@ function countryFlag(countryCode) {
 function parseBridgeLine(line) {
   const parts = line.trim().split(/\s+/);
   const offset = parts[0] === "Bridge" ? 1 : 0;
-  const fingerprint = parts[offset + 2] || "";
+  const first = parts[offset] || "";
+  // Vanilla bridge: first token is a numeric IP:port, not a transport name
+  const vanilla = !KNOWN_TRANSPORTS.has(first.toLowerCase()) && VANILLA_ADDRESS_RE.test(first);
   const iat = line.match(/\biat-mode=(\S+)/i)?.[1];
   return {
-    transport: parts[offset] || "Bridge",
-    address: parts[offset + 1] || "",
-    fingerprint,
+    transport: vanilla ? "none" : (first || "Bridge"),
+    address: vanilla ? first : (parts[offset + 1] || ""),
+    fingerprint: vanilla ? (parts[offset + 1] || "") : (parts[offset + 2] || ""),
     iat
   };
 }
 
 const KNOWN_TRANSPORTS = new Set(["obfs4", "webtunnel", "snowflake", "meek_lite", "meek"]);
-const ADDRESS_RE = /^(\[[\da-f:]+\]|[\d.a-zA-Z-]+):\d{1,5}$/i;
+// Vanilla bridges must use a numeric IP (matching the native Swift/Python parsers).
+const VANILLA_ADDRESS_RE = /^(\[[\da-f:]+\]|[\d.]+):\d{1,5}$/i;
+
+function validPort(address) {
+  const port = Number(address.split(":").at(-1));
+  return port >= 1 && port <= 65535;
+}
 
 function isBridgeLineValid(line) {
   const parts = line.trim().split(/\s+/);
   const offset = parts[0] === "Bridge" ? 1 : 0;
   const first = parts[offset] || "";
-  // Valid if first token is a known transport name or a host:port address
-  return KNOWN_TRANSPORTS.has(first.toLowerCase()) || ADDRESS_RE.test(first);
+  if (KNOWN_TRANSPORTS.has(first.toLowerCase())) return true;
+  // Vanilla: first token must be a numeric IP:port within valid port range
+  return VANILLA_ADDRESS_RE.test(first) && validPort(first);
 }
 
 function bridgeNumberForLine(line, index) {
@@ -512,7 +521,7 @@ function saveSettings() {
   });
 }
 
-function saveBridgeList(successMessage) {
+function saveBridgeList(successMessage, kind = "success") {
   const revision = ++bridgeSaveRevision;
   const nextPreferences = storedPreferences();
   chrome.storage.local.set({ torConnectionPreferences: nextPreferences }, () => {
@@ -526,7 +535,7 @@ function saveBridgeList(successMessage) {
     preferences = nextPreferences;
     isDirty = false;
     markSaveState("All changes saved");
-    showClipboardStatus(successMessage, "success");
+    showClipboardStatus(successMessage, kind);
     if (isConnected) showChangeBanner("Bridge lines changed. Reconnect now to apply them.");
     renderBridgeList();
   });
@@ -539,25 +548,31 @@ function importBridgeText(text, sourceName = "Clipboard") {
     return;
   }
   const knownLines = new Set(bridgeLines.map((line) => line.toLowerCase()));
+  let invalidCount = 0;
   const imported = incoming.filter((line) => {
+    if (!isBridgeLineValid(line)) { invalidCount++; return false; }
     const key = line.toLowerCase();
     if (knownLines.has(key)) return false;
     knownLines.add(key);
     return true;
   });
-  const duplicateCount = incoming.length - imported.length;
+  const duplicateCount = incoming.length - invalidCount - imported.length;
   if (!imported.length) {
-    showClipboardStatus(`No new bridges. ${duplicateCount} duplicate ${duplicateCount === 1 ? "line was" : "lines were"} skipped.`, "");
+    const parts = [];
+    if (duplicateCount) parts.push(`${duplicateCount} duplicate ${duplicateCount === 1 ? "line" : "lines"} skipped`);
+    if (invalidCount) parts.push(`${invalidCount} invalid ${invalidCount === 1 ? "line" : "lines"} skipped`);
+    showClipboardStatus(`No new bridges. ${parts.join(", ")}.`, invalidCount ? "warning" : "");
     return;
   }
   bridgeLines.push(...imported);
   renderBridgeList();
   markDirty();
   const countText = `${imported.length} ${imported.length === 1 ? "bridge" : "bridges"} added and saved.`;
-  const savedText = duplicateCount
-    ? `${countText} ${duplicateCount} duplicate ${duplicateCount === 1 ? "line was" : "lines were"} skipped.`
-    : countText;
-  saveBridgeList(savedText);
+  const skippedParts = [];
+  if (duplicateCount) skippedParts.push(`${duplicateCount} duplicate ${duplicateCount === 1 ? "line" : "lines"}`);
+  if (invalidCount) skippedParts.push(`${invalidCount} invalid ${invalidCount === 1 ? "line" : "lines"}`);
+  const savedText = skippedParts.length ? `${countText} ${skippedParts.join(" and ")} skipped.` : countText;
+  saveBridgeList(savedText, invalidCount ? "warning" : "success");
 }
 
 pasteButton.addEventListener("click", async () => {
@@ -689,6 +704,10 @@ pingButton.addEventListener("click", () => {
     }));
     pingResults = latencies;
     bridgeLines = [...bridgeLines].sort((a, b) => {
+      const aValid = isBridgeLineValid(a), bValid = isBridgeLineValid(b);
+      if (!aValid && !bValid) return 0;
+      if (!aValid) return 1;
+      if (!bValid) return -1;
       const pa = pingResults.get(a), pb = pingResults.get(b);
       if (pa === null) return pb === null ? 0 : 1;
       if (pb === null) return -1;
