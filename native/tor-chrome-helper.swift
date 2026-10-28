@@ -539,10 +539,13 @@ final class Helper {
         guard let parsed = parseBridgeLines(normalizedLines.joined(separator: "\n")), !parsed.isEmpty else {
             return ["ok": false, "error": "Add valid bridge lines before looking up countries."]
         }
+        let knownTransports = ["obfs4", "webtunnel", "snowflake"]
         let results: [[String: Any]] = zip(originalLines, parsed).map { line, parsedLine in
             let parts = parsedLine.split(whereSeparator: \.isWhitespace)
             var result: [String: Any] = ["line": line]
-            if parts.count >= 2, let country = countryCode(for: String(parts[1])) {
+            let vanilla = parts.first.map { !knownTransports.contains(String($0).lowercased()) } ?? true
+            let addressToken = vanilla ? parts.first : (parts.count >= 2 ? parts[1] : nil)
+            if let token = addressToken, let country = countryCode(for: String(token)) {
                 result["countryCode"] = country
             }
             return result
