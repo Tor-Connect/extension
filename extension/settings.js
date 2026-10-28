@@ -514,7 +514,7 @@ function saveSettings() {
   });
 }
 
-function saveBridgeList(successMessage) {
+function saveBridgeList(successMessage, kind = "success") {
   const revision = ++bridgeSaveRevision;
   const nextPreferences = storedPreferences();
   chrome.storage.local.set({ torConnectionPreferences: nextPreferences }, () => {
@@ -528,7 +528,7 @@ function saveBridgeList(successMessage) {
     preferences = nextPreferences;
     isDirty = false;
     markSaveState("All changes saved");
-    showClipboardStatus(successMessage, "success");
+    showClipboardStatus(successMessage, kind);
     if (isConnected) showChangeBanner("Bridge lines changed. Reconnect now to apply them.");
     renderBridgeList();
   });
@@ -541,25 +541,31 @@ function importBridgeText(text, sourceName = "Clipboard") {
     return;
   }
   const knownLines = new Set(bridgeLines.map((line) => line.toLowerCase()));
+  let invalidCount = 0;
   const imported = incoming.filter((line) => {
+    if (!isBridgeLineValid(line)) { invalidCount++; return false; }
     const key = line.toLowerCase();
     if (knownLines.has(key)) return false;
     knownLines.add(key);
     return true;
   });
-  const duplicateCount = incoming.length - imported.length;
+  const duplicateCount = incoming.length - invalidCount - imported.length;
   if (!imported.length) {
-    showClipboardStatus(`No new bridges. ${duplicateCount} duplicate ${duplicateCount === 1 ? "line was" : "lines were"} skipped.`, "");
+    const parts = [];
+    if (duplicateCount) parts.push(`${duplicateCount} duplicate ${duplicateCount === 1 ? "line" : "lines"} skipped`);
+    if (invalidCount) parts.push(`${invalidCount} invalid ${invalidCount === 1 ? "line" : "lines"} skipped`);
+    showClipboardStatus(`No new bridges. ${parts.join(", ")}.`, invalidCount ? "warning" : "");
     return;
   }
   bridgeLines.push(...imported);
   renderBridgeList();
   markDirty();
   const countText = `${imported.length} ${imported.length === 1 ? "bridge" : "bridges"} added and saved.`;
-  const savedText = duplicateCount
-    ? `${countText} ${duplicateCount} duplicate ${duplicateCount === 1 ? "line was" : "lines were"} skipped.`
-    : countText;
-  saveBridgeList(savedText);
+  const skippedParts = [];
+  if (duplicateCount) skippedParts.push(`${duplicateCount} duplicate ${duplicateCount === 1 ? "line" : "lines"}`);
+  if (invalidCount) skippedParts.push(`${invalidCount} invalid ${invalidCount === 1 ? "line" : "lines"}`);
+  const savedText = skippedParts.length ? `${countText} ${skippedParts.join(" and ")} skipped.` : countText;
+  saveBridgeList(savedText, invalidCount ? "warning" : "success");
 }
 
 pasteButton.addEventListener("click", async () => {

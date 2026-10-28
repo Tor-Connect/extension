@@ -158,6 +158,7 @@ button:focus-visible, a:focus-visible, summary:focus-visible { outline: 3px soli
 .clipboard-status { min-height: 20px; margin: 0; color: #8a948f; font-size: 13px; }
 .clipboard-status[data-kind="success"] { color: #2bd576; }
 .clipboard-status[data-kind="error"] { color: #ffaaa4; }
+.clipboard-status[data-kind="warning"] { color: #f5a623; }
 .appearance-cards { display: flex; flex-wrap: wrap; align-items: stretch; gap: 16px; }
 .appearance-card { flex: 1.5 1 440px; box-sizing: border-box; display: flex; flex-direction: column; gap: 14px; padding: 20px; border: 1px solid #1d2421; border-radius: 20px; background: #0c1210; }
 .appearance-card.language-card { position: relative; z-index: 6; flex: 1 1 300px; }
@@ -285,6 +286,7 @@ html[data-theme="light"] .bridge-list-empty { border-color: #d1ded6; color: #667
 html[data-theme="light"] .clipboard-status { color: #66716b; }
 html[data-theme="light"] .clipboard-status[data-kind="success"] { color: #16804a; }
 html[data-theme="light"] .clipboard-status[data-kind="error"] { color: #a33c37; }
+html[data-theme="light"] .clipboard-status[data-kind="warning"] { color: #b45309; }
 html[data-theme="light"] .appearance-card { border-color: #dce4df; background: #f8fbf9; }
 html[data-theme="light"] .appearance-card-label { color: #26332c; }
 html[data-theme="light"] .appearance-card-label svg { stroke: #16804a; }
