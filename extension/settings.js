@@ -477,10 +477,12 @@ function saveSettings() {
   const nextPreferences = storedPreferences();
   chrome.storage.local.set({ torConnectionPreferences: nextPreferences }, () => {
     if (chrome.runtime.lastError) {
+      saveButton.disabled = false;
       isDirty = true;
       markSaveState("Could not save settings. Try again.", "error");
       return;
     }
+    saveButton.disabled = false;
     preferences = nextPreferences;
     isDirty = false;
     markSaveState("All changes saved");
