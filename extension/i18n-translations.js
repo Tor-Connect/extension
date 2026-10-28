@@ -391,7 +391,9 @@
       "Blocked": "مسدود",
       "Checking": "در حال بررسی",
       "Waiting for the Tor helper": "در انتظار ابزار Tor",
-      "Copy": "کپی"
+      "Copy": "کپی",
+      "Support development": "حمایت از توسعه",
+      "If Tor Connect is useful to you, consider supporting its development.": "اگر Tor Connect برایتان مفید است، از توسعه آن حمایت کنید."
     },
     de: {
       "Tor Connect settings": "Tor Connect-Einstellungen", "Back to Tor Connect": "Zurück zu Tor Connect", Settings: "Einstellungen",
@@ -666,7 +668,9 @@
       "Blocked": "Blockiert",
       "Checking": "Wird geprüft",
       "Waiting for the Tor helper": "Auf den Tor-Helfer warten",
-      "Copy": "Kopieren"
+      "Copy": "Kopieren",
+      "Support development": "Entwicklung unterstützen",
+      "If Tor Connect is useful to you, consider supporting its development.": "Wenn dir Tor Connect nützt, erwäge die Entwicklung zu unterstützen."
     },
     es: {
       "Tor Connect settings": "Configuración de Tor Connect", "Back to Tor Connect": "Volver a Tor Connect", Settings: "Configuración", "All changes saved": "Todos los cambios guardados", "Save changes": "Guardar cambios", "Checking connection…": "Comprobando conexión…",
@@ -920,7 +924,9 @@
       "Blocked": "Bloqueado",
       "Checking": "Comprobando",
       "Waiting for the Tor helper": "Esperando al asistente de Tor",
-      "Copy": "Copiar"
+      "Copy": "Copiar",
+      "Support development": "Apoyar el desarrollo",
+      "If Tor Connect is useful to you, consider supporting its development.": "Si Tor Connect te resulta útil, considera apoyar su desarrollo."
     },
     ar: {
       "Tor Connect settings": "إعدادات Tor Connect", "Back to Tor Connect": "العودة إلى Tor Connect", Settings: "الإعدادات", "All changes saved": "تم حفظ جميع التغييرات", "Save changes": "حفظ التغييرات", "Checking connection…": "جارٍ التحقق من الاتصال…",
@@ -1173,7 +1179,9 @@
       "Blocked": "محجوب",
       "Checking": "جارٍ التحقق",
       "Waiting for the Tor helper": "في انتظار أداة Tor المساعدة",
-      "Copy": "نسخ"
+      "Copy": "نسخ",
+      "Support development": "دعم التطوير",
+      "If Tor Connect is useful to you, consider supporting its development.": "إذا كان Tor Connect مفيداً لك، فكّر في دعم تطويره."
     },
     zh: {
       "Tor Connect settings": "Tor Connect 设置", "Back to Tor Connect": "返回 Tor Connect", Settings: "设置", "All changes saved": "已保存所有更改", "Save changes": "保存更改", "Checking connection…": "正在检查连接…", "Settings saved. Reconnect to apply them.": "设置已保存。请重新连接以应用。", "Reconnect now": "立即重新连接", "Settings sections": "设置类别", "Connection method": "连接方式", "Bridge lines": "网桥线路", Appearance: "外观", "Privacy and about": "隐私与关于",
@@ -1425,7 +1433,9 @@
       "Blocked": "已封锁",
       "Checking": "正在检查",
       "Waiting for the Tor helper": "正在等待 Tor 辅助程序",
-      "Copy": "复制"
+      "Copy": "复制",
+      "Support development": "支持开发",
+      "If Tor Connect is useful to you, consider supporting its development.": "如果 Tor Connect 对你有帮助，请考虑支持其开发。"
     },
     hi: {
       "Tor Connect settings": "Tor Connect सेटिंग्स", "Back to Tor Connect": "Tor Connect पर वापस जाएँ", Settings: "सेटिंग्स", "All changes saved": "सभी बदलाव सहेजे गए", "Save changes": "बदलाव सहेजें", "Checking connection…": "कनेक्शन जाँचा जा रहा है…", "Settings saved. Reconnect to apply them.": "सेटिंग्स सहेजी गईं। लागू करने के लिए फिर से कनेक्ट करें।", "Reconnect now": "अभी फिर से कनेक्ट करें", "Settings sections": "सेटिंग्स अनुभाग", "Connection method": "कनेक्शन का तरीका", "Bridge lines": "ब्रिज लाइनें", Appearance: "दिखावट", "Privacy and about": "गोपनीयता और जानकारी",
@@ -1677,7 +1687,9 @@
       "Blocked": "अवरुद्ध",
       "Checking": "जाँचा जा रहा है",
       "Waiting for the Tor helper": "Tor हेल्पर की प्रतीक्षा में",
-      "Copy": "कॉपी करें"
+      "Copy": "कॉपी करें",
+      "Support development": "विकास का समर्थन करें",
+      "If Tor Connect is useful to you, consider supporting its development.": "अगर Tor Connect आपके लिए उपयोगी है, तो इसके विकास का समर्थन करने पर विचार करें।"
     },
     fr: {
       "Tor Connect settings": "Paramètres de Tor Connect", "Back to Tor Connect": "Retour à Tor Connect", Settings: "Paramètres", "All changes saved": "Toutes les modifications sont enregistrées", "Save changes": "Enregistrer les modifications", "Checking connection…": "Vérification de la connexion…", "Settings saved. Reconnect to apply them.": "Paramètres enregistrés. Reconnectez-vous pour les appliquer.", "Reconnect now": "Se reconnecter maintenant", "Settings sections": "Sections des paramètres", "Connection method": "Méthode de connexion", "Bridge lines": "Lignes de bridge", Appearance: "Apparence", "Privacy and about": "Confidentialité et à propos",
@@ -1929,7 +1941,9 @@
       "Blocked": "Bloqué",
       "Checking": "Vérification",
       "Waiting for the Tor helper": "En attente de l'outil Tor",
-      "Copy": "Copier"
+      "Copy": "Copier",
+      "Support development": "Soutenir le développement",
+      "If Tor Connect is useful to you, consider supporting its development.": "Si Tor Connect vous est utile, envisagez de soutenir son développement."
     },
     ru: {
       "Tor Connect settings": "Настройки Tor Connect", "Back to Tor Connect": "Назад в Tor Connect", Settings: "Настройки", "All changes saved": "Все изменения сохранены", "Save changes": "Сохранить изменения", "Checking connection…": "Проверка соединения…", "Settings saved. Reconnect to apply them.": "Настройки сохранены. Переподключитесь, чтобы применить их.", "Reconnect now": "Переподключиться", "Settings sections": "Разделы настроек", "Connection method": "Способ подключения", "Bridge lines": "Строки мостов", Appearance: "Внешний вид", "Privacy and about": "Конфиденциальность и информация",
@@ -2181,7 +2195,9 @@
       "Blocked": "Заблокировано",
       "Checking": "Проверка",
       "Waiting for the Tor helper": "Ожидание помощника Tor",
-      "Copy": "Копировать"
+      "Copy": "Копировать",
+      "Support development": "Поддержать разработку",
+      "If Tor Connect is useful to you, consider supporting its development.": "Если Tor Connect полезен для вас, рассмотрите возможность поддержать его разработку."
     }
   };
 
