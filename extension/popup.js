@@ -395,22 +395,23 @@ function renderSiteCheck(result = {}) {
   siteCheckSummaryNode.classList.toggle("is-failed", failures > 0 && !pending);
   siteCheckSummaryNode.classList.toggle("is-pending", pending);
   siteCheckSummaryNode.classList.toggle("is-passed", !pending && !failures && result.connectivityCheck === "passed");
+  const t = globalThis.torI18n?.t || ((s) => s);
   if (pending) {
-    siteCheckSummaryNode.innerHTML = '<span class="site-check-spinner" aria-hidden="true"></span>Checking sites…';
+    siteCheckSummaryNode.innerHTML = `<span class="site-check-spinner" aria-hidden="true"></span>${t("Checking sites…")}`;
   } else if (failures) {
-    siteCheckSummaryNode.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4 3 20h18L12 4z"/><path d="M12 10v4m0 3.2v.1"/></svg>${failures} of ${sites.length || 4} sites blocked<svg class="site-check-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg>`;
+    siteCheckSummaryNode.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4 3 20h18L12 4z"/><path d="M12 10v4m0 3.2v.1"/></svg>${failures} of ${sites.length || 4} ${t("sites blocked")}<svg class="site-check-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg>`;
   } else if (result.connectivityCheck === "passed") {
-    siteCheckSummaryNode.textContent = "all sites reachable";
+    siteCheckSummaryNode.textContent = t("all sites reachable");
   } else {
-    siteCheckSummaryNode.textContent = "Checking sites…";
+    siteCheckSummaryNode.textContent = t("Checking sites…");
   }
-  const blockedSummary = failures ? `${failures} of ${sites.length || 4} sites blocked` : "All sites reachable";
-  siteCheckCountNode.textContent = pending ? "Checking 4 sites…" : failures ? blockedSummary : "All 4 sites reachable";
+  const blockedSummary = failures ? `${failures} of ${sites.length || 4} ${t("sites blocked")}` : t("All sites reachable");
+  siteCheckCountNode.textContent = pending ? t("Checking 4 sites…") : failures ? blockedSummary : t("All 4 sites reachable");
   siteCheckCountNode.classList.toggle("has-failures", failures > 0 && !pending);
   siteCheckSheetNode.classList.toggle("is-pending", pending);
   siteCheckSheetNode.classList.toggle("is-failed", failures > 0 && !pending);
   siteCheckSheetNode.classList.toggle("is-passed", !pending && !failures && result.connectivityCheck === "passed");
-  nextRouteNode.textContent = preferences.mode === "manual" ? "Next bridge" : "New proxy";
+  nextRouteNode.textContent = t(preferences.mode === "manual" ? "Next bridge" : "New proxy");
   nextRouteNode.hidden = pending || failures === 0;
   document.querySelector("#retestSites").disabled = pending;
   siteCheckRowsNode.replaceChildren(...SITE_CHECK_NAMES.map((name) => {
@@ -430,7 +431,7 @@ function renderSiteCheck(result = {}) {
     siteName.textContent = name;
     const meta = document.createElement("span");
     meta.className = "site-check-meta";
-    meta.textContent = resultForSite.state === "passed" ? `${Math.max(0, Number(resultForSite.latencyMs) || 0)} ms` : resultForSite.state === "failed" ? "Blocked" : "Checking";
+    meta.textContent = resultForSite.state === "passed" ? `${Math.max(0, Number(resultForSite.latencyMs) || 0)} ms` : resultForSite.state === "failed" ? t("Blocked") : t("Checking");
     row.append(icon, siteName, meta);
     return row;
   }));
