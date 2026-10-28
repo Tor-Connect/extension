@@ -607,9 +607,11 @@ final class Helper {
         return lines.enumerated().compactMap { offset, line in
             let parts = line.split(whereSeparator: \.isWhitespace)
             let start = parts.first == "Bridge" ? 1 : 0
-            guard parts.count >= start + 2 else { return nil }
+            guard parts.count > start else { return nil }
             let first = String(parts[start]).lowercased()
             let vanilla = !knownTransports.contains(first)
+            // Named-transport bridges require an address token after the transport name
+            guard vanilla || parts.count >= start + 2 else { return nil }
             let transport = vanilla ? "none" : first
             let address = vanilla ? first : String(parts[start + 1]).lowercased()
             let fpRaw = vanilla ? String(parts[start + 1]) : (parts.count > start + 2 ? String(parts[start + 2]) : "")

@@ -496,10 +496,12 @@ class Helper:
         for number, line in enumerate(lines, start=1):
             fields = line.split()
             start = 1 if fields and fields[0] == "Bridge" else 0
-            if len(fields) < start + 2: continue
+            if len(fields) <= start: continue
             first = fields[start].lower()
             # Vanilla bridge: first token is address, not transport name
             vanilla = first not in KNOWN_TRANSPORTS
+            # Named-transport bridges require an address token after the transport name
+            if not vanilla and len(fields) < start + 2: continue
             transport = "none" if vanilla else first
             address = first if vanilla else fields[start + 1].lower()
             fp_field = fields[start + 1] if vanilla else (fields[start + 2] if len(fields) > start + 2 else "")
