@@ -504,7 +504,7 @@ class Helper:
             if not vanilla and len(fields) < start + 2: continue
             transport = "none" if vanilla else first
             address = first if vanilla else fields[start + 1].lower()
-            fp_field = fields[start + 1] if vanilla else (fields[start + 2] if len(fields) > start + 2 else "")
+            fp_field = (fields[start + 1] if len(fields) > start + 1 else "") if vanilla else (fields[start + 2] if len(fields) > start + 2 else "")
             fingerprint = fp_field.lower()
             targets.append({"index": number + offset, "transport": transport,
                             "address": address,

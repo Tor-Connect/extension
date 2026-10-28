@@ -614,7 +614,7 @@ final class Helper {
             guard vanilla || parts.count >= start + 2 else { return nil }
             let transport = vanilla ? "none" : first
             let address = vanilla ? first : String(parts[start + 1]).lowercased()
-            let fpRaw = vanilla ? String(parts[start + 1]) : (parts.count > start + 2 ? String(parts[start + 2]) : "")
+            let fpRaw = vanilla ? (parts.count > start + 1 ? String(parts[start + 1]) : "") : (parts.count > start + 2 ? String(parts[start + 2]) : "")
             let fingerprintCandidate = fpRaw.lowercased()
             let fingerprint = fingerprintCandidate.range(of: #"^[0-9a-f]{40}$"#, options: .regularExpression) != nil
                 ? fingerprintCandidate
