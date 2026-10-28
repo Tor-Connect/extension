@@ -71,14 +71,16 @@ def parse_bridges(raw: str) -> list[str] | None:
     if not lines or len(lines) > 20:
         return None
     allowed = re.compile(r"^[a-zA-Z0-9 .:/?=&,+_\-\[\]]+$")
-    address_re = re.compile(r"^(\[[\da-fA-F:]+\]|[\d.]+):\d{1,5}$")
+    address_re = re.compile(r"^(\[[\da-fA-F:]+\]|[\d.]+):(\d{1,5})$")
     for line in lines:
         normalized = line[7:].strip() if line.startswith("Bridge ") else line
         if not allowed.fullmatch(normalized) or "#" in normalized or '"' in normalized:
             return None
         first = normalized.split()[0]
-        if first not in {"obfs4", "webtunnel", "snowflake"} and not address_re.match(first):
-            return None
+        if first not in {"obfs4", "webtunnel", "snowflake"}:
+            m = address_re.match(first)
+            if not m or int(m.group(2)) < 1 or int(m.group(2)) > 65535:
+                return None
     return lines
 
 

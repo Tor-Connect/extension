@@ -268,8 +268,8 @@ function parseBridgeLine(line) {
   const parts = line.trim().split(/\s+/);
   const offset = parts[0] === "Bridge" ? 1 : 0;
   const first = parts[offset] || "";
-  // Vanilla bridge: first token is an address, not a transport name
-  const vanilla = !KNOWN_TRANSPORTS.has(first.toLowerCase()) && ADDRESS_RE.test(first);
+  // Vanilla bridge: first token is a numeric IP:port, not a transport name
+  const vanilla = !KNOWN_TRANSPORTS.has(first.toLowerCase()) && VANILLA_ADDRESS_RE.test(first);
   const iat = line.match(/\biat-mode=(\S+)/i)?.[1];
   return {
     transport: vanilla ? "none" : (first || "Bridge"),
@@ -280,14 +280,21 @@ function parseBridgeLine(line) {
 }
 
 const KNOWN_TRANSPORTS = new Set(["obfs4", "webtunnel", "snowflake", "meek_lite", "meek"]);
-const ADDRESS_RE = /^(\[[\da-f:]+\]|[\d.a-zA-Z-]+):\d{1,5}$/i;
+// Vanilla bridges must use a numeric IP (matching the native Swift/Python parsers).
+const VANILLA_ADDRESS_RE = /^(\[[\da-f:]+\]|[\d.]+):\d{1,5}$/i;
+
+function validPort(address) {
+  const port = Number(address.split(":").at(-1));
+  return port >= 1 && port <= 65535;
+}
 
 function isBridgeLineValid(line) {
   const parts = line.trim().split(/\s+/);
   const offset = parts[0] === "Bridge" ? 1 : 0;
   const first = parts[offset] || "";
-  // Valid if first token is a known transport name or a host:port address
-  return KNOWN_TRANSPORTS.has(first.toLowerCase()) || ADDRESS_RE.test(first);
+  if (KNOWN_TRANSPORTS.has(first.toLowerCase())) return true;
+  // Vanilla: first token must be a numeric IP:port within valid port range
+  return VANILLA_ADDRESS_RE.test(first) && validPort(first);
 }
 
 function bridgeNumberForLine(line, index) {

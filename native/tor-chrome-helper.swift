@@ -491,13 +491,18 @@ final class Helper {
             .filter { !$0.isEmpty }
         guard lines.count <= 20 else { return nil }
         let allowed = CharacterSet(charactersIn: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 .:/?=&,+_-[]")
-        let addressPattern = #"^(\[[\da-fA-F:]+\]|[\d.]+):\d{1,5}$"#
+        let addressPattern = #"^(\[[\da-fA-F:]+\]|[\d.]+):(\d{1,5})$"#
         for line in lines {
             guard line.unicodeScalars.allSatisfy({ allowed.contains($0) }),
                   let first = line.split(separator: " ").first,
-                  ["obfs4", "webtunnel", "snowflake"].contains(String(first))
-                      || String(first).range(of: addressPattern, options: .regularExpression) != nil,
                   !line.contains("#"), !line.contains("\"") else { return nil }
+            let firstStr = String(first)
+            if ["obfs4", "webtunnel", "snowflake"].contains(firstStr) { continue }
+            // Vanilla bridge: must be numeric IP:port with port in 1…65535
+            guard firstStr.range(of: addressPattern, options: .regularExpression) != nil,
+                  let colonRange = firstStr.lastIndex(of: ":"),
+                  let port = UInt16(firstStr[firstStr.index(after: colonRange)...]),
+                  port > 0 else { return nil }
         }
         return lines
     }
