@@ -16,11 +16,14 @@ button:focus-visible, a:focus-visible, summary:focus-visible { outline: 3px soli
 .breadcrumb-divider { color: #3a4540; }
 .breadcrumb-current { color: #a9b3ae; font-size: 16px; }
 .topbar-status { flex-wrap: wrap; justify-content: flex-end; gap: 12px 20px; }
-.save-status { color: #2bd576; font-size: 13px; }
-.save-status[data-kind="pending"] { color: #e9b44f; }
-.save-status[data-kind="error"] { color: #ffaaaa; }
+.save-status-clean { display: flex; align-items: center; gap: 7px; font-size: 13px; color: #8a948f; }
+.save-status-clean[hidden] { display: none; }
+.save-status-clean svg { width: 18px; height: 18px; flex: 0 0 18px; fill: none; stroke: #2bd576; stroke-linecap: round; stroke-linejoin: round; stroke-width: 2; }
+.save-status-dirty { display: flex; align-items: center; gap: 7px; font-size: 13px; font-weight: 500; color: #ffc24d; }
+.save-status-dirty[hidden] { display: none; }
+.dirty-dot { width: 8px; height: 8px; flex: 0 0 8px; border-radius: 50%; background: #ffb020; }
 .save-button, .primary-button, .change-banner button { min-height: 40px; padding: 0 18px; border: 0; border-radius: 20px; color: #06150d; background: #2bd576; font-weight: 600; }
-.save-button:disabled { display: none; }
+.save-button[hidden] { display: none; }
 .connection-badge { display: flex; min-height: 32px; align-items: center; gap: 8px; padding: 0 14px; border: 1px solid #303a35; border-radius: 16px; color: #a9b3ae; background: #121816; font-size: 13px; white-space: nowrap; }
 .connection-badge[data-state="connected"] { border-color: #1c5b3b; color: #2bd576; background: #0f1f17; }
 .connection-badge[data-state="starting"] { border-color: #594621; color: #e9b44f; background: #1c1911; }
@@ -44,7 +47,6 @@ button:focus-visible, a:focus-visible, summary:focus-visible { outline: 3px soli
 .page-heading p, .section-heading p { margin: 0; color: #8a948f; line-height: 1.5; }
 .page-heading p { font-size: 15px; }
 .settings-section { display: flex; min-width: 0; flex-direction: column; gap: 20px; scroll-margin-top: 28px; }
-.app-version { margin: 0; color: #8a948f; font-size: 12px; }
 .section-heading { display: flex; flex-direction: column; gap: 6px; }
 .section-heading h2 { margin: 0; font-size: 22px; font-weight: 600; letter-spacing: -.02em; line-height: 1.25; }
 .section-heading p { font-size: 14px; }
@@ -151,43 +153,57 @@ button:focus-visible, a:focus-visible, summary:focus-visible { outline: 3px soli
 .clipboard-status { min-height: 20px; margin: 0; color: #8a948f; font-size: 13px; }
 .clipboard-status[data-kind="success"] { color: #2bd576; }
 .clipboard-status[data-kind="error"] { color: #ffaaa4; }
-.theme-options { display: flex; align-self: flex-start; flex-wrap: wrap; gap: 4px; padding: 4px; border: 1px solid #1d2421; border-radius: 16px; background: #0c1210; }
-.theme-options button { display: inline-flex; min-height: 44px; align-items: center; justify-content: center; gap: 8px; padding: 0 24px; border: 1px solid transparent; border-radius: 12px; color: #8a948f; background: transparent; font-size: 14px; font-weight: 500; white-space: nowrap; }
-.theme-choice-icon { width: 18px; height: 18px; flex: 0 0 18px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.8; }
+.appearance-cards { display: flex; flex-wrap: wrap; align-items: stretch; gap: 16px; }
+.appearance-card { flex: 1.5 1 440px; box-sizing: border-box; display: flex; flex-direction: column; gap: 14px; padding: 20px; border: 1px solid #1d2421; border-radius: 20px; background: #0c1210; }
+.appearance-card.language-card { position: relative; z-index: 6; flex: 1 1 300px; }
+.appearance-card-label { display: flex; align-items: center; gap: 10px; font-size: 15px; font-weight: 600; }
+.appearance-card-label svg { width: 20px; height: 20px; flex: 0 0 20px; fill: none; stroke: #2bd576; stroke-linecap: round; stroke-linejoin: round; stroke-width: 2; }
+.theme-options { display: flex; gap: 4px; padding: 4px; border: 1px solid #1d2421; border-radius: 16px; background: #080c0b; }
+.theme-options button { display: inline-flex; flex: 1; min-height: 44px; align-items: center; justify-content: center; gap: 8px; padding: 0 10px; border: 1px solid transparent; border-radius: 12px; color: #8a948f; background: transparent; font-size: 14px; font-weight: 500; white-space: nowrap; transition: background .2s ease, border-color .2s ease, color .2s ease; }
+.theme-choice-icon { width: 18px; height: 18px; flex: 0 0 18px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 2; }
 .theme-options button[aria-pressed="true"] { border-color: #2bd576; color: #eaf1ee; background: #121816; font-weight: 600; }
-.privacy-card { display: flex; gap: 16px; padding: 20px; border: 1px solid #262d2b; border-radius: 20px; background: #0c1210; }
+.privacy-card { display: flex; gap: 16px; padding: 20px; border: 1px solid #262d2b; border-radius: 20px; background: #0c1210; align-items: flex-start; }
 .privacy-icon { display: grid; width: 44px; height: 44px; flex: 0 0 44px; place-items: center; border-radius: 12px; color: #a9b3ae; background: #121816; }
 .privacy-icon svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 2; }
 .privacy-card strong { font-size: 16px; font-weight: 600; }
 .privacy-card p { margin: 6px 0 0; color: #c3cdc8; font-size: 14px; line-height: 1.6; }
-.privacy-policy-link { display: inline-flex; margin-top: 12px; color: #2bd576; font-size: 13px; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
-.donation-list { display: grid; gap: 8px; }
-.donation-card { display: grid; grid-template-columns: minmax(112px, auto) minmax(0, 1fr) auto; align-items: center; gap: 12px; padding: 9px 12px; border: 1px solid #262d2b; border-radius: 12px; background: #0c1210; }
-.donation-metadata { display: grid; gap: 1px; }
-.donation-metadata strong { color: #eaf1ee; font-size: 15px; font-weight: 600; }
-.donation-metadata span { color: #8a948f; font-size: 12px; }
-.donation-address-row { display: contents; }
-.donation-address { display: flex; min-width: 0; align-items: center; padding: 8px 10px; border: 1px solid #1d2421; border-radius: 8px; color: #cfe9db; background: #101613; font: 12px/1.4 "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace; overflow-wrap: anywhere; }
-.donation-copy-button { width: 40px; min-height: 40px; flex: 0 0 40px; padding: 0; }
-.donation-copy-button svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 2; }
+.privacy-policy-link { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; margin-top: 4px; color: #2bd576; font-size: 14px; font-weight: 600; }
+.privacy-policy-link svg { width: 16px; height: 16px; flex: 0 0 16px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 2.4; }
+.app-version-badge { display: flex; align-items: center; gap: 10px; font-size: 13px; color: #6b7771; }
+.app-version-pill { display: inline-block; padding: 2px 8px; border-radius: 8px; background: #121816; color: #a9b3ae; font: 500 12px/1.5 "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace; }
+.donation-list { display: flex; flex-wrap: wrap; gap: 16px; }
+.donation-card { flex: 1 1 380px; box-sizing: border-box; display: flex; flex-direction: column; gap: 16px; padding: 20px; border: 1px solid #1d2421; border-radius: 20px; background: #0c1210; }
+.donation-card-header { display: flex; align-items: center; gap: 14px; }
+.donation-coin-symbol { flex: 0 0 44px; display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; border: 1.5px solid #2a3230; border-radius: 50%; background: #121816; font-size: 20px; font-weight: 600; color: #eaf1ee; }
+.donation-metadata { display: flex; flex: 1; flex-direction: column; gap: 2px; min-width: 0; }
+.donation-metadata strong { color: #eaf1ee; font-size: 17px; font-weight: 600; }
+.donation-metadata span { color: #8a948f; font-size: 13px; }
+.donation-copy-button { display: inline-flex; flex: none; align-items: center; gap: 8px; height: 44px; padding: 0 16px; border-radius: 22px; font-weight: 600; font-size: 14px; transition: background .2s ease, color .2s ease, border-color .2s ease; }
+.donation-copy-button svg { width: 18px; height: 18px; flex: 0 0 18px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 2; }
 .donation-copy-success-icon { display: none; }
-.donation-copy-button.is-copied { border-color: #1c5b3b; color: #2bd576; background: #0f1f17; }
+.donation-copy-button.is-copied { border-color: #2bd576; color: #06150d; background: #2bd576; }
 .donation-copy-button.is-copied .donation-copy-icon { display: none; }
 .donation-copy-button.is-copied .donation-copy-success-icon { display: block; }
-.donation-privacy-note, .donation-status { margin: 0; color: #8a948f; font-size: 13px; line-height: 1.5; }
+.donation-copy-button.is-copied svg { stroke-width: 2.8; }
+.donation-address-box { box-sizing: border-box; padding: 14px; border: 1px solid #1d2421; border-radius: 12px; background: #080c0b; font: 13px/1.6 "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace; word-break: break-all; color: #6b7771; }
+.donation-address-highlight { color: #eaf1ee; font-weight: 500; }
+.donation-status { margin: 0; color: #8a948f; font-size: 13px; line-height: 1.5; }
 .donation-status:empty { display: none; }
+.donation-security-note { display: flex; align-items: flex-start; gap: 10px; margin: 0; font-size: 13px; line-height: 1.5; color: #8a948f; }
+.donation-security-note svg { width: 18px; height: 18px; flex: 0 0 18px; margin-top: 1px; fill: none; stroke: #2bd576; stroke-linecap: round; stroke-linejoin: round; stroke-width: 2; }
 #support { gap: 10px; }
 #support .section-heading { gap: 3px; }
 #support .section-heading h2 { font-size: 20px; }
 #support .section-heading p { font-size: 13px; }
-.connection-details { overflow: hidden; border: 1px solid #1d2421; border-radius: 16px; }
-.connection-details summary { display: flex; min-height: 60px; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 20px; cursor: pointer; list-style: none; }
-.connection-details summary::-webkit-details-marker { display: none; }
-.connection-details summary span { display: flex; flex-direction: column; gap: 2px; }
-.connection-details summary strong { font-size: 15px; font-weight: 600; }
-.connection-details summary small { color: #8a948f; font-size: 13px; }
-.connection-details summary svg { width: 20px; height: 20px; flex: 0 0 auto; fill: none; stroke: #8a948f; stroke-linecap: round; stroke-linejoin: round; stroke-width: 2; transition: transform .16s ease; }
-.connection-details[open] summary svg { transform: rotate(180deg); }
+.connection-details { overflow: hidden; border: 1px solid #1d2421; border-radius: 16px; transition: border-color .2s ease; }
+.connection-details-toggle { display: flex; width: 100%; min-height: 60px; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 20px; border: 0; border-radius: 16px; background: transparent; color: #eaf1ee; text-align: left; cursor: pointer; }
+.connection-details-toggle span { display: flex; flex-direction: column; gap: 2px; }
+.connection-details-toggle strong { font-size: 15px; font-weight: 600; }
+.connection-details-toggle small { color: #8a948f; font-size: 13px; }
+.connection-details-toggle svg { width: 20px; height: 20px; flex: 0 0 auto; fill: none; stroke: #8a948f; stroke-linecap: round; stroke-linejoin: round; stroke-width: 2; transition: transform .16s ease; }
+.connection-details-toggle[aria-expanded="true"] svg { transform: rotate(180deg); }
+.connection-details-toggle[aria-expanded="true"] ~ .connection-details-body { display: block; }
+.connection-details-body[hidden] { display: none; }
 .connection-details-body { padding: 0 20px 18px; color: #a9b3ae; font-size: 13px; }
 .connection-details-body p { margin: 8px 0 0; }
 .connection-details-body pre { max-height: 280px; overflow: auto; margin: 9px 0; padding: 12px; border-radius: 8px; color: #c3cdc8; background: #121816; font: 12px/1.5 "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace; overflow-wrap: anywhere; white-space: pre-wrap; }
@@ -202,9 +218,9 @@ html[data-theme="light"] .brand-link { color: #1d2621; }
 html[data-theme="light"] .brand-mark { color: #14864c; }
 html[data-theme="light"] .breadcrumb-divider { color: #c4ccc8; }
 html[data-theme="light"] .breadcrumb-current { color: #64716b; }
-html[data-theme="light"] .save-status { color: #16804a; }
-html[data-theme="light"] .save-status[data-kind="pending"] { color: #936300; }
-html[data-theme="light"] .save-status[data-kind="error"] { color: #a33c37; }
+html[data-theme="light"] .save-status-clean { color: #56645c; }
+html[data-theme="light"] .save-status-dirty { color: #936300; }
+html[data-theme="light"] .dirty-dot { background: #b07400; }
 html[data-theme="light"] .connection-badge { border-color: #dce4df; color: #66716b; background: #f4f7f5; }
 html[data-theme="light"] .connection-badge[data-state="connected"] { border-color: #b6dfc6; color: #14864c; background: #edf8f1; }
 html[data-theme="light"] .connection-badge[data-state="starting"] { border-color: #ead6a4; color: #885f0d; background: #fff8e8; }
@@ -263,20 +279,32 @@ html[data-theme="light"] .bridge-list-empty { border-color: #d1ded6; color: #667
 html[data-theme="light"] .clipboard-status { color: #66716b; }
 html[data-theme="light"] .clipboard-status[data-kind="success"] { color: #16804a; }
 html[data-theme="light"] .clipboard-status[data-kind="error"] { color: #a33c37; }
+html[data-theme="light"] .appearance-card { border-color: #dce4df; background: #f8fbf9; }
+html[data-theme="light"] .appearance-card-label { color: #26332c; }
+html[data-theme="light"] .appearance-card-label svg { stroke: #16804a; }
 html[data-theme="light"] .theme-options { border-color: #dce4df; background: #edf1ef; }
 html[data-theme="light"] .theme-options button { color: #66716b; }
 html[data-theme="light"] .theme-options button[aria-pressed="true"] { border-color: #16804a; color: #202b25; background: #fff; }
 html[data-theme="light"] .privacy-card { border-color: #dce4df; background: #fff; }
 html[data-theme="light"] .privacy-icon { color: #66716b; background: #edf1ef; }
 html[data-theme="light"] .privacy-card p { color: #4f5c55; }
-html[data-theme="light"] .donation-card { border-color: #dce4df; background: #fff; }
-html[data-theme="light"] .donation-metadata strong { color: #26332c; }
-html[data-theme="light"] .donation-metadata span, html[data-theme="light"] .donation-privacy-note, html[data-theme="light"] .donation-status { color: #66716b; }
-html[data-theme="light"] .donation-address { border-color: #dce4df; color: #344139; background: #f5f8f6; }
-html[data-theme="light"] .donation-copy-button.is-copied { border-color: #a3e5bf; color: #14864c; background: #edf9f1; }
 html[data-theme="light"] .privacy-policy-link { color: #16804a; }
+html[data-theme="light"] .app-version-badge { color: #78837d; }
+html[data-theme="light"] .app-version-pill { background: #e5ebe7; color: #56645c; }
+html[data-theme="light"] .donation-card { border-color: #dce4df; background: #fff; }
+html[data-theme="light"] .donation-coin-symbol { border-color: #d0d8d3; background: #f0f4f1; color: #26332c; }
+html[data-theme="light"] .donation-metadata strong { color: #26332c; }
+html[data-theme="light"] .donation-metadata span, html[data-theme="light"] .donation-status { color: #66716b; }
+html[data-theme="light"] .donation-copy-button { border-color: #dce4df; color: #26332c; }
+html[data-theme="light"] .donation-copy-button:hover { border-color: #a9cbb5; background: #eef5f0; }
+html[data-theme="light"] .donation-copy-button.is-copied { border-color: #2bd576; color: #06150d; background: #2bd576; }
+html[data-theme="light"] .donation-address-box { border-color: #dce4df; background: #f5f8f6; color: #78837d; }
+html[data-theme="light"] .donation-address-highlight { color: #202b25; }
+html[data-theme="light"] .donation-security-note { color: #66716b; }
+html[data-theme="light"] .donation-security-note svg { stroke: #16804a; }
 html[data-theme="light"] .connection-details { border-color: #dce4df; }
-html[data-theme="light"] .connection-details summary small, html[data-theme="light"] .connection-details summary svg { color: #66716b; stroke: #66716b; }
+html[data-theme="light"] .connection-details-toggle { color: #202b25; }
+html[data-theme="light"] .connection-details-toggle small, html[data-theme="light"] .connection-details-toggle svg { color: #66716b; stroke: #66716b; }
 html[data-theme="light"] .connection-details-body { color: #56645c; }
 
 @media (prefers-reduced-motion: reduce) {
@@ -312,14 +340,12 @@ html[data-theme="light"] .connection-details-body pre { color: #344139; backgrou
   .bridge-row-actions { margin-left: auto; }
   .theme-options button { padding: 0 14px; }
   .change-banner { padding: 12px 16px; text-align: center; }
-  .donation-card { grid-template-columns: minmax(0, 1fr) auto; gap: 6px 10px; padding: 9px 10px; }
-  .donation-metadata { grid-column: 1 / -1; display: flex; align-items: baseline; gap: 8px; }
+  .donation-card { padding: 16px; }
+  .donation-card-header { flex-wrap: wrap; gap: 10px; }
 }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } *, *::before, *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; } }
 
-.language-setting { display: flex; max-width: 520px; flex-direction: column; align-items: flex-start; gap: 12px; padding-top: 8px; }
-.language-setting label { margin: 0; font-size: 22px; font-weight: 600; line-height: 1.25; }
-.language-picker { position: relative; width: 260px; max-width: 100%; flex: none; }
+.language-picker { position: relative; width: 100%; }
 .language-picker-trigger { display: flex; width: 100%; min-height: 52px; align-items: center; gap: 12px; padding: 0 15px; border: 1px solid #303a35; border-radius: 14px; color: #eaf1ee; background: #101613; text-align: start; font-size: 14px; transition: border-color .16s ease, background .16s ease; }
 .language-picker-trigger:hover, .language-picker-trigger[aria-expanded="true"] { border-color: #2b7650; background: #121c17; }
 .language-picker-trigger .language-flag { width: 22px; flex: 0 0 22px; font-size: 19px; }

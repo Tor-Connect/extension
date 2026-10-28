@@ -1,6 +1,7 @@
 const modeButtons = [...document.querySelectorAll(".method-card[data-mode]")];
 const saveButton = document.querySelector("#saveSettings");
-const saveStatusNode = document.querySelector("#saveStatus");
+const saveStatusCleanNode = document.querySelector("#saveStatusClean");
+const saveStatusDirtyNode = document.querySelector("#saveStatusDirty");
 const connectionBadgeNode = document.querySelector("#connectionStatus");
 const connectionBadgeTextNode = connectionBadgeNode.querySelector("span:last-child");
 const connectionStatusMessageNode = document.querySelector("#connectionStatusMessage");
@@ -24,7 +25,10 @@ const useBridgeLinesButton = document.querySelector("#useBridgeLines");
 const clipboardStatusNode = document.querySelector("#clipboardStatus");
 const donationListNode = document.querySelector("#donationList");
 const donationStatusNode = document.querySelector("#donationStatus");
-document.querySelector("#appVersion").textContent = chrome.runtime.getManifest().version;
+const appVersionBadge = document.querySelector("#appVersionBadge");
+appVersionBadge.textContent = "v" + chrome.runtime.getManifest().version;
+const connectionDetailsToggle = document.querySelector("#connectionDetailsToggle");
+const connectionDetailsBody = document.querySelector("#connectionDetailsBody");
 const changeBanner = document.querySelector("#changeBanner");
 const changeBannerMessage = document.querySelector("#changeBannerMessage");
 const reconnectNowButton = document.querySelector("#reconnectNow");
@@ -56,9 +60,13 @@ function allEnabledLines(lines = bridgeLines) {
 }
 
 function markSaveState(message, kind = "") {
-  saveStatusNode.textContent = message;
-  saveStatusNode.dataset.kind = kind;
-  saveButton.disabled = !isDirty;
+  const dirty = isDirty;
+  saveStatusCleanNode.hidden = dirty;
+  saveStatusDirtyNode.hidden = !dirty;
+  saveButton.hidden = !dirty;
+  if (dirty) {
+    saveStatusDirtyNode.dataset.kind = kind;
+  }
 }
 
 function readPreferences() {
@@ -120,6 +128,9 @@ function showClipboardStatus(message, kind = "") {
   clipboardStatusNode.dataset.kind = kind;
 }
 
+const COIN_NAMES = { BTC: "Bitcoin", ETH: "Ethereum", ZEC: "Zcash", XMR: "Monero" };
+const COIN_SYMBOLS = { BTC: "₿", ETH: "Ξ", ZEC: "ⓩ", XMR: "ɱ" };
+
 async function loadDonationAddresses() {
   try {
     const response = await fetch(chrome.runtime.getURL("donation-addresses.txt"));
@@ -133,24 +144,30 @@ async function loadDonationAddresses() {
     for (const { coin, network, address } of entries) {
       const card = document.createElement("article");
       card.className = "donation-card";
-      const metadata = document.createElement("div");
-      metadata.className = "donation-metadata";
+
+      // Header: symbol circle + name/network + copy button
+      const header = document.createElement("div");
+      header.className = "donation-card-header";
+
+      const symCircle = document.createElement("span");
+      symCircle.className = "donation-coin-symbol";
+      symCircle.textContent = COIN_SYMBOLS[coin] || coin[0];
+      symCircle.setAttribute("aria-hidden", "true");
+
+      const meta = document.createElement("div");
+      meta.className = "donation-metadata";
       const name = document.createElement("strong");
-      name.textContent = ({ BTC: "Bitcoin", ETH: "Ethereum", ZEC: "Zcash", XMR: "Monero" })[coin] || coin;
+      name.textContent = COIN_NAMES[coin] || coin;
       const networkLabel = document.createElement("span");
       networkLabel.textContent = `${coin} · ${network}`;
-      metadata.append(name, networkLabel);
+      meta.append(name, networkLabel);
 
-      const addressRow = document.createElement("div");
-      addressRow.className = "donation-address-row";
-      const addressNode = document.createElement("code");
-      addressNode.className = "donation-address";
-      addressNode.dir = "ltr";
-      addressNode.textContent = address;
       const copyButton = document.createElement("button");
       copyButton.className = "quiet-button donation-copy-button";
       copyButton.type = "button";
       copyButton.setAttribute("aria-label", `Copy ${coin} donation address`);
+
+      // Copy button inner: idle icon + copied icon + label
       const copyIcon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
       copyIcon.setAttribute("class", "donation-copy-icon");
       copyIcon.setAttribute("viewBox", "0 0 24 24");
@@ -158,14 +175,36 @@ async function loadDonationAddresses() {
       const copyPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
       copyPath.setAttribute("d", "M8 8V5a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2h-3M5 8h9a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2Z");
       copyIcon.append(copyPath);
+
       const copiedIcon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
       copiedIcon.setAttribute("class", "donation-copy-success-icon");
       copiedIcon.setAttribute("viewBox", "0 0 24 24");
       copiedIcon.setAttribute("aria-hidden", "true");
       const copiedPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
-      copiedPath.setAttribute("d", "m5 12 4 4L19 6");
+      copiedPath.setAttribute("d", "m5 12.5 4.5 4.5L19 7.5");
       copiedIcon.append(copiedPath);
-      copyButton.append(copyIcon, copiedIcon);
+
+      const copyLabel = document.createElement("span");
+      copyLabel.className = "donation-copy-label";
+      copyLabel.textContent = "Copy";
+      copyButton.append(copyIcon, copiedIcon, copyLabel);
+
+      header.append(symCircle, meta, copyButton);
+
+      // Address box with first/last 6 chars highlighted
+      const HIGHLIGHT = 6;
+      const addressBox = document.createElement("div");
+      addressBox.className = "donation-address-box";
+      addressBox.dir = "ltr";
+      const a1 = document.createElement("span");
+      a1.className = "donation-address-highlight";
+      a1.textContent = address.slice(0, HIGHLIGHT);
+      const a2 = document.createTextNode(address.slice(HIGHLIGHT, address.length - HIGHLIGHT));
+      const a3 = document.createElement("span");
+      a3.className = "donation-address-highlight";
+      a3.textContent = address.slice(address.length - HIGHLIGHT);
+      addressBox.append(a1, a2, a3);
+
       let copiedStateTimer;
       copyButton.addEventListener("click", async () => {
         copyButton.disabled = true;
@@ -179,19 +218,21 @@ async function loadDonationAddresses() {
           await navigator.clipboard.writeText(address);
           clearTimeout(copiedStateTimer);
           copyButton.classList.add("is-copied");
+          copyLabel.textContent = "Copied";
           copyButton.setAttribute("aria-label", `${coin} address copied`);
           copiedStateTimer = setTimeout(() => {
             copyButton.classList.remove("is-copied");
+            copyLabel.textContent = "Copy";
             copyButton.setAttribute("aria-label", `Copy ${coin} donation address`);
-          }, 1200);
+          }, 1500);
         } catch {
-          donationStatusNode.textContent = `Could not copy the ${coin} address. Check Chrome’s clipboard permission and try again.`;
+          donationStatusNode.textContent = `Could not copy the ${coin} address. Check Chrome's clipboard permission and try again.`;
         } finally {
           copyButton.disabled = false;
         }
       });
-      addressRow.append(addressNode, copyButton);
-      card.append(metadata, addressRow);
+
+      card.append(header, addressBox);
       donationListNode.append(card);
     }
   } catch {
@@ -740,6 +781,12 @@ reconnectNowButton.addEventListener("click", reconnectUsingSavedSettings);
 
 sectionLinks.forEach((link) => {
   link.addEventListener("click", () => setActiveSection(link.dataset.sectionLink));
+});
+
+connectionDetailsToggle.addEventListener("click", () => {
+  const open = connectionDetailsBody.hidden;
+  connectionDetailsBody.hidden = !open;
+  connectionDetailsToggle.setAttribute("aria-expanded", String(open));
 });
 
 document.addEventListener("tor-language-changed", () => renderBridgeList());
