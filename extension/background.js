@@ -355,6 +355,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 // clear the proxy unless the user has enabled the kill switch, which intentionally
 // keeps the proxy alive so traffic is blocked rather than leaking direct.
 chrome.storage.local.get("torConnectionPreferences", (stored) => {
+  if (chrome.runtime.lastError) return;
   const killSwitch = stored?.torConnectionPreferences?.killSwitch === true;
   if (!killSwitch) clearProxy().catch(() => {});
 });
