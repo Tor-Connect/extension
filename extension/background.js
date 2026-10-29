@@ -351,6 +351,11 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   return true;
 });
 
+// Clear any leftover proxy on every background script start (covers re-enable, install,
+// and service worker restart). On browser restart the proxy is cleared here too; the
+// user must click Connect to restore Tor routing.
+clearProxy().catch(() => {});
+
 // Clear any leftover extension setting on first install. On browser restart,
 // retain an existing Tor proxy so requests fail instead of going direct until reconnect.
 chrome.runtime.onInstalled.addListener(() => {
