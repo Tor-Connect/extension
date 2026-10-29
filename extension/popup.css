@@ -366,19 +366,28 @@ body.popup-page .orbit-node.is-selected:not(.is-active) .orbit-country { border-
 body.popup-page .orbit-node.is-selected:not(.is-active) .orbit-node-label { color: #604dc2; font-weight: 600; }
 body.popup-page .orbit-node:hover .orbit-country { border-color: #2bd576; }
 body.popup-page .orbit-node:focus-visible { outline: 2px solid #7e9bff; outline-offset: 3px; border-radius: 12px; }
-body.popup-page button.power-button { position: absolute; top: 104px; left: 104px; display: grid; width: 112px; height: 112px; min-width: 112px; flex: 0 0 auto; place-items: center; margin: 0; padding: 0; border: 2px solid #dce3df; border-radius: 50%; color: #77827c; background: #edf1ef; box-shadow: none; transition: border-color .3s ease, background-color .3s ease, color .3s ease, box-shadow .35s ease; }
-body.popup-page button.power-button:hover { transform: scale(1.015); background: #e7eeea; }
+body.popup-page button.power-button { position: absolute; top: 104px; left: 104px; display: grid; width: 112px; height: 112px; min-width: 112px; flex: 0 0 auto; place-items: center; margin: 0; padding: 0; border: 2px solid #dce3df; border-radius: 50%; color: #77827c; background: #edf1ef; box-shadow: 0 6px 0 0 #c2cbc6, 0 7px 14px rgba(0,0,0,.13); transition: border-color .3s ease, background-color .3s ease, color .3s ease, box-shadow .15s ease, transform .15s ease; }
+body.popup-page button.power-button:hover { background: #e7eeea; }
+/* Physically pressed: translateY matches shadow depth exactly so button looks flush */
+body.popup-page button.power-button:active,
+body.popup-page button.power-button.is-pressing { transform: translateY(6px); box-shadow: 0 0 0 0 #c2cbc6, 0 1px 4px rgba(0,0,0,.1); }
+/* ON states — button stays down (no raise) */
+body.popup-page button.power-button[data-state="connected"],
+body.popup-page button.power-button[data-state="starting"],
+body.popup-page button.power-button[data-state="reconnecting"],
+body.popup-page button.power-button[data-state="bridge-interrupted"],
+body.popup-page button.power-button[data-state="failed"] { transform: translateY(6px); box-shadow: 0 0 0 0 transparent, 0 1px 4px rgba(0,0,0,.1); }
 body.popup-page .connection-mark { width: 64px; height: 64px; }
 body.popup-page button.power-button[data-mode="snowflake"] .connection-mark .mark-connected { stroke-width: 9; }
-body.popup-page button.power-button[data-state="connected"] { border-color: #2bd576; color: #2bd576; background: #e8f6ee; box-shadow: 0 0 0 8px #2bd57612, 0 0 40px #2bd57620; }
-body.popup-page button.power-button[data-state="connected"][data-check="failed"]:not([data-activity="trying"]):not([data-activity="failed"]):not([data-activity="closed"]) { border-color: #ffb020; color: #ffb020; background: #2a1f08; box-shadow: 0 0 0 8px rgb(255 176 32 / 8%), 0 0 40px rgb(255 176 32 / 12%); }
+body.popup-page button.power-button[data-state="connected"] { border-color: #2bd576; color: #2bd576; background: #e8f6ee; box-shadow: 0 0 0 0 transparent, 0 0 28px #2bd57628; }
+body.popup-page button.power-button[data-state="connected"][data-check="failed"]:not([data-activity="trying"]):not([data-activity="failed"]):not([data-activity="closed"]) { border-color: #ffb020; color: #ffb020; background: #2a1f08; box-shadow: 0 0 0 0 transparent, 0 0 20px rgb(255 176 32 / 18%); }
 body.popup-page button.power-button[data-initial-checking="true"] { border-color: #bfdac9; color: #7d868f; background: #e7f3eb; animation: sonar-breathe 2.7s ease-in-out infinite; }
 body.popup-page button.power-button[data-state="reconnecting"] { border-color: #d99a28; color: #d99a28; background: #f7f0e2; }
 body.popup-page button.power-button[data-state="bridge-interrupted"], body.popup-page button.power-button[data-state="failed"] { border-color: #cc5a55; color: #cc5a55; background: #f8e9e7; }
-body.popup-page button.power-button[data-mode="snowflake"][data-state="starting"] .connection-mark .mark-connected,
-body.popup-page button.power-button[data-mode="snowflake"][data-state="reconnecting"] .connection-mark .mark-connected { display: none; }
-body.popup-page button.power-button[data-mode="snowflake"][data-state="starting"] .connection-mark .mark-connecting,
-body.popup-page button.power-button[data-mode="snowflake"][data-state="reconnecting"] .connection-mark .mark-connecting { display: block; }
+body.popup-page button.power-button[data-state="starting"] .connection-mark .mark-connected,
+body.popup-page button.power-button[data-state="reconnecting"] .connection-mark .mark-connected { display: none; }
+body.popup-page button.power-button[data-state="starting"] .connection-mark .mark-connecting,
+body.popup-page button.power-button[data-state="reconnecting"] .connection-mark .mark-connecting { display: block; }
 body.popup-page .power-button::after { display: none; }
 body.popup-page .power-button[data-state="starting"]::after { display: block; }
 body.popup-page button.power-button[data-initial-checking="true"]::after { display: none; }
@@ -478,9 +487,16 @@ html[data-theme="dark"] body.popup-page .orbit-node.is-active .orbit-node-label 
 html[data-theme="dark"] body.popup-page .orbit-node.is-selected:not(.is-active) .orbit-country { border-color: #8a78d1; color: #c5b6ff; background: #211c32; }
 html[data-theme="dark"] body.popup-page .orbit-node.is-selected:not(.is-active) .orbit-node-label { color: #c5b6ff; }
 html[data-theme="dark"] body.popup-page .orbit-node:hover .orbit-country { border-color: #2bd576; }
-html[data-theme="dark"] body.popup-page button.power-button { border-color: #2a3230; color: #7d868f; background: #121816; }
+html[data-theme="dark"] body.popup-page button.power-button { border-color: #2a3230; color: #7d868f; background: #121816; box-shadow: 0 6px 0 0 #040605, 0 7px 14px rgba(0,0,0,.4); }
 html[data-theme="dark"] body.popup-page button.power-button:hover { background: #18211d; }
-html[data-theme="dark"] body.popup-page button.power-button[data-state="connected"] { border-color: #2bd576; color: #2bd576; background: #10291c; box-shadow: 0 0 0 8px #2bd57614, 0 0 40px #2bd5764d; }
+html[data-theme="dark"] body.popup-page button.power-button:active,
+html[data-theme="dark"] body.popup-page button.power-button.is-pressing { transform: translateY(6px); box-shadow: 0 0 0 0 #040605, 0 1px 4px rgba(0,0,0,.3); }
+html[data-theme="dark"] body.popup-page button.power-button[data-state="connected"],
+html[data-theme="dark"] body.popup-page button.power-button[data-state="starting"],
+html[data-theme="dark"] body.popup-page button.power-button[data-state="reconnecting"],
+html[data-theme="dark"] body.popup-page button.power-button[data-state="bridge-interrupted"],
+html[data-theme="dark"] body.popup-page button.power-button[data-state="failed"] { transform: translateY(6px); box-shadow: 0 0 0 0 transparent, 0 1px 4px rgba(0,0,0,.3); }
+html[data-theme="dark"] body.popup-page button.power-button[data-state="connected"] { border-color: #2bd576; color: #2bd576; background: #10291c; box-shadow: 0 0 0 0 transparent, 0 0 28px #2bd57650; }
 html[data-theme="dark"] body.popup-page .orbit-card[data-state="connected"][data-check="failed"]:not([data-activity="trying"]):not([data-activity="failed"]):not([data-activity="closed"]) .orbit-outer { stroke: #6b4a12; }
 html[data-theme="dark"] body.popup-page .orbit-card[data-state="connected"][data-check="failed"]:not([data-activity="trying"]):not([data-activity="failed"]):not([data-activity="closed"]) .orbit-flow { stroke: #ffb020; }
 html[data-theme="dark"] body.popup-page .orbit-card[data-state="connected"][data-check="failed"]:not([data-activity="trying"]):not([data-activity="failed"]):not([data-activity="closed"]) .orbit-node.is-active .orbit-country { border-color: #ffb020; color: #ffb020; background: #2a1f08; box-shadow: 0 0 0 5px rgb(255 176 32 / 12%); }
@@ -516,6 +532,8 @@ html[data-theme="dark"] body.popup-page a.setup-cta:hover { background: #42e58a;
   body.popup-page .bridge-selector, body.popup-page .setup-panel,
   body.popup-page .live-stats, body.popup-page .site-check-sheet,
   body.popup-page .stats-backdrop { transition: none !important; }
+  body.popup-page button.power-button:hover,
+  body.popup-page button.power-button:active { transform: none !important; }
   body.popup-page .stat-char.rolling-in { animation: none !important; }
 }
 

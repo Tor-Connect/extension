@@ -1054,6 +1054,7 @@ function renderRoute(result = {}) {
 }
 
 function renderResult(result) {
+  connectionToggle.classList.remove("is-pressing");
   currentResult = result || {};
   const currentError = currentResult.error || currentResult.message || "";
   if (isFirefoxExtension && /proxy\.settings requires private browsing permission|private browsing permission/i.test(currentError)) {
@@ -1215,6 +1216,7 @@ connectionToggle.addEventListener("click", async () => {
     return;
   }
   connectionToggle.disabled = true;
+  connectionToggle.classList.add("is-pressing");
   if (currentState === "connected" || currentState === "starting") {
     setStatus("Disconnecting…", "starting");
     renderResult(await send("disconnect"));
