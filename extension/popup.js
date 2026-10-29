@@ -227,10 +227,10 @@ statsToggleNode.addEventListener("click", () => {
   statsToggleNode.setAttribute("aria-label", "Close live statistics");
   liveStatsNode.hidden = false;
   statsBackdropNode.hidden = false;
-  requestAnimationFrame(() => {
+  requestAnimationFrame(() => requestAnimationFrame(() => {
     liveStatsNode.classList.add("is-open");
     statsBackdropNode.classList.add("is-open");
-  });
+  }));
   closeStatsNode.focus();
   lastStatsSample = undefined;
   refreshLiveStats();
@@ -256,10 +256,10 @@ function openSiteCheck() {
   if (liveStatsNode.classList.contains("is-open")) closeLiveStats();
   siteCheckSheetNode.hidden = false;
   siteCheckBackdropNode.hidden = false;
-  requestAnimationFrame(() => {
+  requestAnimationFrame(() => requestAnimationFrame(() => {
     siteCheckSheetNode.classList.add("is-open");
     siteCheckBackdropNode.classList.add("is-open");
-  });
+  }));
   siteCheckBadgeNode.setAttribute("aria-expanded", "true");
   siteCheckSummaryNode.setAttribute("aria-expanded", "true");
   closeSiteCheckNode.focus();
@@ -954,6 +954,7 @@ function renderRoute(result = {}) {
   copyBridgeButton.hidden = true;
   routeBridgeLine = "";
   routeIdentityNode.hidden = false;
+  const prevDetail = routeDetailNode.textContent;
   routeDetailNode.hidden = true;
   routeDetailNode.textContent = "";
   routeCardNode.dataset.state = result.state || "disconnected";
@@ -1022,7 +1023,7 @@ function renderRoute(result = {}) {
     }
     if (endpoint) {
       const nextDetail = endpoint;
-      if (routeDetailNode.textContent !== nextDetail) {
+      if (prevDetail !== nextDetail) {
         fadeText(routeDetailNode, () => { routeDetailNode.textContent = nextDetail; });
       }
       routeDetailNode.hidden = false;
@@ -1040,7 +1041,7 @@ function renderRoute(result = {}) {
       }
       if (bridgeCount) {
         const nextDetail = bridgeCount + " saved " + (bridgeCount === 1 ? "bridge" : "bridges") + " · tries in order";
-        if (routeDetailNode.textContent !== nextDetail) {
+        if (prevDetail !== nextDetail) {
           fadeText(routeDetailNode, () => { routeDetailNode.textContent = nextDetail; });
         }
         routeDetailNode.hidden = false;

@@ -268,7 +268,7 @@ body.popup-page .stats-transfer small { color: #2bd576; font: 13px "IBM Plex Mon
 
 /* Gas-station digit roll — totals only */
 body.popup-page .stats-transfer strong { display: inline-flex; overflow: hidden; vertical-align: bottom; }
-body.popup-page .stat-char { display: inline-block; line-height: inherit; }
+body.popup-page .stat-char { display: inline-block; line-height: inherit; white-space: pre; }
 @keyframes stat-roll-in { from { transform: translateY(100%); } to { transform: translateY(0); } }
 body.popup-page .stat-char.rolling-in { animation: stat-roll-in .18s ease-out forwards; }
 body.popup-page .stats-row { display: flex; height: 44px; align-items: center; justify-content: space-between; margin-top: 8px; padding: 0 4px; border-top: 1px solid #1d2421; color: #a9b3ae; font-size: 14px; }
