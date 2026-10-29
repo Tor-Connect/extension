@@ -410,7 +410,9 @@
       "What happens to your traffic if Tor stops working.": "در صورت قطع Tor چه اتفاقی برای ترافیک شما می‌افتد.",
       "If Tor drops or the extension restarts, your browser traffic stays blocked instead of falling back to your real IP. Press Connect to restore access.": "اگر Tor قطع شود یا افزونه راه‌اندازی مجدد شود، ترافیک مرورگر شما به جای برگشت به IP واقعی‌تان مسدود می‌ماند. برای بازگرداندن دسترسی روی اتصال فشار دهید.",
       "Protected. Your browser traffic never leaves without Tor.": "محافظت‌شده. ترافیک مرورگر شما هرگز بدون Tor خارج نمی‌شود.",
-      "If Tor drops you lose internet until you press Connect. That is the point, but it can look like a broken connection.": "اگر Tor قطع شود، تا زمانی که روی اتصال فشار ندهید اینترنت ندارید. این هدف است، اما ممکن است شبیه قطعی اتصال به نظر برسد."
+      "If Tor drops you lose internet until you press Connect. That is the point, but it can look like a broken connection.": "اگر Tor قطع شود، تا زمانی که روی اتصال فشار ندهید اینترنت ندارید. این هدف است، اما ممکن است شبیه قطعی اتصال به نظر برسد.",
+      On: "روشن",
+      Off: "خاموش"
     },
     de: {
       "Tor Connect settings": "Tor Connect-Einstellungen", "Back to Tor Connect": "Zurück zu Tor Connect", Settings: "Einstellungen",
@@ -695,7 +697,9 @@
       "What happens to your traffic if Tor stops working.": "Was mit deinem Datenverkehr passiert, wenn Tor aufhört zu funktionieren.",
       "If Tor drops or the extension restarts, your browser traffic stays blocked instead of falling back to your real IP. Press Connect to restore access.": "Falls Tor abbricht oder die Erweiterung neu startet, bleibt dein Browser-Datenverkehr gesperrt, anstatt auf deine echte IP zurückzufallen. Drücke Verbinden, um den Zugang wiederherzustellen.",
       "Protected. Your browser traffic never leaves without Tor.": "Geschützt. Dein Browser-Datenverkehr verlässt das Gerät nie ohne Tor.",
-      "If Tor drops you lose internet until you press Connect. That is the point, but it can look like a broken connection.": "Wenn Tor abbricht, hast du kein Internet, bis du auf Verbinden drückst. Das ist der Sinn, kann aber wie eine unterbrochene Verbindung aussehen."
+      "If Tor drops you lose internet until you press Connect. That is the point, but it can look like a broken connection.": "Wenn Tor abbricht, hast du kein Internet, bis du auf Verbinden drückst. Das ist der Sinn, kann aber wie eine unterbrochene Verbindung aussehen.",
+      On: "Ein",
+      Off: "Aus"
     },
     es: {
       "Tor Connect settings": "Configuración de Tor Connect", "Back to Tor Connect": "Volver a Tor Connect", Settings: "Configuración", "All changes saved": "Todos los cambios guardados", "Save changes": "Guardar cambios", "Checking connection…": "Comprobando conexión…",
@@ -959,7 +963,9 @@
       "What happens to your traffic if Tor stops working.": "Qué ocurre con tu tráfico si Tor deja de funcionar.",
       "If Tor drops or the extension restarts, your browser traffic stays blocked instead of falling back to your real IP. Press Connect to restore access.": "Si Tor se cae o la extensión se reinicia, el tráfico de tu navegador permanece bloqueado en lugar de volver a tu IP real. Pulsa Conectar para restaurar el acceso.",
       "Protected. Your browser traffic never leaves without Tor.": "Protegido. El tráfico de tu navegador nunca sale sin Tor.",
-      "If Tor drops you lose internet until you press Connect. That is the point, but it can look like a broken connection.": "Si Tor se cae, pierdes internet hasta que pulses Conectar. Eso es lo que se pretende, pero puede parecer una conexión rota."
+      "If Tor drops you lose internet until you press Connect. That is the point, but it can look like a broken connection.": "Si Tor se cae, pierdes internet hasta que pulses Conectar. Eso es lo que se pretende, pero puede parecer una conexión rota.",
+      On: "Activado",
+      Off: "Desactivado"
     },
     ar: {
       "Tor Connect settings": "إعدادات Tor Connect", "Back to Tor Connect": "العودة إلى Tor Connect", Settings: "الإعدادات", "All changes saved": "تم حفظ جميع التغييرات", "Save changes": "حفظ التغييرات", "Checking connection…": "جارٍ التحقق من الاتصال…",
@@ -1222,7 +1228,9 @@
       "What happens to your traffic if Tor stops working.": "ما الذي يحدث لحركة مرورك إذا توقف Tor عن العمل.",
       "If Tor drops or the extension restarts, your browser traffic stays blocked instead of falling back to your real IP. Press Connect to restore access.": "إذا انقطع Tor أو أُعيد تشغيل الإضافة، يبقى مرور متصفحك محظوراً بدلاً من العودة إلى IP الحقيقي. اضغط اتصال لاستعادة الوصول.",
       "Protected. Your browser traffic never leaves without Tor.": "محمي. لا يغادر مرور متصفحك الشبكة أبداً دون Tor.",
-      "If Tor drops you lose internet until you press Connect. That is the point, but it can look like a broken connection.": "إذا انقطع Tor ستفقد الإنترنت حتى تضغط اتصال. هذا هو الهدف، لكنه قد يبدو كانقطاع في الاتصال."
+      "If Tor drops you lose internet until you press Connect. That is the point, but it can look like a broken connection.": "إذا انقطع Tor ستفقد الإنترنت حتى تضغط اتصال. هذا هو الهدف، لكنه قد يبدو كانقطاع في الاتصال.",
+      On: "تشغيل",
+      Off: "إيقاف"
     },
     zh: {
       "Tor Connect settings": "Tor Connect 设置", "Back to Tor Connect": "返回 Tor Connect", Settings: "设置", "All changes saved": "已保存所有更改", "Save changes": "保存更改", "Checking connection…": "正在检查连接…", "Settings saved. Reconnect to apply them.": "设置已保存。请重新连接以应用。", "Reconnect now": "立即重新连接", "Settings sections": "设置类别", "Connection method": "连接方式", "Bridge lines": "网桥线路", Appearance: "外观", "Appearance and language": "外观与语言", "Privacy and about": "隐私与关于",
@@ -1484,7 +1492,9 @@
       "What happens to your traffic if Tor stops working.": "Tor 停止工作时你的流量会发生什么。",
       "If Tor drops or the extension restarts, your browser traffic stays blocked instead of falling back to your real IP. Press Connect to restore access.": "若 Tor 断开或扩展重启，你的浏览器流量将保持屏蔽状态，而不会回退到真实 IP。点击连接以恢复访问。",
       "Protected. Your browser traffic never leaves without Tor.": "已保护。你的浏览器流量永远不会在没有 Tor 的情况下离开。",
-      "If Tor drops you lose internet until you press Connect. That is the point, but it can look like a broken connection.": "若 Tor 断开，你将失去网络连接直到点击连接。这正是目的所在，但看起来可能像是断网。"
+      "If Tor drops you lose internet until you press Connect. That is the point, but it can look like a broken connection.": "若 Tor 断开，你将失去网络连接直到点击连接。这正是目的所在，但看起来可能像是断网。",
+      On: "开启",
+      Off: "关闭"
     },
     hi: {
       "Tor Connect settings": "Tor Connect सेटिंग्स", "Back to Tor Connect": "Tor Connect पर वापस जाएँ", Settings: "सेटिंग्स", "All changes saved": "सभी बदलाव सहेजे गए", "Save changes": "बदलाव सहेजें", "Checking connection…": "कनेक्शन जाँचा जा रहा है…", "Settings saved. Reconnect to apply them.": "सेटिंग्स सहेजी गईं। लागू करने के लिए फिर से कनेक्ट करें।", "Reconnect now": "अभी फिर से कनेक्ट करें", "Settings sections": "सेटिंग्स अनुभाग", "Connection method": "कनेक्शन का तरीका", "Bridge lines": "ब्रिज लाइनें", Appearance: "दिखावट", "Appearance and language": "रूप-रंग और भाषा", "Privacy and about": "गोपनीयता और जानकारी",
@@ -1746,7 +1756,9 @@
       "What happens to your traffic if Tor stops working.": "अगर Tor काम करना बंद कर दे तो आपके ट्रैफ़िक का क्या होता है।",
       "If Tor drops or the extension restarts, your browser traffic stays blocked instead of falling back to your real IP. Press Connect to restore access.": "अगर Tor कट जाए या एक्सटेंशन फिर से शुरू हो, तो आपका ब्राउज़र ट्रैफ़िक आपके असली IP पर वापस जाने की बजाय ब्लॉक रहेगा। एक्सेस बहाल करने के लिए कनेक्ट दबाएँ।",
       "Protected. Your browser traffic never leaves without Tor.": "सुरक्षित। आपका ब्राउज़र ट्रैफ़िक कभी भी Tor के बिना नहीं जाता।",
-      "If Tor drops you lose internet until you press Connect. That is the point, but it can look like a broken connection.": "अगर Tor कट जाए तो कनेक्ट दबाने तक आपका इंटरनेट नहीं चलेगा। यही उद्देश्य है, लेकिन यह टूटे कनेक्शन जैसा लग सकता है।"
+      "If Tor drops you lose internet until you press Connect. That is the point, but it can look like a broken connection.": "अगर Tor कट जाए तो कनेक्ट दबाने तक आपका इंटरनेट नहीं चलेगा। यही उद्देश्य है, लेकिन यह टूटे कनेक्शन जैसा लग सकता है।",
+      On: "चालू",
+      Off: "बंद"
     },
     fr: {
       "Tor Connect settings": "Paramètres de Tor Connect", "Back to Tor Connect": "Retour à Tor Connect", Settings: "Paramètres", "All changes saved": "Toutes les modifications sont enregistrées", "Save changes": "Enregistrer les modifications", "Checking connection…": "Vérification de la connexion…", "Settings saved. Reconnect to apply them.": "Paramètres enregistrés. Reconnectez-vous pour les appliquer.", "Reconnect now": "Se reconnecter maintenant", "Settings sections": "Sections des paramètres", "Connection method": "Méthode de connexion", "Bridge lines": "Lignes de bridge", Appearance: "Apparence", "Appearance and language": "Apparence et langue", "Privacy and about": "Confidentialité et à propos",
@@ -2008,7 +2020,9 @@
       "What happens to your traffic if Tor stops working.": "Ce qui arrive à votre trafic si Tor cesse de fonctionner.",
       "If Tor drops or the extension restarts, your browser traffic stays blocked instead of falling back to your real IP. Press Connect to restore access.": "Si Tor se coupe ou si l'extension redémarre, le trafic de votre navigateur reste bloqué au lieu de revenir à votre vraie IP. Appuyez sur Connecter pour rétablir l'accès.",
       "Protected. Your browser traffic never leaves without Tor.": "Protégé. Le trafic de votre navigateur ne sort jamais sans Tor.",
-      "If Tor drops you lose internet until you press Connect. That is the point, but it can look like a broken connection.": "Si Tor se coupe, vous perdez internet jusqu'à ce que vous appuyiez sur Connecter. C'est le but recherché, mais cela peut ressembler à une connexion interrompue."
+      "If Tor drops you lose internet until you press Connect. That is the point, but it can look like a broken connection.": "Si Tor se coupe, vous perdez internet jusqu'à ce que vous appuyiez sur Connecter. C'est le but recherché, mais cela peut ressembler à une connexion interrompue.",
+      On: "Activé",
+      Off: "Désactivé"
     },
     ru: {
       "Tor Connect settings": "Настройки Tor Connect", "Back to Tor Connect": "Назад в Tor Connect", Settings: "Настройки", "All changes saved": "Все изменения сохранены", "Save changes": "Сохранить изменения", "Checking connection…": "Проверка соединения…", "Settings saved. Reconnect to apply them.": "Настройки сохранены. Переподключитесь, чтобы применить их.", "Reconnect now": "Переподключиться", "Settings sections": "Разделы настроек", "Connection method": "Способ подключения", "Bridge lines": "Строки мостов", Appearance: "Внешний вид", "Appearance and language": "Внешний вид и язык", "Privacy and about": "Конфиденциальность и информация",
@@ -2270,7 +2284,9 @@
       "What happens to your traffic if Tor stops working.": "Что происходит с вашим трафиком, если Tor перестаёт работать.",
       "If Tor drops or the extension restarts, your browser traffic stays blocked instead of falling back to your real IP. Press Connect to restore access.": "Если Tor отключится или расширение перезапустится, трафик вашего браузера останется заблокированным вместо переключения на реальный IP. Нажмите Подключиться для восстановления доступа.",
       "Protected. Your browser traffic never leaves without Tor.": "Защищено. Трафик вашего браузера никогда не выходит без Tor.",
-      "If Tor drops you lose internet until you press Connect. That is the point, but it can look like a broken connection.": "Если Tor отключится, вы потеряете интернет до нажатия Подключиться. Это и есть цель, но может выглядеть как обрыв соединения."
+      "If Tor drops you lose internet until you press Connect. That is the point, but it can look like a broken connection.": "Если Tor отключится, вы потеряете интернет до нажатия Подключиться. Это и есть цель, но может выглядеть как обрыв соединения.",
+      On: "Вкл.",
+      Off: "Выкл."
     }
   };
 
