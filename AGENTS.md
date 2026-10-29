@@ -17,3 +17,10 @@
 - `native/tor-chrome-helper.py` is the source for **all three platforms**: deployed as a script on Linux and macOS, and compiled into `tor-chrome-helper.exe` via PyInstaller for Windows (see `installer/windows/build-installer.ps1`).
 - `native/tor-chrome-helper.swift` is **macOS-only** (compiled into the macOS installer `.app`).
 - Any change to bridge parsing or validation in the Python file covers Linux, macOS, and Windows.
+
+## UI text and translations
+
+- Any change that adds or modifies user-visible text (labels, descriptions, tooltips, button text, status messages, aria-labels) **must** also update `extension/i18n-translations.js`.
+- Add the new English string as a key in every non-`en` language block that already exists in the file, with an accurate translation for each language.
+- Do not leave a language block missing a key that other blocks have. The `en` block stays empty (English strings are used as keys directly).
+- If a string is only used as an `aria-label` or `title` attribute and never rendered as visible text, it still requires translation entries.

@@ -25,6 +25,10 @@ const useBridgeLinesButton = document.querySelector("#useBridgeLines");
 const clipboardStatusNode = document.querySelector("#clipboardStatus");
 const donationListNode = document.querySelector("#donationList");
 const donationStatusNode = document.querySelector("#donationStatus");
+const killSwitchToggle = document.querySelector("#killSwitchToggle");
+const killSwitchCard = document.querySelector("#killSwitchCard");
+const killSwitchActivePanel = document.querySelector("#killSwitchActivePanel");
+const protectionNavBadge = document.querySelector("#protectionNavBadge");
 const appVersionBadge = document.querySelector("#appVersionBadge");
 appVersionBadge.textContent = "v" + chrome.runtime.getManifest().version;
 const connectionDetailsToggle = document.querySelector("#connectionDetailsToggle");
@@ -33,7 +37,7 @@ const changeBanner = document.querySelector("#changeBanner");
 const changeBannerMessage = document.querySelector("#changeBannerMessage");
 const reconnectNowButton = document.querySelector("#reconnectNow");
 const sectionLinks = [...document.querySelectorAll("[data-section-link]")];
-let preferences = { mode: "snowflake", bridges: "", autoBridgeSelection: true, selectedBridge: "", disabledBridges: [] };
+let preferences = { mode: "snowflake", bridges: "", autoBridgeSelection: true, selectedBridge: "", disabledBridges: [], killSwitch: false };
 let selectedMode = "snowflake";
 let bridgeLines = [];
 let disabledBridgeLines = new Set();
@@ -84,11 +88,13 @@ function readPreferences() {
         bridges: bridgeLines.join("\n"),
         disabledBridges: [...disabledBridgeLines],
         autoBridgeSelection: saved.autoBridgeSelection !== false,
-        selectedBridge: enabled.includes(saved.selectedBridge) ? saved.selectedBridge : enabled[0] || ""
+        selectedBridge: enabled.includes(saved.selectedBridge) ? saved.selectedBridge : enabled[0] || "",
+        killSwitch: saved.killSwitch === true
       };
       selectedMode = preferences.mode;
       setMode(selectedMode);
       renderBridgeList();
+      renderKillSwitch();
       isDirty = false;
       markSaveState("All changes saved");
       resolve();
@@ -493,8 +499,17 @@ function storedPreferences() {
     mode: selectedMode,
     bridges: bridgeLines.join("\n"),
     disabledBridges: [...disabledBridgeLines].filter((line) => bridgeLines.includes(line)),
-    selectedBridge
+    selectedBridge,
+    killSwitch: preferences.killSwitch === true
   };
+}
+
+function renderKillSwitch() {
+  const on = preferences.killSwitch === true;
+  killSwitchToggle.setAttribute("aria-checked", String(on));
+  killSwitchCard.dataset.on = String(on);
+  killSwitchActivePanel.hidden = !on;
+  protectionNavBadge.textContent = on ? "On" : "Off";
 }
 
 function saveSettings() {
@@ -847,6 +862,20 @@ connectionDetailsToggle.addEventListener("click", () => {
   connectionDetailsToggle.setAttribute("aria-expanded", String(open));
 });
 
+killSwitchToggle.addEventListener("click", () => {
+  preferences.killSwitch = !preferences.killSwitch;
+  renderKillSwitch();
+  const nextPreferences = { ...preferences };
+  chrome.storage.local.set({ torConnectionPreferences: nextPreferences }, () => {
+    if (chrome.runtime.lastError) {
+      preferences.killSwitch = !preferences.killSwitch;
+      renderKillSwitch();
+      return;
+    }
+    preferences = nextPreferences;
+  });
+});
+
 document.addEventListener("tor-language-changed", () => renderBridgeList());
 
 chrome.storage.onChanged.addListener((changes, areaName) => {
@@ -861,11 +890,13 @@ chrome.storage.onChanged.addListener((changes, areaName) => {
     bridges: bridgeLines.join("\n"),
     disabledBridges: [...disabledBridgeLines],
     autoBridgeSelection: saved.autoBridgeSelection !== false,
-    selectedBridge: typeof saved.selectedBridge === "string" ? saved.selectedBridge : allEnabledLines()[0] || ""
+    selectedBridge: typeof saved.selectedBridge === "string" ? saved.selectedBridge : allEnabledLines()[0] || "",
+    killSwitch: saved.killSwitch === true
   };
   selectedMode = preferences.mode;
   setMode(selectedMode);
   renderBridgeList();
+  renderKillSwitch();
 });
 
 if ("IntersectionObserver" in window) {
@@ -874,7 +905,7 @@ if ("IntersectionObserver" in window) {
     if (!visible) return;
     setActiveSection(visible.target.id);
   }, { rootMargin: "-15% 0px -65% 0px", threshold: [0, 0.1, 0.35] });
-  ["method", "bridges", "appearance", "privacy", "support"].forEach((id) => sectionObserver.observe(document.getElementById(id)));
+  ["method", "bridges", "protection", "appearance", "privacy", "support"].forEach((id) => sectionObserver.observe(document.getElementById(id)));
 }
 
 loadDonationAddresses();
