@@ -865,7 +865,7 @@ connectionDetailsToggle.addEventListener("click", () => {
 killSwitchToggle.addEventListener("click", () => {
   preferences.killSwitch = !preferences.killSwitch;
   renderKillSwitch();
-  const nextPreferences = storedPreferences();
+  const nextPreferences = { ...preferences };
   chrome.storage.local.set({ torConnectionPreferences: nextPreferences }, () => {
     if (chrome.runtime.lastError) {
       preferences.killSwitch = !preferences.killSwitch;
