@@ -45,6 +45,7 @@
     <nav class="settings-nav" aria-label="Settings sections">
       <a class="active" href="#method" data-section-link="method">Connection method</a>
       <a href="#bridges" data-section-link="bridges"><span>Bridge lines</span><span id="bridgeCount" class="nav-count">0</span></a>
+      <a href="#protection" data-section-link="protection"><span>Protection</span><span id="protectionNavBadge" class="nav-count">Off</span></a>
       <a href="#appearance" data-section-link="appearance">Appearance and language</a>
       <a href="#privacy" data-section-link="privacy">Privacy and about</a>
       <a href="#support" data-section-link="support">Support development</a>
@@ -142,6 +143,35 @@
         </div>
         <div id="bridgeList" class="settings-bridge-list" aria-live="polite"></div>
         <p id="clipboardStatus" class="clipboard-status" role="status" aria-live="polite"></p>
+        </div>
+      </section>
+
+      <section id="protection" class="settings-section" aria-labelledby="protectionHeading">
+        <div class="section-heading">
+          <h2 id="protectionHeading">Protection</h2>
+          <p>What happens to your traffic if Tor stops working.</p>
+        </div>
+        <div id="killSwitchCard" class="kill-switch-card">
+          <div class="kill-switch-card-top">
+            <span class="kill-switch-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 4.5-3.2 7.8-8 9-4.8-1.2-8-4.5-8-9V6z"/><path d="M9 9l6 6M15 9l-6 6"/></svg>
+            </span>
+            <div class="kill-switch-copy">
+              <strong>Block traffic if Tor disconnects</strong>
+              <span>If Tor drops or the extension restarts, your internet stays blocked instead of falling back to your real IP. Press Connect to restore access.</span>
+            </div>
+            <button id="killSwitchToggle" class="kill-switch-toggle" type="button" role="switch" aria-checked="false" aria-label="Block traffic if Tor disconnects"></button>
+          </div>
+          <div id="killSwitchActivePanel" class="kill-switch-active-panel" hidden>
+            <span class="kill-switch-protected">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>
+              Protected. Your traffic never leaves without Tor.
+            </span>
+            <span class="kill-switch-warning">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4L3 20h18L12 4z"/><path d="M12 10v4M12 17.2v.1"/></svg>
+              If Tor drops you lose internet until you press Connect. That is the point, but it can look like a broken connection.
+            </span>
+          </div>
         </div>
       </section>
 
