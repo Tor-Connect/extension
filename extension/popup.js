@@ -73,6 +73,7 @@ let connectedDurationStartedAt = 0;
 let connectedDurationInterval;
 let routeBridgeLine = "";
 let copyFeedbackTimer;
+let statsCopyFeedbackTimer;
 let firefoxPermissionPollTimer;
 let firefoxPermissionSuccessTimer;
 
@@ -193,14 +194,30 @@ permissionErrorSheetNode.addEventListener("keydown", (event) => {
   }
 });
 
+// Crossfade helper: swaps text immediately while fading out, then fades back in.
+// Old text fades out and new text fades in simultaneously — no blank gap.
+function fadeText(node, updater) {
+  node.style.transition = "none";
+  node.style.opacity = "0";
+  requestAnimationFrame(() => {
+    updater();
+    node.style.transition = "";
+    requestAnimationFrame(() => { node.style.opacity = ""; });
+  });
+}
+
 function closeLiveStats() {
-  const wasOpen = !liveStatsNode.hidden;
+  const wasOpen = liveStatsNode.classList.contains("is-open");
   statsToggleNode.setAttribute("aria-expanded", "false");
   statsToggleNode.setAttribute("aria-label", "Open live statistics");
-  liveStatsNode.hidden = true;
-  statsBackdropNode.hidden = true;
+  liveStatsNode.classList.remove("is-open");
+  statsBackdropNode.classList.remove("is-open");
   if (statsPollTimer) clearInterval(statsPollTimer);
   statsPollTimer = undefined;
+  window.setTimeout(() => {
+    if (!liveStatsNode.classList.contains("is-open")) liveStatsNode.hidden = true;
+    if (!statsBackdropNode.classList.contains("is-open")) statsBackdropNode.hidden = true;
+  }, 300);
   if (wasOpen) (statsToggleNode.hidden ? connectionToggle : statsToggleNode).focus();
 }
 
@@ -210,6 +227,10 @@ statsToggleNode.addEventListener("click", () => {
   statsToggleNode.setAttribute("aria-label", "Close live statistics");
   liveStatsNode.hidden = false;
   statsBackdropNode.hidden = false;
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    liveStatsNode.classList.add("is-open");
+    statsBackdropNode.classList.add("is-open");
+  }));
   closeStatsNode.focus();
   lastStatsSample = undefined;
   refreshLiveStats();
@@ -219,18 +240,26 @@ closeStatsNode.addEventListener("click", closeLiveStats);
 statsBackdropNode.addEventListener("click", closeLiveStats);
 
 function closeSiteCheck() {
-  const wasOpen = !siteCheckSheetNode.hidden;
-  siteCheckSheetNode.hidden = true;
-  siteCheckBackdropNode.hidden = true;
+  const wasOpen = siteCheckSheetNode.classList.contains("is-open");
+  siteCheckSheetNode.classList.remove("is-open");
+  siteCheckBackdropNode.classList.remove("is-open");
   siteCheckBadgeNode.setAttribute("aria-expanded", "false");
   siteCheckSummaryNode.setAttribute("aria-expanded", "false");
+  window.setTimeout(() => {
+    if (!siteCheckSheetNode.classList.contains("is-open")) siteCheckSheetNode.hidden = true;
+    if (!siteCheckBackdropNode.classList.contains("is-open")) siteCheckBackdropNode.hidden = true;
+  }, 300);
   if (wasOpen) (siteCheckSummaryNode.hidden ? connectionToggle : siteCheckSummaryNode).focus();
 }
 
 function openSiteCheck() {
-  if (!liveStatsNode.hidden) closeLiveStats();
+  if (liveStatsNode.classList.contains("is-open")) closeLiveStats();
   siteCheckSheetNode.hidden = false;
   siteCheckBackdropNode.hidden = false;
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    siteCheckSheetNode.classList.add("is-open");
+    siteCheckBackdropNode.classList.add("is-open");
+  }));
   siteCheckBadgeNode.setAttribute("aria-expanded", "true");
   siteCheckSummaryNode.setAttribute("aria-expanded", "true");
   closeSiteCheckNode.focus();
@@ -334,17 +363,40 @@ async function refreshLiveStats() {
   updateLiveStats(result || {});
 }
 
+// Gas-station digit roll: only the characters that changed slide in from below.
+// Unchanged characters stay perfectly still. No outgoing animation needed —
+// the container's overflow:hidden clips cleanly as the new char arrives.
+function rollText(node, newText) {
+  const oldText = node.dataset.statText || node.textContent;
+  if (oldText === newText) return;
+  node.dataset.statText = newText;
+  const oldChars = [...oldText];
+  const newChars = [...newText];
+  const spans = newChars.map((ch, i) => {
+    const span = document.createElement("span");
+    span.className = "stat-char";
+    span.textContent = ch;
+    if (ch !== (oldChars[i] ?? "")) span.classList.add("rolling-in");
+    return span;
+  });
+  node.replaceChildren(...spans);
+}
+
 function updateLiveStats(result = {}) {
   const now = Date.now();
   const down = Number(result.downloadBytes), up = Number(result.uploadBytes);
-  document.querySelector("#downloadTotal").textContent = formatBytes(down);
-  document.querySelector("#uploadTotal").textContent = formatBytes(up);
   const rate = (value, oldValue) => Number.isFinite(value) && Number.isFinite(oldValue) && lastStatsSample && now > lastStatsSample.time
     ? formatBytes(Math.max(0, value - oldValue) * 1000 / (now - lastStatsSample.time)) + "/s" : "0 B/s";
   const downRate = Number.isFinite(down) ? rate(down, lastStatsSample?.down) : "—";
   const upRate = Number.isFinite(up) ? rate(up, lastStatsSample?.up) : "—";
-  document.querySelector("#downloadRate").textContent = downRate;
-  document.querySelector("#uploadRate").textContent = upRate;
+  const dlTotal = document.querySelector("#downloadTotal");
+  const ulTotal = document.querySelector("#uploadTotal");
+  const dlRate = document.querySelector("#downloadRate");
+  const ulRate = document.querySelector("#uploadRate");
+  rollText(dlTotal, formatBytes(down));
+  rollText(ulTotal, formatBytes(up));
+  dlRate.textContent = downRate;
+  ulRate.textContent = upRate;
   document.querySelector("#statsMemory").textContent = formatBytes(Number(result.memoryBytes));
   const snowflake = preferences.mode === "snowflake";
   const routeIcon = document.querySelector("#statsRouteIcon");
@@ -366,7 +418,18 @@ function updateLiveStats(result = {}) {
   summaryIcon.classList.toggle("is-snowflake", snowflake);
   const copy = document.querySelector("#statsCopyAddress");
   copy.hidden = !result.bridgeAddress;
-  copy.onclick = () => navigator.clipboard.writeText(result.bridgeAddress).catch(() => {});
+  copy.onclick = () => {
+    navigator.clipboard.writeText(result.bridgeAddress).then(() => {
+      if (statsCopyFeedbackTimer) clearTimeout(statsCopyFeedbackTimer);
+      copy.classList.add("is-copied");
+      copy.setAttribute("aria-label", "Copied");
+      statsCopyFeedbackTimer = window.setTimeout(() => {
+        copy.classList.remove("is-copied");
+        copy.setAttribute("aria-label", "Copy bridge address");
+        statsCopyFeedbackTimer = undefined;
+      }, 1500);
+    }).catch(() => {});
+  };
   if (Number.isFinite(down) || Number.isFinite(up)) lastStatsSample = { down, up, time: now };
   renderSiteCheck(result);
 }
@@ -449,13 +512,36 @@ openFullScreenButton.addEventListener("click", () => {
 });
 
 function setStatus(text, kind = "", detail = "") {
-  statusNode.textContent = text;
-  statusNode.dataset.kind = kind;
-  statusDetailNode.textContent = detail;
-  statusDetailNode.hidden = !detail;
-  metaSeparatorNode.hidden = siteCheckSummaryNode.hidden
-    ? !detail || (bridgeAttemptTimerNode.hidden && connectedDurationNode.hidden)
-    : connectedDurationNode.hidden;
+  if (statusNode.textContent !== text || statusNode.dataset.kind !== kind) {
+    // Crossfade: snap to opacity:0, swap content, then let CSS transition fade in.
+    statusNode.style.transition = "none";
+    statusDetailNode.style.transition = "none";
+    statusNode.style.opacity = "0";
+    statusDetailNode.style.opacity = "0";
+    requestAnimationFrame(() => {
+      statusNode.textContent = text;
+      statusNode.dataset.kind = kind;
+      statusDetailNode.textContent = detail;
+      statusDetailNode.hidden = !detail;
+      metaSeparatorNode.hidden = siteCheckSummaryNode.hidden
+        ? !detail || (bridgeAttemptTimerNode.hidden && connectedDurationNode.hidden)
+        : connectedDurationNode.hidden;
+      statusNode.style.transition = "";
+      statusDetailNode.style.transition = "";
+      requestAnimationFrame(() => {
+        statusNode.style.opacity = "";
+        statusDetailNode.style.opacity = "";
+      });
+    });
+  } else {
+    statusNode.textContent = text;
+    statusNode.dataset.kind = kind;
+    statusDetailNode.textContent = detail;
+    statusDetailNode.hidden = !detail;
+    metaSeparatorNode.hidden = siteCheckSummaryNode.hidden
+      ? !detail || (bridgeAttemptTimerNode.hidden && connectedDurationNode.hidden)
+      : connectedDurationNode.hidden;
+  }
 }
 
 function send(type, extra = {}) {
@@ -868,8 +954,7 @@ function renderRoute(result = {}) {
   copyBridgeButton.hidden = true;
   routeBridgeLine = "";
   routeIdentityNode.hidden = false;
-  routeDetailNode.hidden = true;
-  routeDetailNode.textContent = "";
+  const prevDetail = routeDetailNode.textContent;
   routeCardNode.dataset.state = result.state || "disconnected";
   routeCardNode.dataset.activity = result.bridgeActivity || "";
   routeCardNode.dataset.check = result.connectivityCheck || "";
@@ -901,8 +986,8 @@ function renderRoute(result = {}) {
   renderBridgeCountry(result, shownPosition);
   snowflakeInfoNode.hidden = preferences.mode !== "snowflake" || result.state === "connected";
   if (preferences.mode === "snowflake") {
-    snowflakeInfoTextNode.textContent = result.state === "failed"
-      ? "Couldn’t connect. Check the error details or try again."
+    const nextSnowflakeText = result.state === "failed"
+      ? "Couldn't connect. Check the error details or try again."
       : result.state === "starting"
       ? "Asking volunteer proxies to relay your traffic."
       : result.state === "connected" && result.bridgeActivity === "trying"
@@ -912,10 +997,16 @@ function renderRoute(result = {}) {
           : result.state === "connected"
             ? "Your traffic is relayed through Snowflake proxies. The route may change."
             : "Connect through volunteer proxies. No bridge lines to add.";
+    if (snowflakeInfoTextNode.textContent !== nextSnowflakeText) {
+      fadeText(snowflakeInfoTextNode, () => { snowflakeInfoTextNode.textContent = nextSnowflakeText; });
+    }
   }
-  routeLabelNode.textContent = result.state === "connected" && shownPosition >= 0 ? "CONNECTED THROUGH"
+  const nextRouteLabel = result.state === "connected" && shownPosition >= 0 ? "CONNECTED THROUGH"
     : result.state === "starting" && shownPosition >= 0 ? "TRYING BRIDGE"
       : result.state === "starting" ? "CONNECTING THROUGH" : "WILL CONNECT THROUGH";
+  if (routeLabelNode.textContent !== nextRouteLabel) {
+    fadeText(routeLabelNode, () => { routeLabelNode.textContent = nextRouteLabel; });
+  }
   if (result.state === "starting") routeCardNode.dataset.route = "trying-bridge";
 
   if (hasNoBridgeLines) {
@@ -924,9 +1015,15 @@ function renderRoute(result = {}) {
     const line = entries[shownPosition];
     const parts = line.split(/\s+/);
     const endpoint = parts[0] === "Bridge" ? (parts[2] || "") : (parts[1] || "");
-    routeNameNode.textContent = "Bridge " + bridgeNumberForLine(line);
+    const nextName = "Bridge " + bridgeNumberForLine(line);
+    if (routeNameNode.textContent !== nextName) {
+      fadeText(routeNameNode, () => { routeNameNode.textContent = nextName; });
+    }
     if (endpoint) {
-      routeDetailNode.textContent = endpoint;
+      const nextDetail = endpoint;
+      if (prevDetail !== nextDetail) {
+        fadeText(routeDetailNode, () => { routeDetailNode.textContent = nextDetail; });
+      }
       routeDetailNode.hidden = false;
       routeBridgeLine = line;
       copyBridgeButton.hidden = false;
@@ -936,9 +1033,15 @@ function renderRoute(result = {}) {
     if (preferences.autoBridgeSelection) {
       routeIdentityNode.hidden = true;
     } else {
-      routeNameNode.textContent = "Automatic";
+      const nextName = "Automatic";
+      if (routeNameNode.textContent !== nextName) {
+        fadeText(routeNameNode, () => { routeNameNode.textContent = nextName; });
+      }
       if (bridgeCount) {
-        routeDetailNode.textContent = bridgeCount + " saved " + (bridgeCount === 1 ? "bridge" : "bridges") + " · tries in order";
+        const nextDetail = bridgeCount + " saved " + (bridgeCount === 1 ? "bridge" : "bridges") + " · tries in order";
+        if (prevDetail !== nextDetail) {
+          fadeText(routeDetailNode, () => { routeDetailNode.textContent = nextDetail; });
+        }
         routeDetailNode.hidden = false;
       }
     }
@@ -950,6 +1053,7 @@ function renderRoute(result = {}) {
 }
 
 function renderResult(result) {
+  connectionToggle.classList.remove("is-pressing");
   currentResult = result || {};
   const currentError = currentResult.error || currentResult.message || "";
   if (isFirefoxExtension && /proxy\.settings requires private browsing permission|private browsing permission/i.test(currentError)) {
@@ -1111,6 +1215,7 @@ connectionToggle.addEventListener("click", async () => {
     return;
   }
   connectionToggle.disabled = true;
+  connectionToggle.classList.add("is-pressing");
   if (currentState === "connected" || currentState === "starting") {
     setStatus("Disconnecting…", "starting");
     renderResult(await send("disconnect"));
