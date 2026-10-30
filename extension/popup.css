@@ -909,6 +909,11 @@ html[dir="rtl"] .snowflake-info { direction: rtl; }
 html[dir="rtl"] .bridge-endpoint { direction: ltr; text-align: left; unicode-bidi: isolate; }
 html[dir="rtl"] body.popup-page .connection-method-thumb { left: auto; right: 3px; }
 html[dir="rtl"] body.popup-page .connection-method-switch[data-mode="manual"] .connection-method-thumb { transform: translateX(-47px); }
+html[dir="rtl"] body.popup-page .site-check-chevron { transform: scaleX(-1); }
+html[dir="rtl"] body.popup-page .stats-transfer strong,
+html[dir="rtl"] body.popup-page .stats-transfer small,
+html[dir="rtl"] body.popup-page .stats-row strong,
+html[dir="rtl"] body.popup-page .summary-rates strong { direction: ltr; unicode-bidi: isolate; }
 
 /* Keep the site-check state legible when the popup uses its light palette. */
 html[data-theme="light"] body.popup-page .status[data-kind="connected-check-failed"] { color: #a66a00; }

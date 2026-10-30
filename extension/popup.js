@@ -468,13 +468,13 @@ function renderSiteCheck(result = {}) {
   if (pending) {
     siteCheckSummaryNode.innerHTML = `<span class="site-check-spinner" aria-hidden="true"></span>${t("Checking sites…")}`;
   } else if (failures) {
-    siteCheckSummaryNode.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4 3 20h18L12 4z"/><path d="M12 10v4m0 3.2v.1"/></svg>${failures} of ${sites.length || 4} ${t("sites blocked")}<svg class="site-check-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg>`;
+    siteCheckSummaryNode.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4 3 20h18L12 4z"/><path d="M12 10v4m0 3.2v.1"/></svg>${t("{n} of 4 sites blocked").replace("{n}", failures)}<svg class="site-check-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg>`;
   } else if (result.connectivityCheck === "passed") {
     siteCheckSummaryNode.textContent = t("all sites reachable");
   } else {
     siteCheckSummaryNode.textContent = t("Checking sites…");
   }
-  const blockedSummary = failures ? `${failures} of ${sites.length || 4} ${t("sites blocked")}` : t("All sites reachable");
+  const blockedSummary = failures ? t("{n} of 4 sites blocked").replace("{n}", failures) : t("All sites reachable");
   siteCheckCountNode.textContent = pending ? t("Checking 4 sites…") : failures ? blockedSummary : t("All 4 sites reachable");
   siteCheckCountNode.classList.toggle("has-failures", failures > 0 && !pending);
   siteCheckSheetNode.classList.toggle("is-pending", pending);
