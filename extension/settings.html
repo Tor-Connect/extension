@@ -45,7 +45,8 @@
     <nav class="settings-nav" aria-label="Settings sections">
       <a class="active" href="#method" data-section-link="method">Connection method</a>
       <a href="#bridges" data-section-link="bridges"><span>Bridge lines</span><span id="bridgeCount" class="nav-count">0</span></a>
-      <a href="#protection" data-section-link="protection"><span>Protection</span><span id="protectionNavBadge" class="nav-count">Off</span></a>
+      <a href="#exit-country" data-section-link="exit-country"><span>Exit country</span><span id="exitCountryNavBadge" class="nav-count">Auto</span></a>
+      <a href="#protection" data-section-link="protection"><span>Kill switch</span><span id="protectionNavBadge" class="nav-count">Off</span></a>
       <a href="#appearance" data-section-link="appearance">Appearance and language</a>
       <a href="#privacy" data-section-link="privacy">Privacy and about</a>
       <a href="#support" data-section-link="support">Support development</a>
@@ -78,6 +79,7 @@
             <span class="method-card-copy"><strong>Bridge lines</strong><span>Connect through bridges you add yourself, such as obfs4 lines from Tor.</span></span>
           </button>
         </div>
+
       </section>
 
       <section id="bridges" class="settings-section" aria-labelledby="bridgesHeading">
@@ -146,10 +148,65 @@
         </div>
       </section>
 
+      <section id="exit-country" class="settings-section" aria-labelledby="exitCountryHeading">
+        <div class="section-heading">
+          <h2 id="exitCountryHeading">Exit country</h2>
+          <p>Where your traffic leaves the Tor network.</p>
+        </div>
+        <div id="exitCountryCard" class="exit-country-card">
+          <div class="exit-country-card-top">
+            <span class="exit-country-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-6.2 7-11.5A7 7 0 0 0 5 9.5C5 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>
+            </span>
+            <div class="exit-country-copy">
+              <strong>Preferred country</strong>
+              <span>Tor will prefer exits in this country. If none are available it will use another.</span>
+            </div>
+            <div class="exit-country-picker-wrap">
+              <button id="exitCountrySelect" class="language-picker-trigger exit-country-trigger" type="button" aria-label="Exit country" aria-haspopup="listbox" aria-controls="exitCountryOptions" aria-expanded="false">
+                <span id="exitCountryCurrentFlag" class="picker-code-badge" aria-hidden="true">ANY</span>
+                <span id="exitCountryCurrent">Automatic</span>
+                <svg class="language-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m7 10 5 5 5-5"/></svg>
+              </button>
+              <div id="exitCountryOptions" class="language-options" role="listbox" aria-label="Exit country" hidden>
+                <button class="language-option" type="button" role="option" data-exit-country="" aria-selected="true"><span class="language-option-label"><span class="picker-code-badge" aria-hidden="true">ANY</span><span class="language-option-name">Automatic</span></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></button>
+                <button class="language-option" type="button" role="option" data-exit-country="de" aria-selected="false"><span class="language-option-label"><span class="picker-code-badge" aria-hidden="true">DE</span><span class="language-option-name">Germany</span></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></button>
+                <button class="language-option" type="button" role="option" data-exit-country="us" aria-selected="false"><span class="language-option-label"><span class="picker-code-badge" aria-hidden="true">US</span><span class="language-option-name">United States</span></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></button>
+                <button class="language-option" type="button" role="option" data-exit-country="fr" aria-selected="false"><span class="language-option-label"><span class="picker-code-badge" aria-hidden="true">FR</span><span class="language-option-name">France</span></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></button>
+                <button class="language-option" type="button" role="option" data-exit-country="nl" aria-selected="false"><span class="language-option-label"><span class="picker-code-badge" aria-hidden="true">NL</span><span class="language-option-name">Netherlands</span></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></button>
+                <button class="language-option" type="button" role="option" data-exit-country="se" aria-selected="false"><span class="language-option-label"><span class="picker-code-badge" aria-hidden="true">SE</span><span class="language-option-name">Sweden</span></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></button>
+                <button class="language-option" type="button" role="option" data-exit-country="ch" aria-selected="false"><span class="language-option-label"><span class="picker-code-badge" aria-hidden="true">CH</span><span class="language-option-name">Switzerland</span></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></button>
+                <button class="language-option" type="button" role="option" data-exit-country="ca" aria-selected="false"><span class="language-option-label"><span class="picker-code-badge" aria-hidden="true">CA</span><span class="language-option-name">Canada</span></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></button>
+                <button class="language-option" type="button" role="option" data-exit-country="gb" aria-selected="false"><span class="language-option-label"><span class="picker-code-badge" aria-hidden="true">GB</span><span class="language-option-name">United Kingdom</span></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></button>
+                <button class="language-option" type="button" role="option" data-exit-country="fi" aria-selected="false"><span class="language-option-label"><span class="picker-code-badge" aria-hidden="true">FI</span><span class="language-option-name">Finland</span></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></button>
+                <button class="language-option" type="button" role="option" data-exit-country="at" aria-selected="false"><span class="language-option-label"><span class="picker-code-badge" aria-hidden="true">AT</span><span class="language-option-name">Austria</span></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></button>
+                <button class="language-option" type="button" role="option" data-exit-country="cz" aria-selected="false"><span class="language-option-label"><span class="picker-code-badge" aria-hidden="true">CZ</span><span class="language-option-name">Czech Republic</span></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></button>
+                <button class="language-option" type="button" role="option" data-exit-country="ro" aria-selected="false"><span class="language-option-label"><span class="picker-code-badge" aria-hidden="true">RO</span><span class="language-option-name">Romania</span></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></button>
+                <button class="language-option" type="button" role="option" data-exit-country="pl" aria-selected="false"><span class="language-option-label"><span class="picker-code-badge" aria-hidden="true">PL</span><span class="language-option-name">Poland</span></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></button>
+                <button class="language-option" type="button" role="option" data-exit-country="no" aria-selected="false"><span class="language-option-label"><span class="picker-code-badge" aria-hidden="true">NO</span><span class="language-option-name">Norway</span></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></button>
+                <button class="language-option" type="button" role="option" data-exit-country="dk" aria-selected="false"><span class="language-option-label"><span class="picker-code-badge" aria-hidden="true">DK</span><span class="language-option-name">Denmark</span></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></button>
+                <button class="language-option" type="button" role="option" data-exit-country="lv" aria-selected="false"><span class="language-option-label"><span class="picker-code-badge" aria-hidden="true">LV</span><span class="language-option-name">Latvia</span></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></button>
+                <button class="language-option" type="button" role="option" data-exit-country="lu" aria-selected="false"><span class="language-option-label"><span class="picker-code-badge" aria-hidden="true">LU</span><span class="language-option-name">Luxembourg</span></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></button>
+                <button class="language-option" type="button" role="option" data-exit-country="is" aria-selected="false"><span class="language-option-label"><span class="picker-code-badge" aria-hidden="true">IS</span><span class="language-option-name">Iceland</span></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></button>
+                <button class="language-option" type="button" role="option" data-exit-country="ru" aria-selected="false"><span class="language-option-label"><span class="picker-code-badge" aria-hidden="true">RU</span><span class="language-option-name">Russia</span></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></button>
+                <button class="language-option" type="button" role="option" data-exit-country="ua" aria-selected="false"><span class="language-option-label"><span class="picker-code-badge" aria-hidden="true">UA</span><span class="language-option-name">Ukraine</span></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></button>
+                <button class="language-option" type="button" role="option" data-exit-country="jp" aria-selected="false"><span class="language-option-label"><span class="picker-code-badge" aria-hidden="true">JP</span><span class="language-option-name">Japan</span></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></button>
+                <button class="language-option" type="button" role="option" data-exit-country="au" aria-selected="false"><span class="language-option-label"><span class="picker-code-badge" aria-hidden="true">AU</span><span class="language-option-name">Australia</span></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></button>
+                <button class="language-option" type="button" role="option" data-exit-country="sg" aria-selected="false"><span class="language-option-label"><span class="picker-code-badge" aria-hidden="true">SG</span><span class="language-option-name">Singapore</span></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></button>
+              </div>
+            </div>
+          </div>
+          <div id="exitCountryNotice" class="exit-country-notice" hidden>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg>
+            Picking one country can make you easier to tell apart from other Tor users.
+          </div>
+        </div>
+      </section>
+
       <section id="protection" class="settings-section" aria-labelledby="protectionHeading">
         <div class="section-heading">
-          <h2 id="protectionHeading">Protection</h2>
-          <p>What happens to your traffic if Tor stops working.</p>
+          <h2 id="protectionHeading">Kill switch</h2>
+          <p>Keeps your real IP hidden if Tor stops working.</p>
         </div>
         <div id="killSwitchCard" class="kill-switch-card">
           <div class="kill-switch-card-top">
@@ -203,25 +260,25 @@
           </div>
           <div class="appearance-card language-card">
             <span class="appearance-card-label">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h9M8.5 4v2M6 6c.5 3.5 3 6 6 7M11.5 6c-.5 3.5-3 6-6.5 7.5"/><path d="M12 20l4-9 4 9M13.2 17.5h5.6"/></svg>
               Language
             </span>
             <div class="language-picker">
               <button id="languageSelect" class="language-picker-trigger" type="button" aria-label="Language" aria-haspopup="listbox" aria-controls="languageOptions" aria-expanded="false">
-                <span id="languageCurrentFlag" class="language-flag" aria-hidden="true">🇺🇸</span>
+                <span id="languageCurrentFlag" class="picker-code-badge" aria-hidden="true">EN</span>
                 <span id="languageCurrent">English</span>
                 <svg class="language-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m7 10 5 5 5-5"/></svg>
               </button>
               <div id="languageOptions" class="language-options" role="listbox" aria-label="Language" hidden>
-                <button class="language-option" type="button" role="option" data-language-option="en" aria-selected="true"><span class="language-option-label"><span class="language-flag" aria-hidden="true">🇺🇸</span><span class="language-option-name">English</span></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></button>
-                <button class="language-option" type="button" role="option" data-language-option="fa" aria-selected="false"><span class="language-option-label"><span class="language-flag" aria-hidden="true">🇮🇷</span><span class="language-option-name">فارسی</span></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></button>
-                <button class="language-option" type="button" role="option" data-language-option="de" aria-selected="false"><span class="language-option-label"><span class="language-flag" aria-hidden="true">🇩🇪</span><span class="language-option-name">Deutsch</span></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></button>
-                <button class="language-option" type="button" role="option" data-language-option="es" aria-selected="false"><span class="language-option-label"><span class="language-flag" aria-hidden="true">🇪🇸</span><span class="language-option-name">Español</span></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></button>
-                <button class="language-option" type="button" role="option" data-language-option="ar" aria-selected="false"><span class="language-option-label"><span class="language-flag" aria-hidden="true">🇸🇦</span><span class="language-option-name">العربية</span></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></button>
-                <button class="language-option" type="button" role="option" data-language-option="zh" aria-selected="false"><span class="language-option-label"><span class="language-flag" aria-hidden="true">🇨🇳</span><span class="language-option-name">中文</span></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></button>
-                <button class="language-option" type="button" role="option" data-language-option="hi" aria-selected="false"><span class="language-option-label"><span class="language-flag" aria-hidden="true">🇮🇳</span><span class="language-option-name">हिन्दी</span></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></button>
-                <button class="language-option" type="button" role="option" data-language-option="fr" aria-selected="false"><span class="language-option-label"><span class="language-flag" aria-hidden="true">🇫🇷</span><span class="language-option-name">Français</span></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></button>
-                <button class="language-option" type="button" role="option" data-language-option="ru" aria-selected="false"><span class="language-option-label"><span class="language-flag" aria-hidden="true">🇷🇺</span><span class="language-option-name">Русский</span></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></button>
+                <button class="language-option" type="button" role="option" data-language-option="en" aria-selected="true"><span class="language-option-label"><span class="picker-code-badge" aria-hidden="true">EN</span><span class="language-option-name">English</span></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></button>
+                <button class="language-option" type="button" role="option" data-language-option="fa" aria-selected="false"><span class="language-option-label"><span class="picker-code-badge" aria-hidden="true">FA</span><span class="language-option-name">فارسی</span></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></button>
+                <button class="language-option" type="button" role="option" data-language-option="de" aria-selected="false"><span class="language-option-label"><span class="picker-code-badge" aria-hidden="true">DE</span><span class="language-option-name">Deutsch</span></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></button>
+                <button class="language-option" type="button" role="option" data-language-option="es" aria-selected="false"><span class="language-option-label"><span class="picker-code-badge" aria-hidden="true">ES</span><span class="language-option-name">Español</span></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></button>
+                <button class="language-option" type="button" role="option" data-language-option="ar" aria-selected="false"><span class="language-option-label"><span class="picker-code-badge" aria-hidden="true">AR</span><span class="language-option-name">العربية</span></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></button>
+                <button class="language-option" type="button" role="option" data-language-option="zh" aria-selected="false"><span class="language-option-label"><span class="picker-code-badge" aria-hidden="true">ZH</span><span class="language-option-name">中文</span></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></button>
+                <button class="language-option" type="button" role="option" data-language-option="hi" aria-selected="false"><span class="language-option-label"><span class="picker-code-badge" aria-hidden="true">HI</span><span class="language-option-name">हिन्दी</span></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></button>
+                <button class="language-option" type="button" role="option" data-language-option="fr" aria-selected="false"><span class="language-option-label"><span class="picker-code-badge" aria-hidden="true">FR</span><span class="language-option-name">Français</span></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></button>
+                <button class="language-option" type="button" role="option" data-language-option="ru" aria-selected="false"><span class="language-option-label"><span class="picker-code-badge" aria-hidden="true">RU</span><span class="language-option-name">Русский</span></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></button>
               </div>
             </div>
           </div>

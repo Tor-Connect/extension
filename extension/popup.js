@@ -59,7 +59,7 @@ const autoBridgeSelectionNode = document.querySelector("#autoBridgeSelection");
 let pollTimer;
 let initialStatusPending = true;
 let initialStatusRetries = 0;
-let preferences = { mode: "snowflake", bridges: "", autoBridgeSelection: true, selectedBridge: "", disabledBridges: [] };
+let preferences = { mode: "snowflake", bridges: "", autoBridgeSelection: true, selectedBridge: "", disabledBridges: [], exitCountry: "" };
 let currentState = "disconnected";
 let currentResult = {};
 let bridgeCountries = new Map();
@@ -72,6 +72,7 @@ let bridgeAttemptTimerInterval;
 let connectedDurationStartedAt = 0;
 let connectedDurationInterval;
 let routeBridgeLine = "";
+let lastShownPosition = -1;
 let copyFeedbackTimer;
 let statsCopyFeedbackTimer;
 let firefoxPermissionPollTimer;
@@ -279,8 +280,13 @@ document.querySelector("#retestSites").addEventListener("click", async (event) =
     siteChecks: SITE_CHECK_NAMES.map((site) => ({ site, state: "pending", latencyMs: null }))
   };
   renderResult(currentResult);
-  try { renderResult(await send("retestSites")); }
-  finally { button.disabled = false; }
+  try {
+    // retestSites runs up to 4 site checks each with an 8-second timeout, so
+    // allow up to 40 seconds before falling back to a plain status poll.
+    let result = await send("retestSites", {}, 40000);
+    if (!result) result = await send("status");
+    renderResult(result);
+  } finally { button.disabled = false; }
 });
 nextRouteNode.addEventListener("click", async () => {
   nextRouteNode.disabled = true;
@@ -544,8 +550,24 @@ function setStatus(text, kind = "", detail = "") {
   }
 }
 
-function send(type, extra = {}) {
-  return new Promise((resolve) => chrome.runtime.sendMessage({ type, ...extra }, resolve));
+function send(type, extra = {}, timeout = 5000) {
+  return new Promise((resolve) => {
+    let settled = false;
+    const done = (response) => {
+      if (settled) return;
+      settled = true;
+      void chrome.runtime.lastError; // prevent "unchecked lastError" console error
+      resolve(response);
+    };
+    try {
+      chrome.runtime.sendMessage({ type, ...extra }, done);
+    } catch (_) {
+      done(undefined);
+      return;
+    }
+    // Guard against the service worker waking up and dropping the message entirely.
+    setTimeout(() => done(undefined), timeout);
+  });
 }
 
 function readPreferences() {
@@ -557,7 +579,8 @@ function readPreferences() {
         bridges: typeof saved?.bridges === "string" ? saved.bridges : "",
         autoBridgeSelection: saved?.autoBridgeSelection !== false,
         selectedBridge: typeof saved?.selectedBridge === "string" ? saved.selectedBridge : "",
-        disabledBridges: Array.isArray(saved?.disabledBridges) ? saved.disabledBridges : []
+        disabledBridges: Array.isArray(saved?.disabledBridges) ? saved.disabledBridges : [],
+        exitCountry: typeof saved?.exitCountry === "string" ? saved.exitCountry : ""
       };
       const entries = bridgeEntries();
       if (!entries.includes(preferences.selectedBridge)) preferences.selectedBridge = entries[0] || "";
@@ -982,7 +1005,10 @@ function renderRoute(result = {}) {
   if (entries.length) {
     if (activePosition >= 0) shownPosition = activePosition;
     else if (!preferences.autoBridgeSelection) shownPosition = selectedPosition;
+    else if (result.state === "starting" && lastShownPosition >= 0) shownPosition = lastShownPosition;
   }
+  if (shownPosition >= 0) lastShownPosition = shownPosition;
+  if (result.state !== "starting" && result.state !== "connected") lastShownPosition = -1;
   renderBridgeCountry(result, shownPosition);
   snowflakeInfoNode.hidden = preferences.mode !== "snowflake" || result.state === "connected";
   if (preferences.mode === "snowflake") {
@@ -1066,7 +1092,8 @@ function renderResult(result) {
     return;
   }
   hideFirefoxPermission();
-  const transientStartupFailure = initialStatusPending && (!currentResult.ok || currentResult.state === "failed") && currentResult.state !== "missing_runtime" && initialStatusRetries < 6;
+  const helperNotInstalled = /native helper (?:unavailable|disconnected)|native messaging host not found|native host.*not registered|failed to start native messaging host|access to the specified native messaging host is forbidden/i.test(currentResult?.error || "");
+  const transientStartupFailure = initialStatusPending && (!currentResult.ok || currentResult.state === "failed") && currentResult.state !== "missing_runtime" && !helperNotInstalled && initialStatusRetries < 6;
   if (transientStartupFailure) {
     initialStatusRetries++;
     popupMainNode.dataset.view = "connection";
@@ -1093,12 +1120,12 @@ function renderResult(result) {
   syncBridgeAttemptTimer(currentResult.state);
   syncConnectedDuration(currentResult);
   updateLiveStats(result);
-  const helperUnavailable = /native helper (?:unavailable|disconnected)|native messaging host not found|native host.*not registered|failed to start native messaging host|access to the specified native messaging host is forbidden/i.test(result?.error || "");
-  if (helperUnavailable || result?.state === "missing_runtime") {
+  if (helperNotInstalled || result?.state === "missing_runtime") {
     popupMainNode.dataset.view = "cold-start";
     setupPanelNode.hidden = false;
     routeCardNode.hidden = true;
     openSettingsButton.hidden = true;
+    errorDetailsNode.hidden = true;
     setupDescriptionNode.textContent = result?.state === "missing_runtime"
       ? "Install Tor and its helper once to connect through Chrome."
       : "Install the Tor helper once to connect through Chrome.";
@@ -1206,7 +1233,7 @@ async function connectWithSavedPreferences() {
     ? allBridgeEntries().indexOf(saved.selectedBridge) + 1
     : null;
   const bridges = selectedBridgeIndex ? saved.selectedBridge : entries.join("\n");
-  return send("connect", { mode: saved.mode, bridges, selectedBridgeIndex });
+  return send("connect", { mode: saved.mode, bridges, selectedBridgeIndex, exitCountry: saved.exitCountry || "" });
 }
 
 connectionToggle.addEventListener("click", async () => {
@@ -1272,7 +1299,8 @@ chrome.storage.onChanged.addListener((changes, areaName) => {
     bridges: typeof saved.bridges === "string" ? saved.bridges : "",
     autoBridgeSelection: saved.autoBridgeSelection !== false,
     selectedBridge: typeof saved.selectedBridge === "string" ? saved.selectedBridge : "",
-    disabledBridges: Array.isArray(saved.disabledBridges) ? saved.disabledBridges : []
+    disabledBridges: Array.isArray(saved.disabledBridges) ? saved.disabledBridges : [],
+    exitCountry: typeof saved.exitCountry === "string" ? saved.exitCountry : ""
   };
   if (!bridgeEntries().includes(preferences.selectedBridge)) preferences.selectedBridge = bridgeEntries()[0] || "";
   renderBridgeSelector();
@@ -1283,6 +1311,16 @@ chrome.storage.onChanged.addListener((changes, areaName) => {
 
 readPreferences().then(async () => {
   renderConnectionMethodSwitch();
-  const [result] = await Promise.all([send("status"), refreshBridgeCountries()]);
+  let result;
+  [result] = await Promise.all([send("status"), refreshBridgeCountries()]);
+  // If the service worker was cold-starting it may return undefined before it is
+  // ready. Retry silently a few times so the first renderResult call always has
+  // a real response (avoids showing "Checking…" on the very first paint).
+  if (!result) {
+    for (let i = 0; i < 5 && !result; i++) {
+      await new Promise((r) => setTimeout(r, 800));
+      result = await send("status");
+    }
+  }
   renderResult(result);
 });

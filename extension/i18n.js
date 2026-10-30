@@ -88,7 +88,7 @@
       if (selected) selectedOption = option;
     });
     const selectedName = selectedOption?.querySelector(".language-option-name")?.textContent;
-    const selectedFlag = selectedOption?.querySelector(".language-flag")?.textContent;
+    const selectedFlag = selectedOption?.querySelector(".picker-code-badge, .language-flag")?.textContent;
     if (languageCurrent && selectedName && languageCurrent.textContent !== selectedName) {
       languageCurrent.textContent = selectedName;
     }

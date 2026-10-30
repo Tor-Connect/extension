@@ -171,8 +171,11 @@ function logHelperResult(command, result) {
   console.info("[Tor extension] helper status", entry);
 }
 
+let nativePortError; // set synchronously by onDisconnect before pending map is populated
+
 function connectHost() {
   if (nativePort) return nativePort;
+  nativePortError = undefined;
   nativePort = chrome.runtime.connectNative(HOST_NAME);
   nativePort.onMessage.addListener((message) => {
     if (!message || typeof message.id !== "number") return;
@@ -200,6 +203,7 @@ function connectHost() {
       ? `Native helper unavailable: ${hostError}. Check its installation and restart your browser.`
       : "Native helper disconnected. Check its installation and restart your browser.";
     console.warn("[Tor extension] native helper disconnected", errorMessage);
+    nativePortError = errorMessage;
     nativePort = undefined;
     resetConnectivityCheck();
     setActionConnected(false).catch(() => {});
@@ -217,13 +221,19 @@ function request(command, fields = {}, timeoutMs = 15000) {
   return new Promise((resolve, reject) => {
     let port;
     try { port = connectHost(); } catch (error) { reject(error); return; }
+    // If the host disconnected synchronously (e.g. "forbidden"), nativePortError is
+    // already set but the id hasn't been added to pending yet — detect it here.
+    if (nativePortError) {
+      resolve({ ok: false, error: nativePortError });
+      return;
+    }
     const id = nextId++;
     pending.set(id, resolve);
     port.postMessage({ id, command, ...fields });
     setTimeout(() => {
       if (!pending.has(id)) return;
       pending.delete(id);
-      resolve({ ok: false, error: "The helper did not respond in time." });
+      resolve({ ok: false, error: nativePortError || "The helper did not respond in time." });
     }, timeoutMs);
   });
 }
@@ -322,7 +332,8 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       const result = await request("start", {
         mode: message.mode,
         bridges: message.bridges,
-        selectedBridgeIndex: message.selectedBridgeIndex
+        selectedBridgeIndex: message.selectedBridgeIndex,
+        exitCountry: message.exitCountry || ""
       });
       logHelperResult("start", result);
       const connected = result.ok && result.state === "connected";

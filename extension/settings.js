@@ -37,7 +37,15 @@ const changeBanner = document.querySelector("#changeBanner");
 const changeBannerMessage = document.querySelector("#changeBannerMessage");
 const reconnectNowButton = document.querySelector("#reconnectNow");
 const sectionLinks = [...document.querySelectorAll("[data-section-link]")];
-let preferences = { mode: "snowflake", bridges: "", autoBridgeSelection: true, selectedBridge: "", disabledBridges: [], killSwitch: false };
+const exitCountrySelectNode = document.querySelector("#exitCountrySelect");
+const exitCountryCurrentNode = document.querySelector("#exitCountryCurrent");
+const exitCountryCurrentFlagNode = document.querySelector("#exitCountryCurrentFlag");
+const exitCountryOptionsNode = document.querySelector("#exitCountryOptions");
+const exitCountryOptionButtons = [...document.querySelectorAll("[data-exit-country]")];
+const exitCountryCardNode = document.querySelector("#exitCountryCard");
+const exitCountryNoticeNode = document.querySelector("#exitCountryNotice");
+const exitCountryNavBadge = document.querySelector("#exitCountryNavBadge");
+let preferences = { mode: "snowflake", bridges: "", autoBridgeSelection: true, selectedBridge: "", disabledBridges: [], killSwitch: false, exitCountry: "" };
 let selectedMode = "snowflake";
 let bridgeLines = [];
 let disabledBridgeLines = new Set();
@@ -89,12 +97,14 @@ function readPreferences() {
         disabledBridges: [...disabledBridgeLines],
         autoBridgeSelection: saved.autoBridgeSelection !== false,
         selectedBridge: enabled.includes(saved.selectedBridge) ? saved.selectedBridge : enabled[0] || "",
-        killSwitch: saved.killSwitch === true
+        killSwitch: saved.killSwitch === true,
+        exitCountry: typeof saved.exitCountry === "string" ? saved.exitCountry : ""
       };
       selectedMode = preferences.mode;
       setMode(selectedMode);
       renderBridgeList();
       renderKillSwitch();
+      renderExitCountry();
       isDirty = false;
       markSaveState("All changes saved");
       resolve();
@@ -393,19 +403,22 @@ function renderBridgeList() {
       flag.setAttribute("aria-label", `Approximate bridge country: ${countryName}`);
       primary.append(flag, countryBadge);
     }
-    if (connected) {
-      const inUse = document.createElement("span");
-      inUse.className = "bridge-in-use";
-      inUse.textContent = "In use";
-      primary.append(inUse);
-    }
+    const fingerprintRow = document.createElement("div");
+    fingerprintRow.className = "bridge-fingerprint-row";
     const fingerprint = document.createElement("span");
     fingerprint.className = "bridge-fingerprint";
     const shortFingerprint = parts.fingerprint.length > 18
       ? `${parts.fingerprint.slice(0, 8)}…${parts.fingerprint.slice(-6)}` : parts.fingerprint;
     fingerprint.textContent = parts.iat ? `${shortFingerprint} · iat-mode ${parts.iat}` : shortFingerprint || "Bridge details unavailable";
     fingerprint.title = line;
-    main.append(primary, fingerprint);
+    fingerprintRow.append(fingerprint);
+    if (connected) {
+      const inUse = document.createElement("span");
+      inUse.className = "bridge-in-use";
+      inUse.textContent = "In use";
+      fingerprintRow.append(inUse);
+    }
+    main.append(primary, fingerprintRow);
 
     const ping = pingDescription(line);
     const pingNode = document.createElement("span");
@@ -500,9 +513,67 @@ function storedPreferences() {
     bridges: bridgeLines.join("\n"),
     disabledBridges: [...disabledBridgeLines].filter((line) => bridgeLines.includes(line)),
     selectedBridge,
-    killSwitch: preferences.killSwitch === true
+    killSwitch: preferences.killSwitch === true,
+    exitCountry: preferences.exitCountry || ""
   };
 }
+
+function renderExitCountry() {
+  const code = preferences.exitCountry || "";
+  exitCountryOptionButtons.forEach((btn) => {
+    const selected = btn.dataset.exitCountry === code;
+    btn.setAttribute("aria-selected", String(selected));
+  });
+  if (code) {
+    exitCountryCurrentFlagNode.textContent = code.toUpperCase();
+    const label = new Intl.DisplayNames([globalThis.torI18n?.language || navigator.language || "en"], { type: "region" }).of(code.toUpperCase()) || code.toUpperCase();
+    exitCountryCurrentNode.textContent = label;
+    exitCountryCardNode.dataset.on = "true";
+    exitCountryNoticeNode.hidden = false;
+    if (exitCountryNavBadge) exitCountryNavBadge.textContent = code.toUpperCase();
+  } else {
+    exitCountryCurrentFlagNode.textContent = "ANY";
+    exitCountryCurrentNode.textContent = "Automatic";
+    exitCountryCardNode.dataset.on = "false";
+    exitCountryNoticeNode.hidden = true;
+    if (exitCountryNavBadge) exitCountryNavBadge.textContent = "Auto";
+  }
+}
+
+function setExitCountryPickerOpen(open) {
+  exitCountryOptionsNode.hidden = !open;
+  exitCountrySelectNode.setAttribute("aria-expanded", String(open));
+}
+
+exitCountrySelectNode.addEventListener("click", () => setExitCountryPickerOpen(exitCountryOptionsNode.hidden));
+
+exitCountryOptionButtons.forEach((btn) => {
+  btn.addEventListener("click", () => {
+    setExitCountryPickerOpen(false);
+    exitCountrySelectNode.focus();
+    const code = btn.dataset.exitCountry;
+    if (code === (preferences.exitCountry || "")) return;
+    const prevCode = preferences.exitCountry;
+    preferences.exitCountry = code;
+    renderExitCountry();
+    // Base the write on the last persisted record (preferences), not storedPreferences(),
+    // so pending unsaved bridge/mode edits are not silently committed with this picker change.
+    const nextPreferences = { ...preferences, exitCountry: code };
+    chrome.storage.local.set({ torConnectionPreferences: nextPreferences }, () => {
+      if (chrome.runtime.lastError) {
+        preferences.exitCountry = prevCode;
+        renderExitCountry();
+        return;
+      }
+      preferences = nextPreferences;
+      if (isConnected) showChangeBanner("Exit country changed. Reconnect now to apply it.");
+    });
+  });
+});
+
+document.addEventListener("click", (event) => {
+  if (!event.target.closest(".exit-country-picker-wrap")) setExitCountryPickerOpen(false);
+});
 
 function renderKillSwitch() {
   const on = preferences.killSwitch === true;
@@ -843,7 +914,7 @@ async function reconnectUsingSavedSettings() {
     reconnectNowButton.disabled = false;
     return;
   }
-  const result = await send("connect", { mode: selectedMode, bridges, selectedBridgeIndex });
+  const result = await send("connect", { mode: selectedMode, bridges, selectedBridgeIndex, exitCountry: preferences.exitCountry || "" });
   if (!result?.ok) setConnectionBadge("Connection needs attention", "error", result?.error || "Could not reconnect.");
   else setConnectionBadge("Connecting…", "starting", result.message || "Tor is reconnecting.");
   reconnectNowButton.disabled = false;
@@ -876,7 +947,7 @@ killSwitchToggle.addEventListener("click", () => {
   });
 });
 
-document.addEventListener("tor-language-changed", () => renderBridgeList());
+document.addEventListener("tor-language-changed", () => { renderBridgeList(); renderExitCountry(); });
 
 chrome.storage.onChanged.addListener((changes, areaName) => {
   if (areaName !== "local" || !changes.torConnectionPreferences || isDirty) return;
@@ -891,21 +962,36 @@ chrome.storage.onChanged.addListener((changes, areaName) => {
     disabledBridges: [...disabledBridgeLines],
     autoBridgeSelection: saved.autoBridgeSelection !== false,
     selectedBridge: typeof saved.selectedBridge === "string" ? saved.selectedBridge : allEnabledLines()[0] || "",
-    killSwitch: saved.killSwitch === true
-  };
-  selectedMode = preferences.mode;
-  setMode(selectedMode);
-  renderBridgeList();
-  renderKillSwitch();
+    killSwitch: saved.killSwitch === true,
+    exitCountry: typeof saved.exitCountry === "string" ? saved.exitCountry : ""
+};
+selectedMode = preferences.mode;
+setMode(selectedMode);
+renderBridgeList();
+renderKillSwitch();
+renderExitCountry();
 });
 
-if ("IntersectionObserver" in window) {
-  const sectionObserver = new IntersectionObserver((entries) => {
-    const visible = entries.filter((entry) => entry.isIntersecting).sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
-    if (!visible) return;
-    setActiveSection(visible.target.id);
-  }, { rootMargin: "-15% 0px -65% 0px", threshold: [0, 0.1, 0.35] });
-  ["method", "bridges", "protection", "appearance", "privacy", "support"].forEach((id) => sectionObserver.observe(document.getElementById(id)));
+{
+  let suppressUntil = 0;
+  document.addEventListener("click", () => { suppressUntil = Date.now() + 400; }, { capture: true });
+  const sectionIds = ["method", "bridges", "exit-country", "protection", "appearance", "privacy", "support"];
+  const THRESHOLD = 160; // px from top of viewport — just below the sticky header
+  const updateActiveSection = () => {
+    if (Date.now() < suppressUntil) return;
+    // Find the last section whose top edge has scrolled above THRESHOLD.
+    // That's the section the user is currently reading.
+    let active = sectionIds[0];
+    for (const id of sectionIds) {
+      const el = document.getElementById(id);
+      if (!el) continue;
+      if (el.getBoundingClientRect().top <= THRESHOLD) active = id;
+    }
+    setActiveSection(active);
+  };
+  window.addEventListener("scroll", updateActiveSection, { passive: true });
+  // Set correct active section on initial load (e.g. page loaded mid-scroll or hash in URL).
+  updateActiveSection();
 }
 
 loadDonationAddresses();
