@@ -553,11 +553,16 @@ exitCountryOptionButtons.forEach((btn) => {
     exitCountrySelectNode.focus();
     const code = btn.dataset.exitCountry;
     if (code === (preferences.exitCountry || "")) return;
+    const prevCode = preferences.exitCountry;
     preferences.exitCountry = code;
     renderExitCountry();
     const nextPreferences = { ...storedPreferences(), exitCountry: code };
     chrome.storage.local.set({ torConnectionPreferences: nextPreferences }, () => {
-      if (chrome.runtime.lastError) return;
+      if (chrome.runtime.lastError) {
+        preferences.exitCountry = prevCode;
+        renderExitCountry();
+        return;
+      }
       preferences = nextPreferences;
       if (isConnected) showChangeBanner("Exit country changed. Reconnect now to apply it.");
     });
