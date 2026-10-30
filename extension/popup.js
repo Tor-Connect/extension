@@ -59,7 +59,7 @@ const autoBridgeSelectionNode = document.querySelector("#autoBridgeSelection");
 let pollTimer;
 let initialStatusPending = true;
 let initialStatusRetries = 0;
-let preferences = { mode: "snowflake", bridges: "", autoBridgeSelection: true, selectedBridge: "", disabledBridges: [] };
+let preferences = { mode: "snowflake", bridges: "", autoBridgeSelection: true, selectedBridge: "", disabledBridges: [], exitCountry: "" };
 let currentState = "disconnected";
 let currentResult = {};
 let bridgeCountries = new Map();
@@ -72,6 +72,7 @@ let bridgeAttemptTimerInterval;
 let connectedDurationStartedAt = 0;
 let connectedDurationInterval;
 let routeBridgeLine = "";
+let lastShownPosition = -1;
 let copyFeedbackTimer;
 let statsCopyFeedbackTimer;
 let firefoxPermissionPollTimer;
@@ -557,7 +558,8 @@ function readPreferences() {
         bridges: typeof saved?.bridges === "string" ? saved.bridges : "",
         autoBridgeSelection: saved?.autoBridgeSelection !== false,
         selectedBridge: typeof saved?.selectedBridge === "string" ? saved.selectedBridge : "",
-        disabledBridges: Array.isArray(saved?.disabledBridges) ? saved.disabledBridges : []
+        disabledBridges: Array.isArray(saved?.disabledBridges) ? saved.disabledBridges : [],
+        exitCountry: typeof saved?.exitCountry === "string" ? saved.exitCountry : ""
       };
       const entries = bridgeEntries();
       if (!entries.includes(preferences.selectedBridge)) preferences.selectedBridge = entries[0] || "";
@@ -982,7 +984,10 @@ function renderRoute(result = {}) {
   if (entries.length) {
     if (activePosition >= 0) shownPosition = activePosition;
     else if (!preferences.autoBridgeSelection) shownPosition = selectedPosition;
+    else if (result.state === "starting" && lastShownPosition >= 0) shownPosition = lastShownPosition;
   }
+  if (shownPosition >= 0) lastShownPosition = shownPosition;
+  if (result.state !== "starting" && result.state !== "connected") lastShownPosition = -1;
   renderBridgeCountry(result, shownPosition);
   snowflakeInfoNode.hidden = preferences.mode !== "snowflake" || result.state === "connected";
   if (preferences.mode === "snowflake") {
@@ -1206,7 +1211,7 @@ async function connectWithSavedPreferences() {
     ? allBridgeEntries().indexOf(saved.selectedBridge) + 1
     : null;
   const bridges = selectedBridgeIndex ? saved.selectedBridge : entries.join("\n");
-  return send("connect", { mode: saved.mode, bridges, selectedBridgeIndex });
+  return send("connect", { mode: saved.mode, bridges, selectedBridgeIndex, exitCountry: saved.exitCountry || "" });
 }
 
 connectionToggle.addEventListener("click", async () => {
@@ -1272,7 +1277,8 @@ chrome.storage.onChanged.addListener((changes, areaName) => {
     bridges: typeof saved.bridges === "string" ? saved.bridges : "",
     autoBridgeSelection: saved.autoBridgeSelection !== false,
     selectedBridge: typeof saved.selectedBridge === "string" ? saved.selectedBridge : "",
-    disabledBridges: Array.isArray(saved.disabledBridges) ? saved.disabledBridges : []
+    disabledBridges: Array.isArray(saved.disabledBridges) ? saved.disabledBridges : [],
+    exitCountry: typeof saved.exitCountry === "string" ? saved.exitCountry : ""
   };
   if (!bridgeEntries().includes(preferences.selectedBridge)) preferences.selectedBridge = bridgeEntries()[0] || "";
   renderBridgeSelector();

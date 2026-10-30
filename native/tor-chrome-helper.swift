@@ -10,6 +10,8 @@ private let dataDirectory = appSupport.appendingPathComponent("data", isDirector
 private let configURL = appSupport.appendingPathComponent("torrc")
 private let extensionIDURL = appSupport.appendingPathComponent("extension-id")
 private let manualBridgeConnectTimeout: TimeInterval = 5 * 60
+private let initialBridgeNoProgressTimeout: TimeInterval = 90
+private let bridgeRecoveryNoProgressTimeout: TimeInterval = 60
 private let manualBridgeTimeoutMessage = "Could not connect through this bridge within 5 minutes."
 
 final class Helper {
@@ -29,6 +31,7 @@ final class Helper {
     private var autoRecoveryInProgress = false
     private var recoveryAttemptSince: Date?
     private var recoveryStableSince: Date?
+    private var lastBootstrapProgress = -1
     private var recoveryGeneration = 0
     private var connectedAt: Int64?
     private var ipv4GeoIPLoaded = false
@@ -37,6 +40,7 @@ final class Helper {
     private var ipv6CountryRanges: [IPv6CountryRange] = []
     private var lastError: String?
     private var stopping = false
+    private var exitCountry = ""
     private let lock = NSLock()
 
     private struct BridgeTarget {
@@ -74,7 +78,8 @@ final class Helper {
             response = start(
                 mode: request["mode"] as? String ?? "",
                 bridges: request["bridges"] as? String ?? "",
-                selectedBridgeIndex: request["selectedBridgeIndex"] as? Int
+                selectedBridgeIndex: request["selectedBridgeIndex"] as? Int,
+                exitCountry: request["exitCountry"] as? String ?? ""
             )
         case "stop":
             stop()
@@ -273,7 +278,8 @@ final class Helper {
 
     private func start(mode: String, bridges: String, selectedBridgeIndex: Int?,
                        recoveryBridges: [String]? = nil,
-                       recoveryTried: Set<Int> = []) -> [String: Any] {
+                       recoveryTried: Set<Int> = [],
+                       exitCountry: String = "") -> [String: Any] {
         lock.lock(); let alreadyRunning = tor?.isRunning == true; lock.unlock()
         if alreadyRunning { return status() }
         guard mode == "snowflake" || mode == "manual" else {
@@ -365,6 +371,10 @@ final class Helper {
                 }
                 if let progress = self?.bootstrapProgress(from: output) {
                     self?.lock.lock()
+                    if progress > (self?.lastBootstrapProgress ?? -1), self?.autoRecoveryInProgress == true {
+                        self?.recoveryAttemptSince = Date()
+                    }
+                    self?.lastBootstrapProgress = max(self?.lastBootstrapProgress ?? -1, progress)
                     if progress >= 100 {
                         if self?.connectedAt == nil {
                             self?.connectedAt = Int64(Date().timeIntervalSince1970 * 1000)
@@ -416,19 +426,21 @@ final class Helper {
             reconnectSince = nil
             autoRecoveryBridges = recoveryBridges ?? ((mode == "manual" && selectedBridgeIndex == nil) ? autoBridges : [])
             autoRecoveryTried = recoveryTried
-            autoRecoveryInProgress = recoveryBridges != nil
-            recoveryAttemptSince = recoveryBridges == nil ? nil : Date()
+            autoRecoveryInProgress = recoveryBridges != nil || (mode == "manual" && selectedBridgeIndex == nil && !autoBridges.isEmpty)
+            recoveryAttemptSince = autoRecoveryInProgress ? Date() : nil
             if recoveryBridges == nil { recoveryStableSince = nil }
             let shouldStartRecoveryWatchdog = !autoRecoveryBridges.isEmpty
             recoveryGeneration += 1
             let watchdogGeneration = recoveryGeneration
             connectedAt = nil
+            lastBootstrapProgress = -1
             state = "starting"
             message = "Starting Tor…"
             startupDiagnostic = nil
             startupDiagnostics = []
             lastError = nil
             stopping = false
+            self.exitCountry = exitCountry
             lock.unlock()
             do {
                 try process.run()
@@ -665,8 +677,9 @@ final class Helper {
 
         let cookieHex = cookie.map { String(format: "%02x", $0) }.joined()
         guard sendControlCommand("AUTHENTICATE \(cookieHex)", to: descriptor),
-              readControlReply(from: descriptor)?.contains("250 OK") == true,
-              sendControlCommand("SETEVENTS EXTENDED STATUS_CLIENT ORCONN CIRC", to: descriptor),
+              readControlReply(from: descriptor)?.contains("250 OK") == true else { return }
+
+        guard sendControlCommand("SETEVENTS EXTENDED STATUS_CLIENT ORCONN CIRC", to: descriptor),
               let initialEvents = readControlReply(from: descriptor),
               initialEvents.contains("250 OK") else { return }
 
@@ -683,12 +696,31 @@ final class Helper {
         }
         var buffered = Data()
         var chunk = [UInt8](repeating: 0, count: 8192)
+        var exitNodesApplied = false
         while true {
             let count = chunk.withUnsafeMutableBytes { Darwin.read(descriptor, $0.baseAddress, $0.count) }
             if count == 0 { return }
             if count < 0 {
                 if errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR {
                     if maybeAutoRecover() { return }
+                    // After bootstrap completes, apply exit country restriction via SETCONF once.
+                    if !exitNodesApplied {
+                        lock.lock()
+                        let currentState = state
+                        let currentExitCountry = exitCountry
+                        lock.unlock()
+                        if currentState == "connected" {
+                            let trimmed = currentExitCountry.trimmingCharacters(in: .whitespaces)
+                            if trimmed.count == 2, trimmed.allSatisfy({ $0.isLetter }) {
+                                let code = trimmed.lowercased()
+                                _ = sendControlCommand("SETCONF ExitNodes={\(code)}", to: descriptor)
+                                _ = readControlReply(from: descriptor)
+                                _ = sendControlCommand("SIGNAL NEWNYM", to: descriptor)
+                                _ = readControlReply(from: descriptor)
+                            }
+                            exitNodesApplied = true
+                        }
+                    }
                     continue
                 }
                 return
@@ -840,7 +872,7 @@ final class Helper {
 
     private func maybeAutoRecover() -> Bool {
         lock.lock()
-        if !builtCircuits.isEmpty {
+        if !builtCircuits.isEmpty && state != "starting" {
             if let recoveryStableSince, Date().timeIntervalSince(recoveryStableSince) >= 60 {
                 autoRecoveryTried.removeAll()
                 self.recoveryStableSince = nil
@@ -849,9 +881,12 @@ final class Helper {
             lock.unlock()
             return false
         }
+        let attemptTimeout = autoRecoveryTried.isEmpty
+            ? initialBridgeNoProgressTimeout
+            : bridgeRecoveryNoProgressTimeout
         let recoveryAttemptDue = autoRecoveryInProgress
             && ["starting", "connected", "failed"].contains(state)
-            && (state == "failed" || (recoveryAttemptSince.map { Date().timeIntervalSince($0) >= 30 } ?? false))
+            && (state == "failed" || (recoveryAttemptSince.map { Date().timeIntervalSince($0) >= attemptTimeout } ?? false))
         let outageDue = state == "connected"
             && ["trying", "failed", "closed"].contains(bridgeActivity ?? "")
             && (reconnectSince.map { Date().timeIntervalSince($0) >= 15 } ?? false)
@@ -885,7 +920,8 @@ final class Helper {
 
         stop(preserveAutoRecovery: true)
         let result = start(mode: "manual", bridges: bridges[candidate], selectedBridgeIndex: candidate + 1,
-                           recoveryBridges: bridges, recoveryTried: tried)
+                           recoveryBridges: bridges, recoveryTried: tried,
+                           exitCountry: exitCountry)
         if (result["ok"] as? Bool) != true {
             lock.lock()
             state = "failed"

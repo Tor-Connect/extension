@@ -22,6 +22,8 @@ FIREFOX_ADDON_ID = "{92FAAAD1-58C8-461B-8447-0A43AE6CF002}"
 PROXY_PORT = 9050
 MAX_MESSAGE = 1_048_576
 MANUAL_BRIDGE_CONNECT_TIMEOUT = 5 * 60
+INITIAL_BRIDGE_NO_PROGRESS_TIMEOUT = 90
+BRIDGE_RECOVERY_NO_PROGRESS_TIMEOUT = 60
 MANUAL_BRIDGE_TIMEOUT_MESSAGE = "Could not connect through this bridge within 5 minutes."
 if os.name == "nt":
     BASE = Path(os.environ.get("LOCALAPPDATA", Path.home() / "AppData/Local")) / "TorChrome"
@@ -103,8 +105,10 @@ class Helper:
         self.recovery_attempt_since: float | None = None
         self.recovery_stable_since: float | None = None
         self.connected_at: int | None = None
+        self.bootstrap_progress = -1
         self.transport_launch_dir: Path | None = None
         self.stopping = False
+        self.exit_country: str = ""
         self.geo4: list[tuple[int, int, str]] | None = None
         self.geo6: list[tuple[int, int, str]] | None = None
 
@@ -117,7 +121,7 @@ class Helper:
         elif command == "ping": result = self.ping(request.get("bridges", ""))
         elif command == "countries": result = self.countries(request.get("bridges", ""))
         elif command == "start":
-            result = self.start(request.get("mode", ""), request.get("bridges", ""), request.get("selectedBridgeIndex"))
+            result = self.start(request.get("mode", ""), request.get("bridges", ""), request.get("selectedBridgeIndex"), exit_country=request.get("exitCountry", ""))
         elif command == "stop": self.stop(); result = self.status()
         else: result = {"ok": False, "error": "Unsupported command."}
         result["id"] = request_id
@@ -265,7 +269,8 @@ class Helper:
 
     def start(self, mode: str, raw_bridges: str, selected_index,
               recovery_bridges: list[str] | None = None,
-              recovery_tried: set[int] | None = None) -> dict:
+              recovery_tried: set[int] | None = None,
+              exit_country: str = "") -> dict:
         with self.lock:
             if self.process and self.process.poll() is None:
                 return self.status_payload(True)
@@ -325,11 +330,14 @@ class Helper:
             with self.lock:
                 self.process = process; self.targets = targets; self.current_index = None
                 self.bridge_activity = None; self.connected_at = None; self.state = "starting"; self.message = "Starting Tor…"
+                self.bootstrap_progress = -1
                 self.built_circuits = {}; self.reconnect_since = None
+                self.exit_country = exit_country
                 self.auto_recovery_bridges = list(recovery_bridges) if recovery_bridges is not None else (auto_bridges if mode == "manual" and selected_index is None else [])
                 self.auto_recovery_tried = set(recovery_tried or ())
-                self.auto_recovery_in_progress = recovery_bridges is not None
-                self.recovery_attempt_since = time.monotonic() if recovery_bridges is not None else None
+                self.auto_recovery_in_progress = (recovery_bridges is not None or
+                    (mode == "manual" and selected_index is None and bool(auto_bridges)))
+                self.recovery_attempt_since = time.monotonic() if self.auto_recovery_in_progress else None
                 if recovery_bridges is None: self.recovery_stable_since = None
                 self.diagnostics = []; self.last_error = None; self.stopping = False
             threading.Thread(target=self.read_output, args=(process,), daemon=True).start()
@@ -380,6 +388,9 @@ class Helper:
                 if match:
                     progress = min(100, int(match.group(1)))
                     with self.lock:
+                        if progress > self.bootstrap_progress and self.auto_recovery_in_progress:
+                            self.recovery_attempt_since = time.monotonic()
+                        self.bootstrap_progress = max(self.bootstrap_progress, progress)
                         if progress >= 100:
                             if self.connected_at is None: self.connected_at = int(time.time() * 1000)
                         else:
@@ -542,10 +553,24 @@ class Helper:
                 conn.sendall(b"GETINFO circuit-status\r\n")
                 self.process_circuit_snapshot(self.read_control_reply(conn), targets)
                 buffer = b""
+                exit_nodes_applied = False
                 while True:
                     try: data = conn.recv(8192)
                     except socket.timeout:
                         if self.maybe_auto_recover(): return
+                        # After bootstrap completes, apply exit country restriction via SETCONF once.
+                        if not exit_nodes_applied:
+                            with self.lock:
+                                current_state = self.state
+                                current_exit = self.exit_country
+                            if current_state == "connected":
+                                if current_exit and re.fullmatch(r"[a-zA-Z]{2}", current_exit):
+                                    code = current_exit.lower()
+                                    conn.sendall(f"SETCONF ExitNodes={{{code}}}\r\n".encode())
+                                    self.read_control_reply(conn)
+                                    conn.sendall(b"SIGNAL NEWNYM\r\n")
+                                    self.read_control_reply(conn)
+                                exit_nodes_applied = True
                         continue
                     if not data: return
                     buffer += data
@@ -654,16 +679,18 @@ class Helper:
 
     def maybe_auto_recover(self) -> bool:
         with self.lock:
-            if self.built_circuits:
+            if self.built_circuits and self.state != "starting":
                 if self.recovery_stable_since and time.monotonic() - self.recovery_stable_since >= 60:
                     self.auto_recovery_tried.clear()
                     self.recovery_stable_since = None
                     self.auto_recovery_in_progress = False
                 return False
+            attempt_timeout = (INITIAL_BRIDGE_NO_PROGRESS_TIMEOUT if not self.auto_recovery_tried
+                               else BRIDGE_RECOVERY_NO_PROGRESS_TIMEOUT)
             recovery_attempt_due = (self.auto_recovery_in_progress
                 and self.state in {"starting", "connected", "failed"}
                 and (self.state == "failed" or (self.recovery_attempt_since is not None
-                     and time.monotonic() - self.recovery_attempt_since >= 30)))
+                     and time.monotonic() - self.recovery_attempt_since >= attempt_timeout)))
             outage_due = (self.state == "connected"
                 and self.bridge_activity in {"trying", "failed", "closed"}
                 and self.reconnect_since is not None
@@ -700,7 +727,8 @@ class Helper:
             return True
         self.stop(preserve_auto_recovery=True)
         result = self.start("manual", bridges[candidate], candidate + 1,
-                            recovery_bridges=bridges, recovery_tried=tried)
+                            recovery_bridges=bridges, recovery_tried=tried,
+                            exit_country=self.exit_country)
         if not result.get("ok"):
             with self.lock:
                 self.state = "failed"

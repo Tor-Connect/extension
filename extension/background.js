@@ -322,7 +322,8 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       const result = await request("start", {
         mode: message.mode,
         bridges: message.bridges,
-        selectedBridgeIndex: message.selectedBridgeIndex
+        selectedBridgeIndex: message.selectedBridgeIndex,
+        exitCountry: message.exitCountry || ""
       });
       logHelperResult("start", result);
       const connected = result.ok && result.state === "connected";
