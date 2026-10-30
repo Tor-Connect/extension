@@ -444,12 +444,10 @@ final class Helper {
             lock.unlock()
             do {
                 try process.run()
-                if !configuredBridgeTargets.isEmpty {
-                    let controlPortFile = dataDirectory.appendingPathComponent("control-port")
-                    let cookieFile = dataDirectory.appendingPathComponent("control_auth_cookie")
-                    DispatchQueue.global(qos: .utility).async { [weak self] in
-                        self?.monitorControlPort(portFile: controlPortFile, cookieFile: cookieFile, targets: configuredBridgeTargets)
-                    }
+                let controlPortFile = dataDirectory.appendingPathComponent("control-port")
+                let cookieFile = dataDirectory.appendingPathComponent("control_auth_cookie")
+                DispatchQueue.global(qos: .utility).async { [weak self] in
+                    self?.monitorControlPort(portFile: controlPortFile, cookieFile: cookieFile, targets: configuredBridgeTargets)
                 }
                 if shouldStartRecoveryWatchdog {
                     DispatchQueue.global(qos: .utility).async { [weak self] in
@@ -683,16 +681,18 @@ final class Helper {
               let initialEvents = readControlReply(from: descriptor),
               initialEvents.contains("250 OK") else { return }
 
-        processControlEvents(initialEvents, targets: targets)
-        // The bridge may already be connected before the control listener
-        // attaches, so seed our active bridge from Tor's current OR connections.
-        if sendControlCommand("GETINFO orconn-status", to: descriptor),
-           let snapshot = readControlReply(from: descriptor) {
-            processORConnectionSnapshot(snapshot, targets: targets)
-        }
-        if sendControlCommand("GETINFO circuit-status", to: descriptor),
-           let snapshot = readControlReply(from: descriptor) {
-            processCircuitSnapshot(snapshot, targets: targets)
+        if !targets.isEmpty {
+            processControlEvents(initialEvents, targets: targets)
+            // The bridge may already be connected before the control listener
+            // attaches, so seed our active bridge from Tor's current OR connections.
+            if sendControlCommand("GETINFO orconn-status", to: descriptor),
+               let snapshot = readControlReply(from: descriptor) {
+                processORConnectionSnapshot(snapshot, targets: targets)
+            }
+            if sendControlCommand("GETINFO circuit-status", to: descriptor),
+               let snapshot = readControlReply(from: descriptor) {
+                processCircuitSnapshot(snapshot, targets: targets)
+            }
         }
         var buffered = Data()
         var chunk = [UInt8](repeating: 0, count: 8192)
@@ -730,7 +730,7 @@ final class Helper {
                 let lineData = buffered[..<newline.lowerBound]
                 buffered.removeSubrange(..<newline.upperBound)
                 if let line = String(data: lineData, encoding: .utf8) {
-                    updateBridgeActivity(from: line, targets: targets)
+                    if !targets.isEmpty { updateBridgeActivity(from: line, targets: targets) }
                     if maybeAutoRecover() { return }
                 }
             }

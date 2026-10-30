@@ -341,8 +341,7 @@ class Helper:
                 if recovery_bridges is None: self.recovery_stable_since = None
                 self.diagnostics = []; self.last_error = None; self.stopping = False
             threading.Thread(target=self.read_output, args=(process,), daemon=True).start()
-            if targets:
-                threading.Thread(target=self.monitor_control, args=(targets,), daemon=True).start()
+            threading.Thread(target=self.monitor_control, args=(targets,), daemon=True).start()
             if mode == "manual" and selected_index is not None:
                 threading.Thread(target=self.manual_bridge_timeout_watchdog, args=(process,), daemon=True).start()
             if self.auto_recovery_bridges:
@@ -545,13 +544,14 @@ class Helper:
                 conn.sendall(b"SETEVENTS EXTENDED STATUS_CLIENT ORCONN CIRC\r\n")
                 events = self.read_control_reply(conn)
                 if "250 OK" not in events: return
-                self.process_control_events(events, targets)
-                # The bridge may already be connected before the control listener
-                # attaches, so seed our active bridge from Tor's current OR conns.
-                conn.sendall(b"GETINFO orconn-status\r\n")
-                self.process_orconn_snapshot(self.read_control_reply(conn), targets)
-                conn.sendall(b"GETINFO circuit-status\r\n")
-                self.process_circuit_snapshot(self.read_control_reply(conn), targets)
+                if targets:
+                    self.process_control_events(events, targets)
+                    # The bridge may already be connected before the control listener
+                    # attaches, so seed our active bridge from Tor's current OR conns.
+                    conn.sendall(b"GETINFO orconn-status\r\n")
+                    self.process_orconn_snapshot(self.read_control_reply(conn), targets)
+                    conn.sendall(b"GETINFO circuit-status\r\n")
+                    self.process_circuit_snapshot(self.read_control_reply(conn), targets)
                 buffer = b""
                 exit_nodes_applied = False
                 while True:
@@ -576,7 +576,8 @@ class Helper:
                     buffer += data
                     while b"\r\n" in buffer:
                         raw, buffer = buffer.split(b"\r\n", 1)
-                        self.update_bridge_activity(raw.decode("utf-8", "replace"), targets)
+                        if targets:
+                            self.update_bridge_activity(raw.decode("utf-8", "replace"), targets)
                         if self.maybe_auto_recover(): return
                     if len(buffer) > 65536: buffer = b""
         except OSError: return
