@@ -419,6 +419,8 @@
       "Where your traffic exits the Tor network. Tor will try this country but may use another if no exits are available.": "ترافیک شما از شبکه Tor خارج می‌شود. Tor این کشور را ترجیح می‌دهد اما اگر خروجی در دسترس نباشد از کشور دیگری استفاده می‌کند.",
       "Exit country changed. Reconnect now to apply it.": "کشور خروجی تغییر کرد. برای اعمال، اکنون دوباره متصل شوید.",
       "Choose which country your Tor traffic exits through.": "کشوری را انتخاب کنید که ترافیک Tor شما از آن خارج می‌شود.",
+      "Where your traffic leaves the Tor network.": "مکانی که ترافیک شما شبکه Tor را ترک می‌کند.",
+      "Tor will prefer exits in this country. If none are available it will use another.": "Tor خروجی‌های این کشور را ترجیح می‌دهد. اگر در دسترس نباشند از کشور دیگری استفاده می‌کند.",
       Germany: "آلمان", "United States": "ایالات متحده", France: "فرانسه", Netherlands: "هلند", Sweden: "سوئد", Switzerland: "سوئیس", Canada: "کانادا", "United Kingdom": "بریتانیا", Finland: "فنلاند", Austria: "اتریش", "Czech Republic": "جمهوری چک", Romania: "رومانی", Poland: "لهستان", Norway: "نروژ", Denmark: "دانمارک", Latvia: "لتونی", Luxembourg: "لوکزامبورگ", Iceland: "ایسلند", Russia: "روسیه", Ukraine: "اوکراین", Japan: "ژاپن", Australia: "استرالیا", Singapore: "سنگاپور",
       On: "روشن",
       Off: "خاموش"
@@ -715,6 +717,8 @@
       "Where your traffic exits the Tor network. Tor will try this country but may use another if no exits are available.": "Wo dein Datenverkehr das Tor-Netzwerk verlässt. Tor bevorzugt dieses Land, nutzt aber ein anderes, wenn keine Ausgänge verfügbar sind.",
       "Exit country changed. Reconnect now to apply it.": "Ausgangsland geändert. Stelle jetzt die Verbindung erneut her, um die Änderung anzuwenden.",
       "Choose which country your Tor traffic exits through.": "Wähle das Land, über das dein Tor-Datenverkehr ausgeht.",
+      "Where your traffic leaves the Tor network.": "Wo dein Datenverkehr das Tor-Netzwerk verlässt.",
+      "Tor will prefer exits in this country. If none are available it will use another.": "Tor bevorzugt Ausgänge in diesem Land. Falls keine verfügbar sind, wird ein anderes verwendet.",
       Germany: "Deutschland", "United States": "Vereinigte Staaten", France: "Frankreich", Netherlands: "Niederlande", Sweden: "Schweden", Switzerland: "Schweiz", Canada: "Kanada", "United Kingdom": "Vereinigtes Königreich", Finland: "Finnland", Austria: "Österreich", "Czech Republic": "Tschechien", Romania: "Rumänien", Poland: "Polen", Norway: "Norwegen", Denmark: "Dänemark", Latvia: "Lettland", Luxembourg: "Luxemburg", Iceland: "Island", Russia: "Russland", Ukraine: "Ukraine", Japan: "Japan", Australia: "Australien", Singapore: "Singapur",
       On: "Ein",
       Off: "Aus"
@@ -990,6 +994,8 @@
       "Where your traffic exits the Tor network. Tor will try this country but may use another if no exits are available.": "Donde tu tráfico sale de la red Tor. Tor intentará este país, pero puede usar otro si no hay salidas disponibles.",
       "Exit country changed. Reconnect now to apply it.": "País de salida cambiado. Vuelve a conectar ahora para aplicarlo.",
       "Choose which country your Tor traffic exits through.": "Elige el país por el que sale tu tráfico de Tor.",
+      "Where your traffic leaves the Tor network.": "Donde tu tráfico sale de la red Tor.",
+      "Tor will prefer exits in this country. If none are available it will use another.": "Tor preferirá salidas en este país. Si no hay ninguna disponible, usará otro.",
       Germany: "Alemania", "United States": "Estados Unidos", France: "Francia", Netherlands: "Países Bajos", Sweden: "Suecia", Switzerland: "Suiza", Canada: "Canadá", "United Kingdom": "Reino Unido", Finland: "Finlandia", Austria: "Austria", "Czech Republic": "República Checa", Romania: "Rumanía", Poland: "Polonia", Norway: "Noruega", Denmark: "Dinamarca", Latvia: "Letonia", Luxembourg: "Luxemburgo", Iceland: "Islandia", Russia: "Rusia", Ukraine: "Ucrania", Japan: "Japón", Australia: "Australia", Singapore: "Singapur",
       On: "Activado",
       Off: "Desactivado"
@@ -1264,6 +1270,8 @@
       "Where your traffic exits the Tor network. Tor will try this country but may use another if no exits are available.": "المكان الذي يخرج منه ترافيكك من شبكة Tor. سيحاول Tor استخدام هذا البلد لكنه قد يستخدم آخر إذا لم تتوفر مخارج.",
       "Exit country changed. Reconnect now to apply it.": "تم تغيير بلد الخروج. أعد الاتصال الآن لتطبيق التغيير.",
       "Choose which country your Tor traffic exits through.": "اختر البلد الذي يخرج منه حركة مرور Tor الخاصة بك.",
+      "Where your traffic leaves the Tor network.": "المكان الذي يغادر فيه ترافيكك شبكة Tor.",
+      "Tor will prefer exits in this country. If none are available it will use another.": "سيفضل Tor المخارج في هذا البلد. إذا لم تتوفر أي مخارج سيستخدم بلداً آخر.",
       Germany: "ألمانيا", "United States": "الولايات المتحدة", France: "فرنسا", Netherlands: "هولندا", Sweden: "السويد", Switzerland: "سويسرا", Canada: "كندا", "United Kingdom": "المملكة المتحدة", Finland: "فنلندا", Austria: "النمسا", "Czech Republic": "جمهورية التشيك", Romania: "رومانيا", Poland: "بولندا", Norway: "النرويج", Denmark: "الدنمارك", Latvia: "لاتفيا", Luxembourg: "لوكسمبورغ", Iceland: "آيسلندا", Russia: "روسيا", Ukraine: "أوكرانيا", Japan: "اليابان", Australia: "أستراليا", Singapore: "سنغافورة",
       On: "تشغيل",
       Off: "إيقاف"
@@ -1537,6 +1545,8 @@
       "Where your traffic exits the Tor network. Tor will try this country but may use another if no exits are available.": "流量从 Tor 网络退出的地点。Tor 会优先选择此国家，但如果该国家没有可用出口节点，可能会使用其他国家。",
       "Exit country changed. Reconnect now to apply it.": "出口国家已更改。立即重新连接以应用更改。",
       "Choose which country your Tor traffic exits through.": "选择你的 Tor 流量从哪个国家出口。",
+      "Where your traffic leaves the Tor network.": "流量离开 Tor 网络的位置。",
+      "Tor will prefer exits in this country. If none are available it will use another.": "Tor 会优先选择此国家的出口节点。如果没有可用的出口，将使用其他国家。",
       Germany: "德国", "United States": "美国", France: "法国", Netherlands: "荷兰", Sweden: "瑞典", Switzerland: "瑞士", Canada: "加拿大", "United Kingdom": "英国", Finland: "芬兰", Austria: "奥地利", "Czech Republic": "捷克共和国", Romania: "罗马尼亚", Poland: "波兰", Norway: "挪威", Denmark: "丹麦", Latvia: "拉脱维亚", Luxembourg: "卢森堡", Iceland: "冰岛", Russia: "俄罗斯", Ukraine: "乌克兰", Japan: "日本", Australia: "澳大利亚", Singapore: "新加坡",
       On: "开启",
       Off: "关闭"
@@ -1810,6 +1820,8 @@
       "Where your traffic exits the Tor network. Tor will try this country but may use another if no exits are available.": "वह स्थान जहाँ से आपका ट्रैफ़िक Tor नेटवर्क से बाहर निकलता है। Tor इस देश को प्राथमिकता देगा लेकिन यदि कोई एग्ज़िट उपलब्ध न हो तो दूसरे देश का उपयोग कर सकता है।",
       "Exit country changed. Reconnect now to apply it.": "निकास देश बदल गया। इसे लागू करने के लिए अभी पुनः कनेक्ट करें।",
       "Choose which country your Tor traffic exits through.": "वह देश चुनें जिससे आपका Tor ट्रैफ़िक बाहर निकलता है।",
+      "Where your traffic leaves the Tor network.": "वह स्थान जहाँ से आपका ट्रैफ़िक Tor नेटवर्क छोड़ता है।",
+      "Tor will prefer exits in this country. If none are available it will use another.": "Tor इस देश के एग्ज़िट को प्राथमिकता देगा। यदि कोई उपलब्ध न हो तो दूसरे देश का उपयोग करेगा।",
       Germany: "जर्मनी", "United States": "संयुक्त राज्य अमेरिका", France: "फ़्रांस", Netherlands: "नीदरलैंड", Sweden: "स्वीडन", Switzerland: "स्विट्ज़रलैंड", Canada: "कनाडा", "United Kingdom": "यूनाइटेड किंगडम", Finland: "फ़िनलैंड", Austria: "ऑस्ट्रिया", "Czech Republic": "चेक गणराज्य", Romania: "रोमानिया", Poland: "पोलैंड", Norway: "नॉर्वे", Denmark: "डेनमार्क", Latvia: "लातविया", Luxembourg: "लक्ज़मबर्ग", Iceland: "आइसलैंड", Russia: "रूस", Ukraine: "यूक्रेन", Japan: "जापान", Australia: "ऑस्ट्रेलिया", Singapore: "सिंगापुर",
       On: "चालू",
       Off: "बंद"
@@ -2083,6 +2095,8 @@
       "Where your traffic exits the Tor network. Tor will try this country but may use another if no exits are available.": "L'endroit où votre trafic sort du réseau Tor. Tor essaiera ce pays mais pourra en utiliser un autre si aucune sortie n'est disponible.",
       "Exit country changed. Reconnect now to apply it.": "Pays de sortie modifié. Reconnectez-vous maintenant pour l'appliquer.",
       "Choose which country your Tor traffic exits through.": "Choisissez le pays par lequel votre trafic Tor sort.",
+      "Where your traffic leaves the Tor network.": "L'endroit où votre trafic quitte le réseau Tor.",
+      "Tor will prefer exits in this country. If none are available it will use another.": "Tor préférera les sorties dans ce pays. Si aucune n'est disponible, il en utilisera une autre.",
       Germany: "Allemagne", "United States": "États-Unis", France: "France", Netherlands: "Pays-Bas", Sweden: "Suède", Switzerland: "Suisse", Canada: "Canada", "United Kingdom": "Royaume-Uni", Finland: "Finlande", Austria: "Autriche", "Czech Republic": "République tchèque", Romania: "Roumanie", Poland: "Pologne", Norway: "Norvège", Denmark: "Danemark", Latvia: "Lettonie", Luxembourg: "Luxembourg", Iceland: "Islande", Russia: "Russie", Ukraine: "Ukraine", Japan: "Japon", Australia: "Australie", Singapore: "Singapour",
       On: "Activé",
       Off: "Désactivé"
@@ -2356,6 +2370,8 @@
       "Where your traffic exits the Tor network. Tor will try this country but may use another if no exits are available.": "Место, откуда ваш трафик выходит из сети Tor. Tor предпочтёт эту страну, но может использовать другую, если выходных узлов нет.",
       "Exit country changed. Reconnect now to apply it.": "Страна выхода изменена. Подключитесь заново, чтобы применить изменение.",
       "Choose which country your Tor traffic exits through.": "Выберите страну, через которую выходит трафик Tor.",
+      "Where your traffic leaves the Tor network.": "Место, где ваш трафик покидает сеть Tor.",
+      "Tor will prefer exits in this country. If none are available it will use another.": "Tor будет предпочитать выходные узлы в этой стране. Если они недоступны, будет использована другая страна.",
       Germany: "Германия", "United States": "США", France: "Франция", Netherlands: "Нидерланды", Sweden: "Швеция", Switzerland: "Швейцария", Canada: "Канада", "United Kingdom": "Великобритания", Finland: "Финляндия", Austria: "Австрия", "Czech Republic": "Чехия", Romania: "Румыния", Poland: "Польша", Norway: "Норвегия", Denmark: "Дания", Latvia: "Латвия", Luxembourg: "Люксембург", Iceland: "Исландия", Russia: "Россия", Ukraine: "Украина", Japan: "Япония", Australia: "Австралия", Singapore: "Сингапур",
       On: "Вкл.",
       Off: "Выкл."
