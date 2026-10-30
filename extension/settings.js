@@ -403,19 +403,22 @@ function renderBridgeList() {
       flag.setAttribute("aria-label", `Approximate bridge country: ${countryName}`);
       primary.append(flag, countryBadge);
     }
-    if (connected) {
-      const inUse = document.createElement("span");
-      inUse.className = "bridge-in-use";
-      inUse.textContent = "In use";
-      primary.append(inUse);
-    }
+    const fingerprintRow = document.createElement("div");
+    fingerprintRow.className = "bridge-fingerprint-row";
     const fingerprint = document.createElement("span");
     fingerprint.className = "bridge-fingerprint";
     const shortFingerprint = parts.fingerprint.length > 18
       ? `${parts.fingerprint.slice(0, 8)}…${parts.fingerprint.slice(-6)}` : parts.fingerprint;
     fingerprint.textContent = parts.iat ? `${shortFingerprint} · iat-mode ${parts.iat}` : shortFingerprint || "Bridge details unavailable";
     fingerprint.title = line;
-    main.append(primary, fingerprint);
+    fingerprintRow.append(fingerprint);
+    if (connected) {
+      const inUse = document.createElement("span");
+      inUse.className = "bridge-in-use";
+      inUse.textContent = "In use";
+      fingerprintRow.append(inUse);
+    }
+    main.append(primary, fingerprintRow);
 
     const ping = pingDescription(line);
     const pingNode = document.createElement("span");
