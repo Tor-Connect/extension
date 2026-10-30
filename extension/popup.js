@@ -280,8 +280,13 @@ document.querySelector("#retestSites").addEventListener("click", async (event) =
     siteChecks: SITE_CHECK_NAMES.map((site) => ({ site, state: "pending", latencyMs: null }))
   };
   renderResult(currentResult);
-  try { renderResult(await send("retestSites")); }
-  finally { button.disabled = false; }
+  try {
+    // retestSites runs up to 4 site checks each with an 8-second timeout, so
+    // allow up to 40 seconds before falling back to a plain status poll.
+    let result = await send("retestSites", {}, 40000);
+    if (!result) result = await send("status");
+    renderResult(result);
+  } finally { button.disabled = false; }
 });
 nextRouteNode.addEventListener("click", async () => {
   nextRouteNode.disabled = true;
@@ -545,7 +550,7 @@ function setStatus(text, kind = "", detail = "") {
   }
 }
 
-function send(type, extra = {}) {
+function send(type, extra = {}, timeout = 5000) {
   return new Promise((resolve) => {
     let settled = false;
     const done = (response) => {
@@ -561,7 +566,7 @@ function send(type, extra = {}) {
       return;
     }
     // Guard against the service worker waking up and dropping the message entirely.
-    setTimeout(() => done(undefined), 5000);
+    setTimeout(() => done(undefined), timeout);
   });
 }
 

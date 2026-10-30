@@ -817,7 +817,12 @@ final class Helper {
             if let index { currentBridgeIndex = index }
             bridgeActivity = "connected"
             reconnectSince = nil
-            recoveryAttemptSince = nil
+            // Guard: a CIRC BUILT event can arrive (via the control port) while
+            // state is still "starting" (bootstrap < 100%, from stdout). Clearing
+            // recoveryAttemptSince here would blind the watchdog — if bootstrap
+            // then stalls with no further log output, maybeAutoRecover would never
+            // fire because recoveryAttemptSince is nil and state != "connected".
+            if state == "connected" { recoveryAttemptSince = nil }
             if !autoRecoveryTried.isEmpty && recoveryStableSince == nil { recoveryStableSince = Date() }
             lock.unlock()
         } else if ["CLOSED", "FAILED", "DESTROYED"].contains(status) {

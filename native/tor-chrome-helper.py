@@ -645,7 +645,13 @@ class Helper:
                 if bridge_index is not None: self.current_index = bridge_index
                 self.bridge_activity = "connected"
                 self.reconnect_since = None
-                self.recovery_attempt_since = None
+                # Guard: a CIRC BUILT event can arrive (via the control port) while
+                # state is still "starting" (bootstrap < 100 %, from stdout).  Clearing
+                # recovery_attempt_since here would blind the watchdog — if bootstrap
+                # then stalls with no further log output, maybe_auto_recover would never
+                # fire because recovery_attempt_since is None and state != "connected".
+                if self.state == "connected":
+                    self.recovery_attempt_since = None
                 if self.auto_recovery_tried and not self.recovery_stable_since:
                     self.recovery_stable_since = time.monotonic()
         elif status in {"CLOSED", "FAILED", "DESTROYED"}:
