@@ -526,7 +526,7 @@ function renderExitCountry() {
   });
   if (code) {
     exitCountryCurrentFlagNode.textContent = code.toUpperCase();
-    const label = new Intl.DisplayNames([navigator.language || "en"], { type: "region" }).of(code.toUpperCase()) || code.toUpperCase();
+    const label = new Intl.DisplayNames([globalThis.torI18n?.language || navigator.language || "en"], { type: "region" }).of(code.toUpperCase()) || code.toUpperCase();
     exitCountryCurrentNode.textContent = label;
     exitCountryCardNode.dataset.on = "true";
     exitCountryNoticeNode.hidden = false;
