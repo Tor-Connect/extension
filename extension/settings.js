@@ -556,7 +556,9 @@ exitCountryOptionButtons.forEach((btn) => {
     const prevCode = preferences.exitCountry;
     preferences.exitCountry = code;
     renderExitCountry();
-    const nextPreferences = { ...storedPreferences(), exitCountry: code };
+    // Base the write on the last persisted record (preferences), not storedPreferences(),
+    // so pending unsaved bridge/mode edits are not silently committed with this picker change.
+    const nextPreferences = { ...preferences, exitCountry: code };
     chrome.storage.local.set({ torConnectionPreferences: nextPreferences }, () => {
       if (chrome.runtime.lastError) {
         preferences.exitCountry = prevCode;
