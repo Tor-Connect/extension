@@ -546,7 +546,23 @@ function setStatus(text, kind = "", detail = "") {
 }
 
 function send(type, extra = {}) {
-  return new Promise((resolve) => chrome.runtime.sendMessage({ type, ...extra }, resolve));
+  return new Promise((resolve) => {
+    let settled = false;
+    const done = (response) => {
+      if (settled) return;
+      settled = true;
+      void chrome.runtime.lastError; // prevent "unchecked lastError" console error
+      resolve(response);
+    };
+    try {
+      chrome.runtime.sendMessage({ type, ...extra }, done);
+    } catch (_) {
+      done(undefined);
+      return;
+    }
+    // Guard against the service worker waking up and dropping the message entirely.
+    setTimeout(() => done(undefined), 5000);
+  });
 }
 
 function readPreferences() {
@@ -1071,7 +1087,8 @@ function renderResult(result) {
     return;
   }
   hideFirefoxPermission();
-  const transientStartupFailure = initialStatusPending && (!currentResult.ok || currentResult.state === "failed") && currentResult.state !== "missing_runtime" && initialStatusRetries < 6;
+  const helperNotInstalled = /native helper (?:unavailable|disconnected)|native messaging host not found|native host.*not registered|failed to start native messaging host|access to the specified native messaging host is forbidden/i.test(currentResult?.error || "");
+  const transientStartupFailure = initialStatusPending && (!currentResult.ok || currentResult.state === "failed") && currentResult.state !== "missing_runtime" && !helperNotInstalled && initialStatusRetries < 6;
   if (transientStartupFailure) {
     initialStatusRetries++;
     popupMainNode.dataset.view = "connection";
@@ -1098,12 +1115,12 @@ function renderResult(result) {
   syncBridgeAttemptTimer(currentResult.state);
   syncConnectedDuration(currentResult);
   updateLiveStats(result);
-  const helperUnavailable = /native helper (?:unavailable|disconnected)|native messaging host not found|native host.*not registered|failed to start native messaging host|access to the specified native messaging host is forbidden/i.test(result?.error || "");
-  if (helperUnavailable || result?.state === "missing_runtime") {
+  if (helperNotInstalled || result?.state === "missing_runtime") {
     popupMainNode.dataset.view = "cold-start";
     setupPanelNode.hidden = false;
     routeCardNode.hidden = true;
     openSettingsButton.hidden = true;
+    errorDetailsNode.hidden = true;
     setupDescriptionNode.textContent = result?.state === "missing_runtime"
       ? "Install Tor and its helper once to connect through Chrome."
       : "Install the Tor helper once to connect through Chrome.";
@@ -1289,6 +1306,16 @@ chrome.storage.onChanged.addListener((changes, areaName) => {
 
 readPreferences().then(async () => {
   renderConnectionMethodSwitch();
-  const [result] = await Promise.all([send("status"), refreshBridgeCountries()]);
+  let result;
+  [result] = await Promise.all([send("status"), refreshBridgeCountries()]);
+  // If the service worker was cold-starting it may return undefined before it is
+  // ready. Retry silently a few times so the first renderResult call always has
+  // a real response (avoids showing "Checking…" on the very first paint).
+  if (!result) {
+    for (let i = 0; i < 5 && !result; i++) {
+      await new Promise((r) => setTimeout(r, 800));
+      result = await send("status");
+    }
+  }
   renderResult(result);
 });

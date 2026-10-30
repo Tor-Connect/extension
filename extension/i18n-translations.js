@@ -410,7 +410,7 @@
       "Kill switch": "قطع‌کننده اتصال",
       "Keeps your real IP hidden if Tor stops working.": "اگر Tor قطع شود، IP واقعی شما پنهان می‌ماند.",
       "Preferred country": "کشور ترجیحی",
-      "Picking one country can make you easier to tell apart from other Tor users.": "انتخاب یک کشور مشخص ممکن است شما را از سایر کاربران Tor متمایزتر کند."
+      "Picking one country can make you easier to tell apart from other Tor users.": "انتخاب یک کشور مشخص ممکن است شما را از سایر کاربران Tor متمایزتر کند.",
       "What happens to your traffic if Tor stops working.": "در صورت قطع Tor چه اتفاقی برای ترافیک شما می‌افتد.",
       "If Tor drops or the extension restarts, your browser traffic stays blocked instead of falling back to your real IP. Press Connect to restore access.": "اگر Tor قطع شود یا افزونه راه‌اندازی مجدد شود، ترافیک مرورگر شما به جای برگشت به IP واقعی‌تان مسدود می‌ماند. برای بازگرداندن دسترسی روی اتصال فشار دهید.",
       "Protected. Your browser traffic never leaves without Tor.": "محافظت‌شده. ترافیک مرورگر شما هرگز بدون Tor خارج نمی‌شود.",
@@ -706,7 +706,7 @@
       "Kill switch": "Kill-Switch",
       "Keeps your real IP hidden if Tor stops working.": "Versteckt deine echte IP, wenn Tor aufhört zu funktionieren.",
       "Preferred country": "Bevorzugtes Land",
-      "Picking one country can make you easier to tell apart from other Tor users.": "Ein bestimmtes Land auszuwählen kann dich von anderen Tor-Nutzern unterscheidbarer machen."
+      "Picking one country can make you easier to tell apart from other Tor users.": "Ein bestimmtes Land auszuwählen kann dich von anderen Tor-Nutzern unterscheidbarer machen.",
       "What happens to your traffic if Tor stops working.": "Was mit deinem Datenverkehr passiert, wenn Tor aufhört zu funktionieren.",
       "If Tor drops or the extension restarts, your browser traffic stays blocked instead of falling back to your real IP. Press Connect to restore access.": "Falls Tor abbricht oder die Erweiterung neu startet, bleibt dein Browser-Datenverkehr gesperrt, anstatt auf deine echte IP zurückzufallen. Drücke Verbinden, um den Zugang wiederherzustellen.",
       "Protected. Your browser traffic never leaves without Tor.": "Geschützt. Dein Browser-Datenverkehr verlässt das Gerät nie ohne Tor.",
@@ -981,7 +981,7 @@
       "Kill switch": "Kill switch",
       "Keeps your real IP hidden if Tor stops working.": "Oculta tu IP real si Tor deja de funcionar.",
       "Preferred country": "País preferido",
-      "Picking one country can make you easier to tell apart from other Tor users.": "Elegir un país concreto puede hacer que seas más fácil de distinguir del resto de usuarios de Tor."
+      "Picking one country can make you easier to tell apart from other Tor users.": "Elegir un país concreto puede hacer que seas más fácil de distinguir del resto de usuarios de Tor.",
       "What happens to your traffic if Tor stops working.": "Qué ocurre con tu tráfico si Tor deja de funcionar.",
       "If Tor drops or the extension restarts, your browser traffic stays blocked instead of falling back to your real IP. Press Connect to restore access.": "Si Tor se cae o la extensión se reinicia, el tráfico de tu navegador permanece bloqueado en lugar de volver a tu IP real. Pulsa Conectar para restaurar el acceso.",
       "Protected. Your browser traffic never leaves without Tor.": "Protegido. El tráfico de tu navegador nunca sale sin Tor.",
@@ -1255,7 +1255,7 @@
       "Kill switch": "مفتاح القطع",
       "Keeps your real IP hidden if Tor stops working.": "يخفي عنوان IP الحقيقي إذا توقف Tor عن العمل.",
       "Preferred country": "البلد المفضل",
-      "Picking one country can make you easier to tell apart from other Tor users.": "اختيار بلد محدد قد يجعلك أسهل في التمييز عن مستخدمي Tor الآخرين."
+      "Picking one country can make you easier to tell apart from other Tor users.": "اختيار بلد محدد قد يجعلك أسهل في التمييز عن مستخدمي Tor الآخرين.",
       "What happens to your traffic if Tor stops working.": "ما الذي يحدث لحركة مرورك إذا توقف Tor عن العمل.",
       "If Tor drops or the extension restarts, your browser traffic stays blocked instead of falling back to your real IP. Press Connect to restore access.": "إذا انقطع Tor أو أُعيد تشغيل الإضافة، يبقى مرور متصفحك محظوراً بدلاً من العودة إلى IP الحقيقي. اضغط اتصال لاستعادة الوصول.",
       "Protected. Your browser traffic never leaves without Tor.": "محمي. لا يغادر مرور متصفحك الشبكة أبداً دون Tor.",
@@ -2074,7 +2074,7 @@
       "Kill switch": "Coupe-circuit",
       "Keeps your real IP hidden if Tor stops working.": "Cache votre vraie IP si Tor cesse de fonctionner.",
       "Preferred country": "Pays préféré",
-      "Picking one country can make you easier to tell apart from other Tor users.": "Choisir un pays précis peut vous rendre plus facile à distinguer des autres utilisateurs Tor."
+      "Picking one country can make you easier to tell apart from other Tor users.": "Choisir un pays précis peut vous rendre plus facile à distinguer des autres utilisateurs Tor.",
       "What happens to your traffic if Tor stops working.": "Ce qui arrive à votre trafic si Tor cesse de fonctionner.",
       "If Tor drops or the extension restarts, your browser traffic stays blocked instead of falling back to your real IP. Press Connect to restore access.": "Si Tor se coupe ou si l'extension redémarre, le trafic de votre navigateur reste bloqué au lieu de revenir à votre vraie IP. Appuyez sur Connecter pour rétablir l'accès.",
       "Protected. Your browser traffic never leaves without Tor.": "Protégé. Le trafic de votre navigateur ne sort jamais sans Tor.",
@@ -2347,7 +2347,7 @@
       "Kill switch": "Аварийное отключение",
       "Keeps your real IP hidden if Tor stops working.": "Скрывает ваш реальный IP, если Tor перестаёт работать.",
       "Preferred country": "Предпочтительная страна",
-      "Picking one country can make you easier to tell apart from other Tor users.": "Выбор конкретной страны может упростить отличие вас от других пользователей Tor."
+      "Picking one country can make you easier to tell apart from other Tor users.": "Выбор конкретной страны может упростить отличие вас от других пользователей Tor.",
       "What happens to your traffic if Tor stops working.": "Что происходит с вашим трафиком, если Tor перестаёт работать.",
       "If Tor drops or the extension restarts, your browser traffic stays blocked instead of falling back to your real IP. Press Connect to restore access.": "Если Tor отключится или расширение перезапустится, трафик вашего браузера останется заблокированным вместо переключения на реальный IP. Нажмите Подключиться для восстановления доступа.",
       "Protected. Your browser traffic never leaves without Tor.": "Защищено. Трафик вашего браузера никогда не выходит без Tor.",
