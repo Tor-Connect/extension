@@ -120,7 +120,7 @@ function checkConnectivityAfterConnect(result, generation, { force = false } = {
   return connectivityCheckPromise;
 }
 
-function addConnectivityCheck(result) {
+function addConnectivityCheck(result, { checkHelperVersion = false } = {}) {
   if (result?.ok && result.state === "connected") {
     const connectionId = result.connectedAt || "connected";
     result.connectivityCheck = connectivityCheckConnectionId === connectionId
@@ -130,7 +130,7 @@ function addConnectivityCheck(result) {
       ? connectivitySiteResults
       : CONNECTIVITY_SITES.map(({ site }) => ({ site, state: "pending", latencyMs: null }));
   }
-  if (isHelperOutdated(result)) result.helperOutdated = true;
+  if (checkHelperVersion && result?.ok && isHelperOutdated(result)) result.helperOutdated = true;
   return result;
 }
 
@@ -314,13 +314,13 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       const generation = trackConnectivityConnection(result);
       if (connected) {
         const appliedResult = await applyProxyForConnectedResult(result, generation);
-        sendResponse(addConnectivityCheck(appliedResult));
+        sendResponse(addConnectivityCheck(appliedResult, { checkHelperVersion: true }));
         return;
       } else {
         checkConnectivityAfterConnect(result, generation);
       }
       await setActionConnected(false);
-      sendResponse(addConnectivityCheck(result));
+      sendResponse(addConnectivityCheck(result, { checkHelperVersion: true }));
       return;
     }
     if (message.type === "retestSites") {
@@ -328,11 +328,11 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       const generation = trackConnectivityConnection(result);
       if (result.ok && result.state === "connected") {
         const appliedResult = await applyProxyForConnectedResult(result, generation, { forceCheck: true });
-        sendResponse(addConnectivityCheck(appliedResult));
+        sendResponse(addConnectivityCheck(appliedResult, { checkHelperVersion: true }));
         return;
       }
       await setActionConnected(false);
-      sendResponse(addConnectivityCheck(result));
+      sendResponse(addConnectivityCheck(result, { checkHelperVersion: true }));
       return;
     }
     if (message.type === "pingBridges") {
