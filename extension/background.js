@@ -130,7 +130,7 @@ function addConnectivityCheck(result, { checkHelperVersion = false } = {}) {
       ? connectivitySiteResults
       : CONNECTIVITY_SITES.map(({ site }) => ({ site, state: "pending", latencyMs: null }));
   }
-  if (checkHelperVersion && result?.ok && isHelperOutdated(result)) result.helperOutdated = true;
+  if (checkHelperVersion && result?.state && isHelperOutdated(result)) result.helperOutdated = true;
   return result;
 }
 
