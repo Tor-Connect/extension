@@ -1132,7 +1132,16 @@ function renderResult(result) {
     errorDetailsNode.hidden = true;
     if (mainHeadingNode) mainHeadingNode.hidden = true;
     setToggleState("disconnected");
-    if (pollTimer) { clearTimeout(pollTimer); pollTimer = undefined; }
+    // In the tab view the page stays open while the user runs setup in another
+    // tab, so keep polling so it exits the outdated panel automatically once the
+    // helper is updated. In the popup view the panel closes on its own when the
+    // popup is reopened.
+    if (isTabView) {
+      if (pollTimer) clearTimeout(pollTimer);
+      pollTimer = setTimeout(async () => renderResult(await send("status")), 3000);
+    } else {
+      if (pollTimer) { clearTimeout(pollTimer); pollTimer = undefined; }
+    }
     return;
   }
   outdatedPanelNode.hidden = true;
