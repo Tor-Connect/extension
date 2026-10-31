@@ -1080,6 +1080,18 @@ function renderRoute(result = {}) {
   copyBridgeButton.hidden = !routeBridgeLine;
 }
 
+// Polls for status while the outdated panel is visible in the tab view.
+// If send() times out (resolves undefined), reschedules without calling
+// renderResult so the outdated panel stays visible and polling continues.
+function pollOutdatedStatus() {
+  if (pollTimer) clearTimeout(pollTimer);
+  pollTimer = setTimeout(async () => {
+    const result = await send("status");
+    if (result) renderResult(result);
+    else pollOutdatedStatus();
+  }, 3000);
+}
+
 function renderResult(result) {
   connectionToggle.classList.remove("is-pressing");
   currentResult = result || {};
@@ -1137,8 +1149,7 @@ function renderResult(result) {
     // helper is updated. In the popup view the panel closes on its own when the
     // popup is reopened.
     if (isTabView) {
-      if (pollTimer) clearTimeout(pollTimer);
-      pollTimer = setTimeout(async () => renderResult(await send("status")), 3000);
+      pollOutdatedStatus();
     } else {
       if (pollTimer) { clearTimeout(pollTimer); pollTimer = undefined; }
     }
