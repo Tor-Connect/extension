@@ -293,7 +293,11 @@ document.querySelector("#retestSites").addEventListener("click", async (event) =
 });
 nextRouteNode.addEventListener("click", async () => {
   nextRouteNode.disabled = true;
+  // Focus the toggle before closing the sheet so the popup does not lose focus
+  // (Chrome closes the popup the moment focus leaves the window).
+  connectionToggle.focus();
   closeSiteCheck();
+  setStatus("Connecting…", "starting");
   if (preferences.mode === "manual") {
     const entries = allBridgeEntries();
     if (entries.length > 1) {
