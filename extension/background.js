@@ -3,7 +3,7 @@ const PROXY_PORT = 9050;
 // The minimum helper version the extension requires. Bump this (matching the
 // helper's HELPER_VERSION constant) only when the native protocol changes in a
 // breaking way that requires users to reinstall the helper.
-const MIN_HELPER_VERSION = "0.17.0";
+const MIN_HELPER_VERSION = "1.0.0";
 
 function isHelperOutdated(result) {
   const v = result?.helperVersion;
