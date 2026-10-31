@@ -13,10 +13,30 @@ env:
   TOR_EXTENSION_ID: ${{ vars.TOR_EXTENSION_ID || 'nhpflipfjhibgcopfbeoloeghdpoighk' }}
 
 jobs:
-  # Runs on every push to main (skips its own chore(release) commit via [skip ci])
+  # Read the actual commit message (head_commit is null for bot pushes via GITHUB_TOKEN)
+  # and expose two flags used by all downstream jobs.
+  check:
+    runs-on: ubuntu-latest
+    outputs:
+      is_release: ${{ steps.msg.outputs.is_release }}
+    steps:
+      - uses: actions/checkout@v7
+      - name: Detect release commit
+        id: msg
+        run: |
+          MSG=$(git log -1 --format='%s')
+          echo "Commit message: $MSG"
+          if echo "$MSG" | grep -qP '^chore\(release\):'; then
+            echo "is_release=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "is_release=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  # Runs on every non-release push to main.
   # Cuts a GitHub release and bumps version constants when releasable commits are found.
   semantic-release:
-    if: "!startsWith(github.event.head_commit.message, 'chore(release):') && github.event_name == 'push'"
+    needs: check
+    if: needs.check.outputs.is_release == 'false' && github.event_name == 'push'
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -43,8 +63,9 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
 
   macos:
+    needs: check
     # Only build on release commits (version constants already bumped) or manual triggers
-    if: startsWith(github.event.head_commit.message, 'chore(release):') || github.event_name == 'workflow_dispatch'
+    if: needs.check.outputs.is_release == 'true' || github.event_name == 'workflow_dispatch'
     runs-on: macos-15
     steps:
       - uses: actions/checkout@v7
@@ -64,10 +85,10 @@ jobs:
           if-no-files-found: error
 
   windows:
+    needs: [check, linux]
     # Only build on release commits (version constants already bumped) or manual triggers
-    if: startsWith(github.event.head_commit.message, 'chore(release):') || github.event_name == 'workflow_dispatch'
+    if: needs.check.outputs.is_release == 'true' || github.event_name == 'workflow_dispatch'
     runs-on: windows-latest
-    needs: linux
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
@@ -101,8 +122,9 @@ jobs:
           if-no-files-found: error
 
   linux:
+    needs: check
     # Only build on release commits (version constants already bumped) or manual triggers
-    if: startsWith(github.event.head_commit.message, 'chore(release):') || github.event_name == 'workflow_dispatch'
+    if: needs.check.outputs.is_release == 'true' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
@@ -126,8 +148,8 @@ jobs:
           if-no-files-found: error
 
   release:
-    if: startsWith(github.event.head_commit.message, 'chore(release):') && github.ref == 'refs/heads/main'
-    needs: [macos, windows, linux]
+    needs: [check, macos, windows, linux]
+    if: needs.check.outputs.is_release == 'true' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -143,7 +165,7 @@ jobs:
         id: tag
         run: |
           # commit message is "chore(release): X.Y.Z"
-          VERSION=$(echo "${{ github.event.head_commit.message }}" | grep -oP '(?<=chore\(release\): )\S+')
+          VERSION=$(git log -1 --format='%s' | grep -oP '(?<=chore\(release\): )\S+')
           echo "tag=v${VERSION}" >> "$GITHUB_OUTPUT"
       - name: Upload installer artifacts to existing GitHub release
         uses: softprops/action-gh-release@v2
