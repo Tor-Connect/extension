@@ -26,6 +26,8 @@ const connectionProgress = document.querySelector("#connectionProgress");
 const popupMainNode = document.querySelector(".popup-main");
 const setupPanelNode = document.querySelector("#setupPanel");
 const setupDescriptionNode = document.querySelector("#setupDescription");
+const outdatedPanelNode = document.querySelector("#outdatedPanel");
+const mainHeadingNode = document.querySelector(".popup-main > .heading");
 const openFullScreenButton = document.querySelector("#openFullScreen");
 const openSettingsButton = document.querySelector("#openSettings");
 const firefoxPermissionPanelNode = document.querySelector("#firefoxPermissionPanel");
@@ -1120,6 +1122,22 @@ function renderResult(result) {
   syncBridgeAttemptTimer(currentResult.state);
   syncConnectedDuration(currentResult);
   updateLiveStats(result);
+  if (result?.helperOutdated) {
+    popupMainNode.dataset.view = "helper-outdated";
+    outdatedPanelNode.hidden = false;
+    setupPanelNode.hidden = true;
+    routeCardNode.hidden = true;
+    openSettingsButton.hidden = true;
+    openFullScreenButton.hidden = true;
+    errorDetailsNode.hidden = true;
+    if (mainHeadingNode) mainHeadingNode.hidden = true;
+    setToggleState("disconnected");
+    if (pollTimer) { clearTimeout(pollTimer); pollTimer = undefined; }
+    return;
+  }
+  outdatedPanelNode.hidden = true;
+  if (mainHeadingNode) mainHeadingNode.hidden = false;
+  openFullScreenButton.hidden = false;
   if (helperNotInstalled || result?.state === "missing_runtime") {
     popupMainNode.dataset.view = "cold-start";
     setupPanelNode.hidden = false;

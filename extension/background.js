@@ -1,5 +1,21 @@
 const HOST_NAME = "org.torconnect.torchrome";
 const PROXY_PORT = 9050;
+// The minimum helper version the extension requires. Bump this (matching the
+// helper's HELPER_VERSION constant) only when the native protocol changes in a
+// breaking way that requires users to reinstall the helper.
+const MIN_HELPER_VERSION = "0.17.0";
+
+function isHelperOutdated(result) {
+  const v = result?.helperVersion;
+  // No helperVersion means a pre-versioning helper — treat it as outdated.
+  if (!v) return true;
+  const parse = (s) => s.split(".").map(Number);
+  const [ma, mi, pa] = parse(v);
+  const [mb, mib, pb] = parse(MIN_HELPER_VERSION);
+  if (ma !== mb) return ma < mb;
+  if (mi !== mib) return mi < mib;
+  return pa < pb;
+}
 let nativePort;
 let pending = new Map();
 let nextId = 1;
@@ -114,6 +130,7 @@ function addConnectivityCheck(result) {
       ? connectivitySiteResults
       : CONNECTIVITY_SITES.map(({ site }) => ({ site, state: "pending", latencyMs: null }));
   }
+  if (isHelperOutdated(result)) result.helperOutdated = true;
   return result;
 }
 

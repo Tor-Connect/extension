@@ -7,13 +7,19 @@
     [
       "@semantic-release/exec",
       {
-        "prepareCmd": "python3 scripts/build-extension-package.py ${nextRelease.version} && python3 scripts/build-firefox-package.py ${nextRelease.version} && cp dist/firefox/Tor-Connect-Firefox-Extension-${nextRelease.version}.zip dist/release/"
+        "prepareCmd": "python3 scripts/build-extension-package.py ${nextRelease.version} && python3 scripts/build-firefox-package.py ${nextRelease.version} && cp dist/firefox/Tor-Connect-Firefox-Extension-${nextRelease.version}.zip dist/release/ && python3 scripts/bump-helper-version.py ${nextRelease.version} ${lastRelease.gitTag}"
       }
     ],
     [
       "@semantic-release/git",
       {
-        "assets": ["extension/manifest.json"],
+        "assets": [
+          "extension/manifest.json",
+          "native/tor-chrome-helper.py",
+          "native/tor-chrome-helper.swift",
+          "extension/background.js",
+          "extension/setup.js"
+        ],
         "message": "chore(release): ${nextRelease.version} [skip ci]"
       }
     ],

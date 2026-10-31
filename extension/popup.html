@@ -86,6 +86,63 @@
       </ol>
       <a class="setup-cta" href="setup.html" target="_blank" rel="noreferrer">Set up this device</a>
     </section>
+    <section id="outdatedPanel" class="outdated-panel" aria-labelledby="outdatedTitle" hidden>
+      <header class="outdated-header">
+        <div class="outdated-header-brand">
+          <svg class="outdated-brand-mark" viewBox="0 0 128 128" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="10" stroke-linecap="round"><path d="M20 88H48"/><path d="M80 88H108"/><path d="M20 88A44 44 0 0 1 108 88" stroke-dasharray="54 30 54"/><path d="M35 88A29 29 0 0 1 93 88" stroke-dasharray="33.5 24 33.5"/><path d="M50 88A14 14 0 0 1 78 88" stroke-dasharray="14 16 14"/></g></svg>
+          <span class="outdated-header-name">Tor connection</span>
+        </div>
+        <span class="outdated-badge" aria-label="Update required">UPDATE</span>
+      </header>
+
+      <div class="outdated-diagram" aria-hidden="true">
+        <svg class="outdated-diagram-lines" viewBox="0 0 320 196" width="320" height="196">
+          <path d="M118 84H146" stroke="#1C5B3B" stroke-width="3" stroke-linecap="round"/>
+          <path d="M174 84H202" stroke="#6B4A12" stroke-width="3" stroke-linecap="round" stroke-dasharray="2 7"/>
+        </svg>
+        <span class="outdated-node outdated-node-ext">
+          <svg viewBox="0 0 128 128" width="48" height="48"><g fill="none" stroke="#2BD576" stroke-width="9" stroke-linecap="round"><path d="M20 88H108"/><path d="M20 88A44 44 0 0 1 108 88"/><path d="M35 88A29 29 0 0 1 93 88"/><path d="M50 88A14 14 0 0 1 78 88"/></g></svg>
+        </span>
+        <span class="outdated-node outdated-node-helper">
+          <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M7 10l3 2.5L7 15M12.5 15H17"/></svg>
+        </span>
+        <span class="outdated-node-badge" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V6M6 12l6-6 6 6"/></svg>
+        </span>
+        <div class="outdated-diagram-label outdated-diagram-label-ext">
+          <span class="outdated-diagram-caption">EXTENSION</span>
+          <span class="outdated-diagram-status outdated-diagram-status-ok">
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>Up to date
+          </span>
+        </div>
+        <div class="outdated-diagram-label outdated-diagram-label-helper">
+          <span class="outdated-diagram-caption">TOR HELPER</span>
+          <span class="outdated-diagram-status outdated-diagram-status-warn">Needs update</span>
+        </div>
+      </div>
+
+      <div class="outdated-title-row" aria-live="polite">
+        <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5L2.8 19.5h18.4z"/><path d="M12 10v4.5M12 17.2v.1"/></svg>
+        <h2 id="outdatedTitle" class="outdated-title">Update required</h2>
+      </div>
+      <p class="outdated-description">Your Tor helper needs to be updated to work with this version of the extension.</p>
+
+      <div class="outdated-info-card">
+        <div class="outdated-info-row">
+          <span class="outdated-info-icon outdated-info-icon-ok"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>
+          <span>Your settings are kept</span>
+        </div>
+        <div class="outdated-info-row">
+          <span class="outdated-info-icon outdated-info-icon-muted"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span>
+          <span>Takes about a minute, same steps as setup</span>
+        </div>
+      </div>
+
+      <a id="outdatedCta" class="outdated-cta" href="setup.html" target="_blank" rel="noreferrer">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 11l5 5 5-5M5 20h14"/></svg>
+        Update helper
+      </a>
+    </section>
     <section id="routeCard" class="route-card orbit-card">
       <p id="routeLabel" class="route-label visually-hidden">CONNECTION METHOD</p>
       <div class="connection-overview">
