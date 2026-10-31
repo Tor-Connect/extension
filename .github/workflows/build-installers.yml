@@ -13,33 +13,15 @@ env:
   TOR_EXTENSION_ID: ${{ vars.TOR_EXTENSION_ID || 'nhpflipfjhibgcopfbeoloeghdpoighk' }}
 
 jobs:
-  # Read the actual commit message (head_commit is null for bot pushes via GITHUB_TOKEN)
-  # and expose two flags used by all downstream jobs.
-  check:
-    runs-on: ubuntu-latest
-    outputs:
-      is_release: ${{ steps.msg.outputs.is_release }}
-    steps:
-      - uses: actions/checkout@v7
-      - name: Detect release commit
-        id: msg
-        run: |
-          MSG=$(git log -1 --format='%s')
-          echo "Commit message: $MSG"
-          if echo "$MSG" | grep -qP '^chore\(release\):'; then
-            echo "is_release=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "is_release=false" >> "$GITHUB_OUTPUT"
-          fi
-
-  # Runs on every non-release push to main.
   # Cuts a GitHub release and bumps version constants when releasable commits are found.
   semantic-release:
-    needs: check
-    if: needs.check.outputs.is_release == 'false' && github.event_name == 'push'
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     permissions:
       contents: write
+    outputs:
+      released: ${{ steps.sr.outputs.new_release_published }}
+      version: ${{ steps.sr.outputs.new_release_version }}
     steps:
       - name: Check out full history
         uses: actions/checkout@v7
@@ -50,6 +32,7 @@ jobs:
         with:
           node-version: 24
       - name: Publish release from commit titles
+        id: sr
         uses: cycjimmy/semantic-release-action@v7
         with:
           semantic_version: 25
@@ -62,13 +45,43 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
 
+  linux:
+    needs: semantic-release
+    # Run when semantic-release cut a new release, or on manual dispatch
+    if: needs.semantic-release.outputs.released == 'true' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # Fetch the chore(release) commit that semantic-release just pushed
+          ref: main
+      - name: Install package and signature tools
+        run: sudo apt-get update && sudo apt-get install --yes dpkg-dev gnupg
+      - name: Download and verify Tor bundle
+        run: scripts/download-verified-tor-bundle.sh linux-x86_64 dist/tor-expert-bundle-linux-x86_64.tar.gz
+      - name: Build Debian installer
+        run: installer/linux/build-deb.sh "${{ env.TOR_EXTENSION_ID }}" dist/tor-expert-bundle-linux-x86_64.tar.gz dist
+      - name: Download and verify Windows Tor bundle
+        run: scripts/download-verified-tor-bundle.sh windows-x86_64 dist/tor-expert-bundle-windows-x86_64.tar.gz
+      - uses: actions/upload-artifact@v7
+        with:
+          name: Tor-Connect-Setup-Linux-x64
+          path: dist/Tor-Connect-Setup-Linux-x64.deb
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v7
+        with:
+          name: tor-expert-bundle-windows-x64
+          path: dist/tor-expert-bundle-windows-x86_64.tar.gz
+          if-no-files-found: error
+
   macos:
-    needs: check
-    # Only build on release commits (version constants already bumped) or manual triggers
-    if: needs.check.outputs.is_release == 'true' || github.event_name == 'workflow_dispatch'
+    needs: semantic-release
+    if: needs.semantic-release.outputs.released == 'true' || github.event_name == 'workflow_dispatch'
     runs-on: macos-15
     steps:
       - uses: actions/checkout@v7
+        with:
+          ref: main
       - name: Install GnuPG
         run: brew install gnupg
       - name: Download and verify Tor bundles
@@ -85,12 +98,13 @@ jobs:
           if-no-files-found: error
 
   windows:
-    needs: [check, linux]
-    # Only build on release commits (version constants already bumped) or manual triggers
-    if: needs.check.outputs.is_release == 'true' || github.event_name == 'workflow_dispatch'
+    needs: [semantic-release, linux]
+    if: needs.semantic-release.outputs.released == 'true' || github.event_name == 'workflow_dispatch'
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v7
+        with:
+          ref: main
       - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
@@ -121,56 +135,23 @@ jobs:
           path: dist/Tor-Connect-Helper-Windows-x64.exe
           if-no-files-found: error
 
-  linux:
-    needs: check
-    # Only build on release commits (version constants already bumped) or manual triggers
-    if: needs.check.outputs.is_release == 'true' || github.event_name == 'workflow_dispatch'
-    runs-on: ubuntu-24.04
-    steps:
-      - uses: actions/checkout@v7
-      - name: Install package and signature tools
-        run: sudo apt-get update && sudo apt-get install --yes dpkg-dev gnupg
-      - name: Download and verify Tor bundle
-        run: scripts/download-verified-tor-bundle.sh linux-x86_64 dist/tor-expert-bundle-linux-x86_64.tar.gz
-      - name: Build Debian installer
-        run: installer/linux/build-deb.sh "${{ env.TOR_EXTENSION_ID }}" dist/tor-expert-bundle-linux-x86_64.tar.gz dist
-      - name: Download and verify Windows Tor bundle
-        run: scripts/download-verified-tor-bundle.sh windows-x86_64 dist/tor-expert-bundle-windows-x86_64.tar.gz
-      - uses: actions/upload-artifact@v7
-        with:
-          name: Tor-Connect-Setup-Linux-x64
-          path: dist/Tor-Connect-Setup-Linux-x64.deb
-          if-no-files-found: error
-      - uses: actions/upload-artifact@v7
-        with:
-          name: tor-expert-bundle-windows-x64
-          path: dist/tor-expert-bundle-windows-x86_64.tar.gz
-          if-no-files-found: error
-
   release:
-    needs: [check, macos, windows, linux]
-    if: needs.check.outputs.is_release == 'true' && github.ref == 'refs/heads/main'
+    needs: [semantic-release, macos, windows, linux]
+    if: needs.semantic-release.outputs.released == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v7
       - name: Download built installers
         uses: actions/download-artifact@v8
         with:
           pattern: Tor-Connect-*
           path: dist/release
           merge-multiple: true
-      - name: Extract release tag from commit message
-        id: tag
-        run: |
-          # commit message is "chore(release): X.Y.Z"
-          VERSION=$(git log -1 --format='%s' | grep -oP '(?<=chore\(release\): )\S+')
-          echo "tag=v${VERSION}" >> "$GITHUB_OUTPUT"
-      - name: Upload installer artifacts to existing GitHub release
+      - name: Upload installer artifacts to GitHub release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ steps.tag.outputs.tag }}
+          tag_name: v${{ needs.semantic-release.outputs.version }}
           files: dist/release/*
         env:
           GITHUB_TOKEN: ${{ github.token }}
