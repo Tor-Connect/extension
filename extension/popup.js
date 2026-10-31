@@ -59,6 +59,7 @@ let statsPollTimer;
 let lastStatsSample;
 const autoBridgeSelectionNode = document.querySelector("#autoBridgeSelection");
 let pollTimer;
+let outdatedPollGeneration = 0;
 let initialStatusPending = true;
 let initialStatusRetries = 0;
 let preferences = { mode: "snowflake", bridges: "", autoBridgeSelection: true, selectedBridge: "", disabledBridges: [], exitCountry: "" };
@@ -1083,10 +1084,15 @@ function renderRoute(result = {}) {
 // Polls for status while the outdated panel is visible in the tab view.
 // If send() times out (resolves undefined), reschedules without calling
 // renderResult so the outdated panel stays visible and polling continues.
+// A generation counter ensures stale callbacks from a superseded cycle
+// (e.g. triggered by a language change while a request was in-flight) do
+// not clobber the timer started by the newer cycle.
 function pollOutdatedStatus() {
+  const generation = ++outdatedPollGeneration;
   if (pollTimer) clearTimeout(pollTimer);
   pollTimer = setTimeout(async () => {
     const result = await send("status");
+    if (generation !== outdatedPollGeneration || popupMainNode.dataset.view !== "helper-outdated") return;
     if (result) renderResult(result);
     else pollOutdatedStatus();
   }, 3000);
