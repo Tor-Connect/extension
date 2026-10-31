@@ -19,6 +19,7 @@ from pathlib import Path
 
 HOST_NAME = "org.torconnect.torchrome"
 FIREFOX_ADDON_ID = "{92FAAAD1-58C8-461B-8447-0A43AE6CF002}"
+HELPER_VERSION = "0.17.0"
 PROXY_PORT = 9050
 MAX_MESSAGE = 1_048_576
 MANUAL_BRIDGE_CONNECT_TIMEOUT = 5 * 60
@@ -160,12 +161,13 @@ class Helper:
                 return self.status_payload(False)
             self.state = "disconnected"
         if not self.executable("tor"):
-            return {"ok": True, "state": "missing_runtime", "message": "Install the Tor runtime first."}
-        return {"ok": True, "state": "disconnected", "message": "Ready to connect."}
+            return {"ok": True, "state": "missing_runtime", "message": "Install the Tor runtime first.", "helperVersion": HELPER_VERSION}
+        return {"ok": True, "state": "disconnected", "message": "Ready to connect.", "helperVersion": HELPER_VERSION}
 
     def status_payload(self, ok: bool) -> dict:
         payload = {"ok": ok, "state": self.state, "message": self.message,
-                   "diagnostics": list(self.diagnostics), "bridgeCount": len(self.targets)}
+                   "diagnostics": list(self.diagnostics), "bridgeCount": len(self.targets),
+                   "helperVersion": HELPER_VERSION}
         if self.last_error: payload["error"] = self.last_error
         if self.state == "connected" and self.connected_at is not None:
             payload["connectedAt"] = self.connected_at

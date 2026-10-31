@@ -424,7 +424,18 @@
       "Tor will prefer exits in this country. If none are available it will use another.": "Tor خروجی‌های این کشور را ترجیح می‌دهد. اگر در دسترس نباشند از کشور دیگری استفاده می‌کند.",
       Germany: "آلمان", "United States": "ایالات متحده", France: "فرانسه", Netherlands: "هلند", Sweden: "سوئد", Switzerland: "سوئیس", Canada: "کانادا", "United Kingdom": "بریتانیا", Finland: "فنلاند", Austria: "اتریش", "Czech Republic": "جمهوری چک", Romania: "رومانی", Poland: "لهستان", Norway: "نروژ", Denmark: "دانمارک", Latvia: "لتونی", Luxembourg: "لوکزامبورگ", Iceland: "ایسلند", Russia: "روسیه", Ukraine: "اوکراین", Japan: "ژاپن", Australia: "استرالیا", Singapore: "سنگاپور",
       On: "روشن",
-      Off: "خاموش"
+      Off: "خاموش",
+      "Update required": "به‌روزرسانی لازم است",
+      "Your Tor helper needs to be updated to work with this version of the extension.": "ابزار Tor شما باید برای کارکرد با این نسخه از افزونه به‌روزرسانی شود.",
+      "Update helper": "به‌روزرسانی ابزار",
+      "Your settings are kept": "تنظیمات شما حفظ می‌شوند",
+      "Takes about a minute, same steps as setup": "حدود یک دقیقه طول می‌کشد، همان مراحل نصب اولیه",
+      "Tor connection": "اتصال Tor",
+      UPDATE: "به‌روزرسانی",
+      EXTENSION: "افزونه",
+      "Up to date": "به‌روز",
+      "TOR HELPER": "ابزار TOR",
+      "Needs update": "نیاز به به‌روزرسانی"
     },
     de: {
       "Tor Connect settings": "Tor Connect-Einstellungen", "Back to Tor Connect": "Zurück zu Tor Connect", Settings: "Einstellungen",
@@ -723,7 +734,18 @@
       "Tor will prefer exits in this country. If none are available it will use another.": "Tor bevorzugt Ausgänge in diesem Land. Falls keine verfügbar sind, wird ein anderes verwendet.",
       Germany: "Deutschland", "United States": "Vereinigte Staaten", France: "Frankreich", Netherlands: "Niederlande", Sweden: "Schweden", Switzerland: "Schweiz", Canada: "Kanada", "United Kingdom": "Vereinigtes Königreich", Finland: "Finnland", Austria: "Österreich", "Czech Republic": "Tschechien", Romania: "Rumänien", Poland: "Polen", Norway: "Norwegen", Denmark: "Dänemark", Latvia: "Lettland", Luxembourg: "Luxemburg", Iceland: "Island", Russia: "Russland", Ukraine: "Ukraine", Japan: "Japan", Australia: "Australien", Singapore: "Singapur",
       On: "Ein",
-      Off: "Aus"
+      Off: "Aus",
+      "Update required": "Update erforderlich",
+      "Your Tor helper needs to be updated to work with this version of the extension.": "Dein Tor-Helfer muss aktualisiert werden, um mit dieser Version der Erweiterung zu funktionieren.",
+      "Update helper": "Helfer aktualisieren",
+      "Your settings are kept": "Deine Einstellungen bleiben erhalten",
+      "Takes about a minute, same steps as setup": "Dauert etwa eine Minute, gleiche Schritte wie beim Setup",
+      "Tor connection": "Tor-Verbindung",
+      UPDATE: "UPDATE",
+      EXTENSION: "ERWEITERUNG",
+      "Up to date": "Aktuell",
+      "TOR HELPER": "TOR-HELFER",
+      "Needs update": "Update erforderlich"
     },
     es: {
       "Tor Connect settings": "Configuración de Tor Connect", "Back to Tor Connect": "Volver a Tor Connect", Settings: "Configuración", "All changes saved": "Todos los cambios guardados", "Save changes": "Guardar cambios", "Checking connection…": "Comprobando conexión…",
@@ -1001,7 +1023,18 @@
       "Tor will prefer exits in this country. If none are available it will use another.": "Tor preferirá salidas en este país. Si no hay ninguna disponible, usará otro.",
       Germany: "Alemania", "United States": "Estados Unidos", France: "Francia", Netherlands: "Países Bajos", Sweden: "Suecia", Switzerland: "Suiza", Canada: "Canadá", "United Kingdom": "Reino Unido", Finland: "Finlandia", Austria: "Austria", "Czech Republic": "República Checa", Romania: "Rumanía", Poland: "Polonia", Norway: "Noruega", Denmark: "Dinamarca", Latvia: "Letonia", Luxembourg: "Luxemburgo", Iceland: "Islandia", Russia: "Rusia", Ukraine: "Ucrania", Japan: "Japón", Australia: "Australia", Singapore: "Singapur",
       On: "Activado",
-      Off: "Desactivado"
+      Off: "Desactivado",
+      "Update required": "Actualización necesaria",
+      "Your Tor helper needs to be updated to work with this version of the extension.": "Tu asistente de Tor debe actualizarse para funcionar con esta versión de la extensión.",
+      "Update helper": "Actualizar asistente",
+      "Your settings are kept": "Tu configuración se conserva",
+      "Takes about a minute, same steps as setup": "Tarda aproximadamente un minuto, los mismos pasos que la configuración inicial",
+      "Tor connection": "Conexión Tor",
+      UPDATE: "ACTUALIZAR",
+      EXTENSION: "EXTENSIÓN",
+      "Up to date": "Actualizada",
+      "TOR HELPER": "ASISTENTE TOR",
+      "Needs update": "Necesita actualización"
     },
     ar: {
       "Tor Connect settings": "إعدادات Tor Connect", "Back to Tor Connect": "العودة إلى Tor Connect", Settings: "الإعدادات", "All changes saved": "تم حفظ جميع التغييرات", "Save changes": "حفظ التغييرات", "Checking connection…": "جارٍ التحقق من الاتصال…",
@@ -1278,7 +1311,18 @@
       "Tor will prefer exits in this country. If none are available it will use another.": "سيفضل Tor المخارج في هذا البلد. إذا لم تتوفر أي مخارج سيستخدم بلداً آخر.",
       Germany: "ألمانيا", "United States": "الولايات المتحدة", France: "فرنسا", Netherlands: "هولندا", Sweden: "السويد", Switzerland: "سويسرا", Canada: "كندا", "United Kingdom": "المملكة المتحدة", Finland: "فنلندا", Austria: "النمسا", "Czech Republic": "جمهورية التشيك", Romania: "رومانيا", Poland: "بولندا", Norway: "النرويج", Denmark: "الدنمارك", Latvia: "لاتفيا", Luxembourg: "لوكسمبورغ", Iceland: "آيسلندا", Russia: "روسيا", Ukraine: "أوكرانيا", Japan: "اليابان", Australia: "أستراليا", Singapore: "سنغافورة",
       On: "تشغيل",
-      Off: "إيقاف"
+      Off: "إيقاف",
+      "Update required": "تحديث مطلوب",
+      "Your Tor helper needs to be updated to work with this version of the extension.": "تحتاج أداة Tor المساعدة لديك إلى تحديث للعمل مع هذا الإصدار من الامتداد.",
+      "Update helper": "تحديث الأداة المساعدة",
+      "Your settings are kept": "إعداداتك محفوظة",
+      "Takes about a minute, same steps as setup": "يستغرق الأمر دقيقة تقريباً، بنفس خطوات الإعداد",
+      "Tor connection": "اتصال Tor",
+      UPDATE: "تحديث",
+      EXTENSION: "الامتداد",
+      "Up to date": "محدَّث",
+      "TOR HELPER": "أداة TOR",
+      "Needs update": "يحتاج تحديثاً"
     },
     zh: {
       "Tor Connect settings": "Tor Connect 设置", "Back to Tor Connect": "返回 Tor Connect", Settings: "设置", "All changes saved": "已保存所有更改", "Save changes": "保存更改", "Checking connection…": "正在检查连接…", "Settings saved. Reconnect to apply them.": "设置已保存。请重新连接以应用。", "Reconnect now": "立即重新连接", "Settings sections": "设置类别", "Connection method": "连接方式", "Bridge lines": "网桥线路", Appearance: "外观", "Appearance and language": "外观与语言", "Privacy and about": "隐私与关于",
@@ -1554,7 +1598,18 @@
       "Tor will prefer exits in this country. If none are available it will use another.": "Tor 会优先选择此国家的出口节点。如果没有可用的出口，将使用其他国家。",
       Germany: "德国", "United States": "美国", France: "法国", Netherlands: "荷兰", Sweden: "瑞典", Switzerland: "瑞士", Canada: "加拿大", "United Kingdom": "英国", Finland: "芬兰", Austria: "奥地利", "Czech Republic": "捷克共和国", Romania: "罗马尼亚", Poland: "波兰", Norway: "挪威", Denmark: "丹麦", Latvia: "拉脱维亚", Luxembourg: "卢森堡", Iceland: "冰岛", Russia: "俄罗斯", Ukraine: "乌克兰", Japan: "日本", Australia: "澳大利亚", Singapore: "新加坡",
       On: "开启",
-      Off: "关闭"
+      Off: "关闭",
+      "Update required": "需要更新",
+      "Your Tor helper needs to be updated to work with this version of the extension.": "您的 Tor 辅助程序需要更新才能与此版本的扩展程序兼容。",
+      "Update helper": "更新辅助程序",
+      "Your settings are kept": "您的设置将被保留",
+      "Takes about a minute, same steps as setup": "大约需要一分钟，步骤与初次设置相同",
+      "Tor connection": "Tor 连接",
+      UPDATE: "更新",
+      EXTENSION: "扩展程序",
+      "Up to date": "已是最新",
+      "TOR HELPER": "TOR 辅助程序",
+      "Needs update": "需要更新"
     },
     hi: {
       "Tor Connect settings": "Tor Connect सेटिंग्स", "Back to Tor Connect": "Tor Connect पर वापस जाएँ", Settings: "सेटिंग्स", "All changes saved": "सभी बदलाव सहेजे गए", "Save changes": "बदलाव सहेजें", "Checking connection…": "कनेक्शन जाँचा जा रहा है…", "Settings saved. Reconnect to apply them.": "सेटिंग्स सहेजी गईं। लागू करने के लिए फिर से कनेक्ट करें।", "Reconnect now": "अभी फिर से कनेक्ट करें", "Settings sections": "सेटिंग्स अनुभाग", "Connection method": "कनेक्शन का तरीका", "Bridge lines": "ब्रिज लाइनें", Appearance: "दिखावट", "Appearance and language": "रूप-रंग और भाषा", "Privacy and about": "गोपनीयता और जानकारी",
@@ -1830,7 +1885,18 @@
       "Tor will prefer exits in this country. If none are available it will use another.": "Tor इस देश के एग्ज़िट को प्राथमिकता देगा। यदि कोई उपलब्ध न हो तो दूसरे देश का उपयोग करेगा।",
       Germany: "जर्मनी", "United States": "संयुक्त राज्य अमेरिका", France: "फ़्रांस", Netherlands: "नीदरलैंड", Sweden: "स्वीडन", Switzerland: "स्विट्ज़रलैंड", Canada: "कनाडा", "United Kingdom": "यूनाइटेड किंगडम", Finland: "फ़िनलैंड", Austria: "ऑस्ट्रिया", "Czech Republic": "चेक गणराज्य", Romania: "रोमानिया", Poland: "पोलैंड", Norway: "नॉर्वे", Denmark: "डेनमार्क", Latvia: "लातविया", Luxembourg: "लक्ज़मबर्ग", Iceland: "आइसलैंड", Russia: "रूस", Ukraine: "यूक्रेन", Japan: "जापान", Australia: "ऑस्ट्रेलिया", Singapore: "सिंगापुर",
       On: "चालू",
-      Off: "बंद"
+      Off: "बंद",
+      "Update required": "अपडेट आवश्यक है",
+      "Your Tor helper needs to be updated to work with this version of the extension.": "इस एक्सटेंशन के इस संस्करण के साथ काम करने के लिए आपका Tor हेल्पर अपडेट होना ज़रूरी है।",
+      "Update helper": "हेल्पर अपडेट करें",
+      "Your settings are kept": "आपकी सेटिंग्स सुरक्षित रहेंगी",
+      "Takes about a minute, same steps as setup": "लगभग एक मिनट लगता है, सेटअप जैसे ही चरण",
+      "Tor connection": "Tor कनेक्शन",
+      UPDATE: "अपडेट",
+      EXTENSION: "एक्सटेंशन",
+      "Up to date": "अप-टू-डेट",
+      "TOR HELPER": "TOR हेल्पर",
+      "Needs update": "अपडेट ज़रूरी"
     },
     fr: {
       "Tor Connect settings": "Paramètres de Tor Connect", "Back to Tor Connect": "Retour à Tor Connect", Settings: "Paramètres", "All changes saved": "Toutes les modifications sont enregistrées", "Save changes": "Enregistrer les modifications", "Checking connection…": "Vérification de la connexion…", "Settings saved. Reconnect to apply them.": "Paramètres enregistrés. Reconnectez-vous pour les appliquer.", "Reconnect now": "Se reconnecter maintenant", "Settings sections": "Sections des paramètres", "Connection method": "Méthode de connexion", "Bridge lines": "Lignes de bridge", Appearance: "Apparence", "Appearance and language": "Apparence et langue", "Privacy and about": "Confidentialité et à propos",
@@ -2106,7 +2172,18 @@
       "Tor will prefer exits in this country. If none are available it will use another.": "Tor préférera les sorties dans ce pays. Si aucune n'est disponible, il en utilisera une autre.",
       Germany: "Allemagne", "United States": "États-Unis", France: "France", Netherlands: "Pays-Bas", Sweden: "Suède", Switzerland: "Suisse", Canada: "Canada", "United Kingdom": "Royaume-Uni", Finland: "Finlande", Austria: "Autriche", "Czech Republic": "République tchèque", Romania: "Roumanie", Poland: "Pologne", Norway: "Norvège", Denmark: "Danemark", Latvia: "Lettonie", Luxembourg: "Luxembourg", Iceland: "Islande", Russia: "Russie", Ukraine: "Ukraine", Japan: "Japon", Australia: "Australie", Singapore: "Singapour",
       On: "Activé",
-      Off: "Désactivé"
+      Off: "Désactivé",
+      "Update required": "Mise à jour requise",
+      "Your Tor helper needs to be updated to work with this version of the extension.": "Votre assistant Tor doit être mis à jour pour fonctionner avec cette version de l'extension.",
+      "Update helper": "Mettre à jour l'assistant",
+      "Your settings are kept": "Vos paramètres sont conservés",
+      "Takes about a minute, same steps as setup": "Prend environ une minute, mêmes étapes que la configuration initiale",
+      "Tor connection": "Connexion Tor",
+      UPDATE: "MISE À JOUR",
+      EXTENSION: "EXTENSION",
+      "Up to date": "À jour",
+      "TOR HELPER": "ASSISTANT TOR",
+      "Needs update": "Mise à jour requise"
     },
     ru: {
       "Tor Connect settings": "Настройки Tor Connect", "Back to Tor Connect": "Назад в Tor Connect", Settings: "Настройки", "All changes saved": "Все изменения сохранены", "Save changes": "Сохранить изменения", "Checking connection…": "Проверка соединения…", "Settings saved. Reconnect to apply them.": "Настройки сохранены. Переподключитесь, чтобы применить их.", "Reconnect now": "Переподключиться", "Settings sections": "Разделы настроек", "Connection method": "Способ подключения", "Bridge lines": "Строки мостов", Appearance: "Внешний вид", "Appearance and language": "Внешний вид и язык", "Privacy and about": "Конфиденциальность и информация",
@@ -2382,7 +2459,18 @@
       "Tor will prefer exits in this country. If none are available it will use another.": "Tor будет предпочитать выходные узлы в этой стране. Если они недоступны, будет использована другая страна.",
       Germany: "Германия", "United States": "США", France: "Франция", Netherlands: "Нидерланды", Sweden: "Швеция", Switzerland: "Швейцария", Canada: "Канада", "United Kingdom": "Великобритания", Finland: "Финляндия", Austria: "Австрия", "Czech Republic": "Чехия", Romania: "Румыния", Poland: "Польша", Norway: "Норвегия", Denmark: "Дания", Latvia: "Латвия", Luxembourg: "Люксембург", Iceland: "Исландия", Russia: "Россия", Ukraine: "Украина", Japan: "Япония", Australia: "Австралия", Singapore: "Сингапур",
       On: "Вкл.",
-      Off: "Выкл."
+      Off: "Выкл.",
+      "Update required": "Требуется обновление",
+      "Your Tor helper needs to be updated to work with this version of the extension.": "Ваш помощник Tor требует обновления для работы с этой версией расширения.",
+      "Update helper": "Обновить помощник",
+      "Your settings are kept": "Ваши настройки сохраняются",
+      "Takes about a minute, same steps as setup": "Занимает около минуты, те же шаги, что и при установке",
+      "Tor connection": "Подключение Tor",
+      UPDATE: "ОБНОВИТЬ",
+      EXTENSION: "РАСШИРЕНИЕ",
+      "Up to date": "Актуально",
+      "TOR HELPER": "ПОМОЩНИК TOR",
+      "Needs update": "Требует обновления"
     }
   };
 

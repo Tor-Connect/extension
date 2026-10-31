@@ -1,6 +1,7 @@
 import Foundation
 import Darwin
 
+private let helperVersion = "0.17.0"
 private let proxyPort = 9050
 private let appSupport = FileManager.default.homeDirectoryForCurrentUser
     .appendingPathComponent("Library/Application Support/TorChrome", isDirectory: true)
@@ -102,9 +103,9 @@ final class Helper {
         }
         if state != "disconnected" { state = "disconnected" }
         if executable(named: "tor") == nil {
-            return ["ok": true, "state": "missing_runtime", "message": "Install the Tor runtime first."]
+            return ["ok": true, "state": "missing_runtime", "message": "Install the Tor runtime first.", "helperVersion": helperVersion]
         }
-        return ["ok": true, "state": "disconnected", "message": "Ready to connect."]
+        return ["ok": true, "state": "disconnected", "message": "Ready to connect.", "helperVersion": helperVersion]
     }
 
     private func statusPayload(ok: Bool) -> [String: Any] {
@@ -114,7 +115,8 @@ final class Helper {
             "message": message,
             "diagnostics": startupDiagnostics,
             "bridgeCount": bridgeTargets.count,
-            "builtCircuitCount": builtCircuits.count
+            "builtCircuitCount": builtCircuits.count,
+            "helperVersion": helperVersion
         ]
         if let lastError { payload["error"] = lastError }
         if state == "connected", let connectedAt { payload["connectedAt"] = connectedAt }

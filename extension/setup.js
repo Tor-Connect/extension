@@ -1,4 +1,14 @@
 const releaseDownloadBase = "https://github.com/Tor-Connect/extension/releases/latest/download";
+const SETUP_MIN_HELPER_VERSION = "0.17.0";
+function setupVersionOk(v) {
+  if (!v) return false; // pre-versioning helper → needs updating
+  const parse = (s) => s.split(".").map(Number);
+  const [ma, mi, pa] = parse(v);
+  const [mb, mib, pb] = parse(SETUP_MIN_HELPER_VERSION);
+  if (ma !== mb) return ma > mb;
+  if (mi !== mib) return mi > mib;
+  return pa >= pb;
+}
 const macInstallerDownloadUrl = `${releaseDownloadBase}/Tor-Connect-Setup-macOS.zip`;
 const windowsInstallerDownloadUrl = `${releaseDownloadBase}/Tor-Connect-Setup-Windows-x64.exe`;
 const linuxInstallerDownloadUrl = `${releaseDownloadBase}/Tor-Connect-Setup-Linux-x64.deb`;
@@ -324,7 +334,7 @@ async function pollForHelper(statusNode, activeSetupPanel) {
     try {
       const result = await requestHelperStatus();
       if (generation !== helperCheckGeneration) return;
-      if (result?.ok) {
+      if (result?.ok && setupVersionOk(result?.helperVersion)) {
         statusNode.textContent = "Helper found";
         statusNode.dataset.kind = "success";
         setHelperVisualState("ready");

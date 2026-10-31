@@ -26,6 +26,8 @@ const connectionProgress = document.querySelector("#connectionProgress");
 const popupMainNode = document.querySelector(".popup-main");
 const setupPanelNode = document.querySelector("#setupPanel");
 const setupDescriptionNode = document.querySelector("#setupDescription");
+const outdatedPanelNode = document.querySelector("#outdatedPanel");
+const mainHeadingNode = document.querySelector(".popup-main > .heading");
 const openFullScreenButton = document.querySelector("#openFullScreen");
 const openSettingsButton = document.querySelector("#openSettings");
 const firefoxPermissionPanelNode = document.querySelector("#firefoxPermissionPanel");
@@ -57,6 +59,7 @@ let statsPollTimer;
 let lastStatsSample;
 const autoBridgeSelectionNode = document.querySelector("#autoBridgeSelection");
 let pollTimer;
+let outdatedPollGeneration = 0;
 let initialStatusPending = true;
 let initialStatusRetries = 0;
 let preferences = { mode: "snowflake", bridges: "", autoBridgeSelection: true, selectedBridge: "", disabledBridges: [], exitCountry: "" };
@@ -1078,6 +1081,23 @@ function renderRoute(result = {}) {
   copyBridgeButton.hidden = !routeBridgeLine;
 }
 
+// Polls for status while the outdated panel is visible in the tab view.
+// If send() times out (resolves undefined), reschedules without calling
+// renderResult so the outdated panel stays visible and polling continues.
+// A generation counter ensures stale callbacks from a superseded cycle
+// (e.g. triggered by a language change while a request was in-flight) do
+// not clobber the timer started by the newer cycle.
+function pollOutdatedStatus() {
+  const generation = ++outdatedPollGeneration;
+  if (pollTimer) clearTimeout(pollTimer);
+  pollTimer = setTimeout(async () => {
+    const result = await send("status");
+    if (generation !== outdatedPollGeneration || popupMainNode.dataset.view !== "helper-outdated") return;
+    if (result) renderResult(result);
+    else pollOutdatedStatus();
+  }, 3000);
+}
+
 function renderResult(result) {
   connectionToggle.classList.remove("is-pressing");
   currentResult = result || {};
@@ -1120,6 +1140,30 @@ function renderResult(result) {
   syncBridgeAttemptTimer(currentResult.state);
   syncConnectedDuration(currentResult);
   updateLiveStats(result);
+  if (result?.helperOutdated) {
+    popupMainNode.dataset.view = "helper-outdated";
+    outdatedPanelNode.hidden = false;
+    setupPanelNode.hidden = true;
+    routeCardNode.hidden = true;
+    openSettingsButton.hidden = true;
+    openFullScreenButton.hidden = true;
+    errorDetailsNode.hidden = true;
+    if (mainHeadingNode) mainHeadingNode.hidden = true;
+    setToggleState("disconnected");
+    // In the tab view the page stays open while the user runs setup in another
+    // tab, so keep polling so it exits the outdated panel automatically once the
+    // helper is updated. In the popup view the panel closes on its own when the
+    // popup is reopened.
+    if (isTabView) {
+      pollOutdatedStatus();
+    } else {
+      if (pollTimer) { clearTimeout(pollTimer); pollTimer = undefined; }
+    }
+    return;
+  }
+  outdatedPanelNode.hidden = true;
+  if (mainHeadingNode) mainHeadingNode.hidden = false;
+  openFullScreenButton.hidden = false;
   if (helperNotInstalled || result?.state === "missing_runtime") {
     popupMainNode.dataset.view = "cold-start";
     setupPanelNode.hidden = false;
