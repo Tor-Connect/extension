@@ -13,7 +13,38 @@ env:
   TOR_EXTENSION_ID: ${{ vars.TOR_EXTENSION_ID || 'nhpflipfjhibgcopfbeoloeghdpoighk' }}
 
 jobs:
+  # Runs on every push to main (skips its own chore(release) commit via [skip ci])
+  # Cuts a GitHub release and bumps version constants when releasable commits are found.
+  semantic-release:
+    if: "!startsWith(github.event.head_commit.message, 'chore(release):') && github.event_name == 'push'"
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Check out full history
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - name: Publish release from commit titles
+        uses: cycjimmy/semantic-release-action@v7
+        with:
+          semantic_version: 25
+          extra_plugins: |
+            @semantic-release/commit-analyzer
+            @semantic-release/release-notes-generator
+            @semantic-release/exec
+            @semantic-release/git
+            @semantic-release/github
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+
   macos:
+    # Only build on release commits (version constants already bumped) or manual triggers
+    if: startsWith(github.event.head_commit.message, 'chore(release):') || github.event_name == 'workflow_dispatch'
     runs-on: macos-15
     steps:
       - uses: actions/checkout@v7
@@ -33,6 +64,8 @@ jobs:
           if-no-files-found: error
 
   windows:
+    # Only build on release commits (version constants already bumped) or manual triggers
+    if: startsWith(github.event.head_commit.message, 'chore(release):') || github.event_name == 'workflow_dispatch'
     runs-on: windows-latest
     needs: linux
     steps:
@@ -68,6 +101,8 @@ jobs:
           if-no-files-found: error
 
   linux:
+    # Only build on release commits (version constants already bumped) or manual triggers
+    if: startsWith(github.event.head_commit.message, 'chore(release):') || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
@@ -91,35 +126,29 @@ jobs:
           if-no-files-found: error
 
   release:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: startsWith(github.event.head_commit.message, 'chore(release):') && github.ref == 'refs/heads/main'
     needs: [macos, windows, linux]
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
-      - name: Check out full history
-        uses: actions/checkout@v7
-        with:
-          fetch-depth: 0
+      - uses: actions/checkout@v7
       - name: Download built installers
         uses: actions/download-artifact@v8
         with:
           pattern: Tor-Connect-*
           path: dist/release
           merge-multiple: true
-      - name: Set up Node.js
-        uses: actions/setup-node@v7
+      - name: Extract release tag from commit message
+        id: tag
+        run: |
+          # commit message is "chore(release): X.Y.Z"
+          VERSION=$(echo "${{ github.event.head_commit.message }}" | grep -oP '(?<=chore\(release\): )\S+')
+          echo "tag=v${VERSION}" >> "$GITHUB_OUTPUT"
+      - name: Upload installer artifacts to existing GitHub release
+        uses: softprops/action-gh-release@v2
         with:
-          node-version: 24
-      - name: Publish release from commit titles
-        uses: cycjimmy/semantic-release-action@v7
-        with:
-          semantic_version: 25
-          extra_plugins: |
-            @semantic-release/commit-analyzer
-            @semantic-release/release-notes-generator
-            @semantic-release/exec
-            @semantic-release/git
-            @semantic-release/github
+          tag_name: ${{ steps.tag.outputs.tag }}
+          files: dist/release/*
         env:
           GITHUB_TOKEN: ${{ github.token }}

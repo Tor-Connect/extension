@@ -23,9 +23,10 @@ Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern
 UninstallDisplayName=Tor Connect Setup
+CloseApplications=yes
 
 [Files]
-Source: "{#PayloadDir}\tor-chrome-helper.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "{#PayloadDir}\tor-chrome-helper.exe"; DestDir: "{app}"; Flags: ignoreversion restartreplace uninsrestartdelete
 Source: "{#PayloadDir}\Register-NativeHost.ps1"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#PayloadDir}\runtime\*"; DestDir: "{app}\runtime"; Flags: ignoreversion recursesubdirs createallsubdirs
 
