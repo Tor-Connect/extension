@@ -2613,6 +2613,7 @@
       "CONNECTING THROUGH": "CONECTANDO VIA", "WILL CONNECT THROUGH": "VAI CONECTAR VIA",
       "You can switch any time.": "Você pode trocar a qualquer momento.",
       "A local Tor port is already in use": "Uma porta Tor local já está em uso",
+      "Tor can\u2019t access a required file": "O Tor não consegue acessar um arquivo necessário",
       "Tor can't access a required file": "O Tor não consegue acessar um arquivo necessário",
       "Check your bridge settings": "Verifique suas configurações de bridge",
       "Tor stopped before connecting": "O Tor parou antes de conectar",
