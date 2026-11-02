@@ -11,6 +11,7 @@
 
 - Use Conventional Commit titles for commits that will be pushed, because semantic-release determines releases from commit messages. Start titles with a recognized type such as `feat:`, `fix:`, `perf:`, `docs:`, `refactor:`, `test:`, `build:`, `ci:`, `chore:`, `style:`, or `revert:`; optional scopes are allowed, for example `feat(firefox): ...`.
 - Use `feat` for a user-facing feature and `fix` for a bug fix. These prefixes trigger the expected minor and patch releases. Add `!` after the type or scope, or include a `BREAKING CHANGE:` footer, when a change is breaking.
+- **Never use `git pull --rebase` before pushing.** If a push is rejected because the remote is ahead, use `git fetch && git merge --ff-only` instead. Rebasing rewrites the commit SHA; if semantic-release already processed the original SHA and pushed a `chore(release)` commit, a rebase + force-push will rewind `main` past that release commit, orphaning the release tag and causing all build jobs to be skipped on the next CI run.
 
 ## When in doubt, ask — do not improvise
 
