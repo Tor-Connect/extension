@@ -45,6 +45,13 @@ jobs:
             @semantic-release/git
         env:
           GITHUB_TOKEN: ${{ github.token }}
+      - name: Upload Firefox extension package
+        if: steps.sr.outputs.new_release_published == 'true'
+        uses: actions/upload-artifact@v7
+        with:
+          name: Tor-Connect-Firefox-Extension
+          path: dist/release/Tor-Connect-Firefox-Extension-*.zip
+          if-no-files-found: error
 
   linux:
     needs: semantic-release
