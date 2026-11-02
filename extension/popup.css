@@ -299,7 +299,7 @@ body.popup-page .orbit-inner { stroke: #dce4df; stroke-width: 2; }
 body.popup-page .orbit-spoke { stroke: #dce4df; stroke-width: 1.5; }
 body.popup-page .orbit-flow { stroke: #4a5753; stroke-width: 3; stroke-linecap: round; stroke-dasharray: 2 8; transform-box: view-box; transform-origin: center; transition: transform 700ms cubic-bezier(.2,.75,.25,1); }
 body.popup-page .orbit-card[data-state="connected"] .orbit-outer { stroke: #1c5b3b; stroke-dasharray: none; }
-body.popup-page .orbit-card[data-state="connected"] .orbit-flow { animation: orbit-flow 1s linear infinite; }
+body.popup-page .orbit-card[data-state="connected"] .orbit-flow { stroke: #2bd576; animation: orbit-flow 1s linear infinite; }
 body.popup-page .orbit-card[data-state="connected"][data-check="failed"]:not([data-activity="trying"]):not([data-activity="failed"]):not([data-activity="closed"]) .orbit-outer { stroke: #6b4a12; }
 body.popup-page .orbit-card[data-state="connected"][data-check="failed"]:not([data-activity="trying"]):not([data-activity="failed"]):not([data-activity="closed"]) .orbit-flow { stroke: #ffb020; }
 body.popup-page .orbit-card[data-state="connected"][data-check="failed"]:not([data-activity="trying"]):not([data-activity="failed"]):not([data-activity="closed"]) .orbit-node.is-active .orbit-country { border-color: #ffb020; color: #ffb020; background: #2a1f08; box-shadow: 0 0 0 5px rgb(255 176 32 / 12%); }
@@ -379,7 +379,7 @@ body.popup-page button.power-button[data-state="bridge-interrupted"],
 body.popup-page button.power-button[data-state="failed"] { transform: translateY(6px); box-shadow: 0 0 0 0 transparent, 0 1px 4px rgba(0,0,0,.1); }
 body.popup-page .connection-mark { width: 64px; height: 64px; }
 body.popup-page button.power-button[data-mode="snowflake"] .connection-mark .mark-connected { stroke-width: 9; }
-body.popup-page button.power-button[data-state="connected"] { border-color: #2bd576; color: #2bd576; background: #e8f6ee; box-shadow: 0 0 0 0 transparent, 0 0 28px #2bd57628; }
+body.popup-page button.power-button[data-state="connected"] { border-color: #2bd576; color: #2bd576; background: #e8f6ee; box-shadow: 0 0 0 8px #2bd57612, 0 0 40px #2bd57620; }
 body.popup-page button.power-button[data-state="connected"][data-check="failed"]:not([data-activity="trying"]):not([data-activity="failed"]):not([data-activity="closed"]) { border-color: #ffb020; color: #ffb020; background: #2a1f08; box-shadow: 0 0 0 0 transparent, 0 0 20px rgb(255 176 32 / 18%); }
 body.popup-page button.power-button[data-initial-checking="true"] { border-color: #bfdac9; color: #7d868f; background: #e7f3eb; animation: sonar-breathe 2.7s ease-in-out infinite; }
 body.popup-page button.power-button[data-state="reconnecting"] { border-color: #d99a28; color: #d99a28; background: #f7f0e2; }
@@ -496,7 +496,7 @@ html[data-theme="dark"] body.popup-page button.power-button[data-state="starting
 html[data-theme="dark"] body.popup-page button.power-button[data-state="reconnecting"],
 html[data-theme="dark"] body.popup-page button.power-button[data-state="bridge-interrupted"],
 html[data-theme="dark"] body.popup-page button.power-button[data-state="failed"] { transform: translateY(6px); box-shadow: 0 0 0 0 transparent, 0 1px 4px rgba(0,0,0,.3); }
-html[data-theme="dark"] body.popup-page button.power-button[data-state="connected"] { border-color: #2bd576; color: #2bd576; background: #10291c; box-shadow: 0 0 0 0 transparent, 0 0 28px #2bd57650; }
+html[data-theme="dark"] body.popup-page button.power-button[data-state="connected"] { border-color: #2bd576; color: #2bd576; background: #12291d; box-shadow: 0 0 0 8px #2bd57614, 0 0 48px #2bd57640; }
 html[data-theme="dark"] body.popup-page .orbit-card[data-state="connected"][data-check="failed"]:not([data-activity="trying"]):not([data-activity="failed"]):not([data-activity="closed"]) .orbit-outer { stroke: #6b4a12; }
 html[data-theme="dark"] body.popup-page .orbit-card[data-state="connected"][data-check="failed"]:not([data-activity="trying"]):not([data-activity="failed"]):not([data-activity="closed"]) .orbit-flow { stroke: #ffb020; }
 html[data-theme="dark"] body.popup-page .orbit-card[data-state="connected"][data-check="failed"]:not([data-activity="trying"]):not([data-activity="failed"]):not([data-activity="closed"]) .orbit-node.is-active .orbit-country { border-color: #ffb020; color: #ffb020; background: #2a1f08; box-shadow: 0 0 0 5px rgb(255 176 32 / 12%); }
@@ -614,7 +614,7 @@ body.popup-page .orbit-card[data-empty="true"] button.power-button {
 }
 body.popup-page .orbit-card[data-empty="true"] button.power-button:hover { background: #121816; }
 body.popup-page .snowflake-particle.particle-2 { top: 104px; left: 258px; }
-body.popup-page .snowflake-particle.particle-3 { top: 230px; left: 227px; }
+body.popup-page .snowflake-particle.particle-3 { top: 203px; left: 248px; }
 body.popup-page .snowflake-particle.particle-4 { display: none; }
 body.popup-page .snowflake-particle.particle-5 { top: 230px; left: 57px; }
 body.popup-page .snowflake-particle.particle-6 { top: 104px; left: 26px; }
