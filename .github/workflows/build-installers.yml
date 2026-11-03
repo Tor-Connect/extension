@@ -45,6 +45,13 @@ jobs:
             @semantic-release/git
         env:
           GITHUB_TOKEN: ${{ github.token }}
+      - name: Upload Chrome extension package
+        if: steps.sr.outputs.new_release_published == 'true'
+        uses: actions/upload-artifact@v7
+        with:
+          name: Tor-Connect-Chrome-Extension
+          path: dist/release/Tor-Connect-Chrome-Extension-*.zip
+          if-no-files-found: error
       - name: Upload Firefox extension package
         if: steps.sr.outputs.new_release_published == 'true'
         uses: actions/upload-artifact@v7
