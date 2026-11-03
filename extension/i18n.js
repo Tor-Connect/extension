@@ -100,7 +100,7 @@
   function applyLanguage(nextLanguage) {
     language = Object.hasOwn(translations, nextLanguage) ? nextLanguage : "en";
     document.documentElement.lang = language;
-    document.documentElement.dir = ["fa", "ar"].includes(language) ? "rtl" : "ltr";
+    document.documentElement.dir = ["fa", "ar", "ur"].includes(language) ? "rtl" : "ltr";
     document.documentElement.dataset.language = language;
     translateSubtree(document.documentElement);
     updateLanguagePicker(false);
