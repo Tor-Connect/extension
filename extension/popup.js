@@ -524,8 +524,12 @@ openFullScreenButton.addEventListener("click", () => {
   chrome.tabs.create({ url: chrome.runtime.getURL("popup.html?view=tab") });
 });
 
+let lastStatusText = "";
+let lastStatusDetail = "";
 function setStatus(text, kind = "", detail = "") {
-  if (statusNode.textContent !== text || statusNode.dataset.kind !== kind) {
+  if (lastStatusText !== text || statusNode.dataset.kind !== kind) {
+    lastStatusText = text;
+    lastStatusDetail = detail;
     // Crossfade: snap to opacity:0, swap content, then let CSS transition fade in.
     statusNode.style.transition = "none";
     statusDetailNode.style.transition = "none";
@@ -546,9 +550,8 @@ function setStatus(text, kind = "", detail = "") {
         statusDetailNode.style.opacity = "";
       });
     });
-  } else {
-    statusNode.textContent = text;
-    statusNode.dataset.kind = kind;
+  } else if (lastStatusDetail !== detail) {
+    lastStatusDetail = detail;
     statusDetailNode.textContent = detail;
     statusDetailNode.hidden = !detail;
     metaSeparatorNode.hidden = siteCheckSummaryNode.hidden
@@ -1337,7 +1340,12 @@ autoBridgeSelectionNode.addEventListener("change", () => {
   renderRoute(currentResult);
 });
 
-document.addEventListener("tor-language-changed", () => renderResult(currentResult));
+document.addEventListener("tor-language-changed", () => {
+  // Skip re-render on the initial language load — the MutationObserver in i18n.js
+  // already translates every text node in place. Only re-render when the user
+  // actively switches language after the first status result has been received.
+  if (currentResult && Object.keys(currentResult).length > 0) renderResult(currentResult);
+});
 
 chrome.storage.onChanged.addListener((changes, areaName) => {
   if (areaName !== "local" || !changes.torConnectionPreferences) return;
