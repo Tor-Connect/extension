@@ -13,7 +13,8 @@ env:
   TOR_EXTENSION_ID: ${{ vars.TOR_EXTENSION_ID || 'nhpflipfjhibgcopfbeoloeghdpoighk' }}
 
 jobs:
-  # Cuts a GitHub release and bumps version constants when releasable commits are found.
+  # Computes next version, bumps version constants, pushes tag + chore(release) commit.
+  # Does NOT publish the GitHub release — that happens in the release job after all builds succeed.
   semantic-release:
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
@@ -22,6 +23,7 @@ jobs:
     outputs:
       released: ${{ steps.sr.outputs.new_release_published }}
       version: ${{ steps.sr.outputs.new_release_version }}
+      notes: ${{ steps.sr.outputs.new_release_notes }}
     steps:
       - name: Check out full history
         uses: actions/checkout@v7
@@ -41,9 +43,15 @@ jobs:
             @semantic-release/release-notes-generator
             @semantic-release/exec
             @semantic-release/git
-            @semantic-release/github
         env:
           GITHUB_TOKEN: ${{ github.token }}
+      - name: Upload Firefox extension package
+        if: steps.sr.outputs.new_release_published == 'true'
+        uses: actions/upload-artifact@v7
+        with:
+          name: Tor-Connect-Firefox-Extension
+          path: dist/release/Tor-Connect-Firefox-Extension-*.zip
+          if-no-files-found: error
 
   linux:
     needs: semantic-release
@@ -148,10 +156,13 @@ jobs:
           pattern: Tor-Connect-*
           path: dist/release
           merge-multiple: true
-      - name: Upload installer artifacts to GitHub release
+      - name: Create GitHub release and upload installer artifacts
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ needs.semantic-release.outputs.version }}
+          name: v${{ needs.semantic-release.outputs.version }}
+          body: ${{ needs.semantic-release.outputs.notes }}
           files: dist/release/*
+          fail_on_unmatched_files: true
         env:
           GITHUB_TOKEN: ${{ github.token }}

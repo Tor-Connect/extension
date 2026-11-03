@@ -22,12 +22,6 @@
         ],
         "message": "chore(release): ${nextRelease.version}"
       }
-    ],
-    [
-      "@semantic-release/github",
-      {
-        "assets": ["dist/release/*"]
-      }
     ]
   ]
 }
