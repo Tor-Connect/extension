@@ -964,8 +964,11 @@ html[data-theme="light"] body.popup-page .outdated-badge {
 /* Diagram */
 body.popup-page .outdated-diagram {
   position: relative;
+  width: 320px;
   height: 196px;
   margin-top: 14px;
+  margin-left: auto;
+  margin-right: auto;
   flex: 0 0 auto;
 }
 body.popup-page .outdated-diagram-lines {
