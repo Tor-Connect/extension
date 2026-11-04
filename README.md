@@ -7,6 +7,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Build companion installers](https://github.com/Tor-Connect/extension/actions/workflows/build-installers.yml/badge.svg?branch=main)](https://github.com/Tor-Connect/extension/actions/workflows/build-installers.yml)
 [![Latest release](https://img.shields.io/github/v/release/Tor-Connect/extension?label=latest%20release)](https://github.com/Tor-Connect/extension/releases/latest)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/Tor-Connect/extension/badge)](https://scorecard.dev/viewer/?uri=github.com/Tor-Connect/extension)
 
 Tor Connect is a browser extension that routes Chrome or Firefox through a Tor client running on your computer. Choose Snowflake or add your own Tor bridge lines. Your bridge settings are stored locally in your browser profile.
 
