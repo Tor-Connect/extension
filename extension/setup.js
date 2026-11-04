@@ -1,4 +1,4 @@
-const releaseDownloadBase = "https://github.com/Tor-Connect/extension/releases/latest/download";
+const releaseDownloadBase = `https://github.com/Tor-Connect/extension/releases/download/v${chrome.runtime.getManifest().version}`;
 const SETUP_MIN_HELPER_VERSION = "1.0.0";
 function setupVersionOk(v) {
   if (!v) return false; // pre-versioning helper → needs updating
