@@ -55,7 +55,7 @@
   // Regex that tokenises a restricted-HTML string into text runs and simple tags.
   // Matches either an opening tag with optional attrs, a closing tag, or a text chunk.
   // No innerHTML or DOMParser is used — the string is never interpreted as live HTML.
-  const TAG_RE = /<(\/?)([\w]+)((?:\s+[\w-]+=(?:"[^"]*"|'[^']*'|[^\s>]*))*)\s*\/?>|([^<]+)/g;
+  const TAG_RE = /<(\/?)([\w]+)((?:\s+[\w-]+=(?:"[^"]*"|'[^']*'|[^\s>"']*))*)\s*\/?>|([^<]+)/g;
 
   function setTranslatedHTML(el, html) {
     const nodes = [];
