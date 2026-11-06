@@ -300,6 +300,22 @@ const helperNodeStatus = document.querySelector("#helperNodeStatus");
 const connectionStatus = document.querySelector("#connectionStatusText");
 let helperCheckGeneration = 0;
 
+// Render the current helper-pill text in the active language.
+// Called on init and on tor-language-changed so language switches don't clobber state.
+function renderHelperPillText(pill) {
+  if (pill.dataset.kind === "success") {
+    pill.textContent = t("Helper found");
+  } else if (pill.textContent === t("Listening…") || pill.dataset.kind === "listening") {
+    pill.textContent = t("Listening…");
+  } else {
+    pill.textContent = t("Not detected yet");
+  }
+}
+[appHelperStatus, terminalHelperStatus].forEach(renderHelperPillText);
+document.addEventListener("tor-language-changed", () => {
+  [appHelperStatus, terminalHelperStatus].forEach(renderHelperPillText);
+});
+
 const connectionLinePending = document.querySelector(".connection-line-pending");
 function setHelperVisualState(state) {
   connectionCard.classList.toggle("is-detecting", state === "checking");
@@ -329,7 +345,7 @@ async function requestHelperStatus() {
 async function pollForHelper(statusNode, activeSetupPanel) {
   const generation = ++helperCheckGeneration;
   statusNode.textContent = t("Listening…");
-  statusNode.dataset.kind = "";
+  statusNode.dataset.kind = "listening";
   setHelperVisualState("checking");
   while (generation === helperCheckGeneration) {
     try {
