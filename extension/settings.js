@@ -62,6 +62,7 @@ let isConnected = false;
 let pollTimer;
 let bridgeSaveRevision = 0;
 let copiedTimers = new Map();
+const t = (key, params) => (globalThis.torI18n?.t || ((s) => s))(key, params);
 
 function send(type, extra = {}) {
   return new Promise((resolve) => chrome.runtime.sendMessage({ type, ...extra }, resolve));
@@ -106,7 +107,7 @@ function readPreferences() {
       renderKillSwitch();
       renderExitCountry();
       isDirty = false;
-      markSaveState("All changes saved");
+      markSaveState(t("All changes saved"));
       resolve();
     });
   });
@@ -126,10 +127,10 @@ function setMode(mode) {
 
 function markDirty() {
   isDirty = true;
-  markSaveState("Unsaved changes", "pending");
+  markSaveState(t("Unsaved changes"), "pending");
 }
 
-function showChangeBanner(message = "Settings saved. Reconnect now to apply them.") {
+function showChangeBanner(message = t("Settings saved. Reconnect now to apply them.")) {
   if (!isConnected) return;
   changeBannerMessage.textContent = message;
   changeBanner.hidden = false;
@@ -181,7 +182,7 @@ async function loadDonationAddresses() {
       const copyButton = document.createElement("button");
       copyButton.className = "quiet-button donation-copy-button";
       copyButton.type = "button";
-      copyButton.setAttribute("aria-label", `Copy ${coin} donation address`);
+      copyButton.setAttribute("aria-label", t("Copy {coin} donation address", { coin }));
 
       // Copy button inner: idle icon + copied icon + label
       const copyIcon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
@@ -202,7 +203,7 @@ async function loadDonationAddresses() {
 
       const copyLabel = document.createElement("span");
       copyLabel.className = "donation-copy-label";
-      copyLabel.textContent = "Copy";
+      copyLabel.textContent = t("Copy");
       copyButton.append(copyIcon, copiedIcon, copyLabel);
 
       header.append(symCircle, meta, copyButton);
@@ -228,21 +229,21 @@ async function loadDonationAddresses() {
         try {
           const allowed = await requestClipboardPermission("clipboardWrite");
           if (!allowed) {
-            donationStatusNode.textContent = "Allow clipboard access to copy the address.";
+            donationStatusNode.textContent = t("Allow clipboard access to copy the address.");
             return;
           }
           await navigator.clipboard.writeText(address);
           clearTimeout(copiedStateTimer);
           copyButton.classList.add("is-copied");
-          copyLabel.textContent = "Copied";
-          copyButton.setAttribute("aria-label", `${coin} address copied`);
+          copyLabel.textContent = t("Copied");
+          copyButton.setAttribute("aria-label", t("{coin} address copied", { coin }));
           copiedStateTimer = setTimeout(() => {
             copyButton.classList.remove("is-copied");
-            copyLabel.textContent = "Copy";
-            copyButton.setAttribute("aria-label", `Copy ${coin} donation address`);
+            copyLabel.textContent = t("Copy");
+            copyButton.setAttribute("aria-label", t("Copy {coin} donation address", { coin }));
           }, 1500);
         } catch {
-          donationStatusNode.textContent = `Could not copy the ${coin} address. Check Chrome's clipboard permission and try again.`;
+          donationStatusNode.textContent = t("Could not copy the {coin} address. Check Chrome's clipboard permission and try again.", { coin });
         } finally {
           copyButton.disabled = false;
         }
@@ -252,7 +253,7 @@ async function loadDonationAddresses() {
       donationListNode.append(card);
     }
   } catch {
-    donationStatusNode.textContent = "Could not load donation addresses.";
+    donationStatusNode.textContent = t("Could not load donation addresses.");
   }
 }
 
@@ -320,8 +321,8 @@ function bridgeNumberForLine(line, index) {
 
 function pingDescription(line) {
   const result = pingResults.get(line);
-  if (result === undefined) return { label: "Not tested", level: 0, timeout: false };
-  if (result === null) return { label: "Timed out", level: 0, timeout: true };
+  if (result === undefined) return { label: t("Not tested"), level: 0, timeout: false };
+  if (result === null) return { label: t("Timed out"), level: 0, timeout: true };
   const level = result < 100 ? 3 : result < 250 ? 2 : 1;
   return { label: result < 0.05 ? "<0.1 ms" : `${result.toFixed(1)} ms`, level, timeout: false };
 }
@@ -339,14 +340,14 @@ function makeIconButton(className, label, svg) {
 function renderBridgeList() {
   bridgeListNode.replaceChildren();
   bridgeCountNode.textContent = String(bridgeLines.length);
-  bridgeSummaryCountNode.textContent = `${bridgeLines.length} saved`;
+  bridgeSummaryCountNode.textContent = t("{n} saved", { n: bridgeLines.length });
   pingButton.disabled = bridgeLines.length === 0 || isPingingBridges;
   copyAllButton.disabled = bridgeLines.length === 0 || isCopyingAllBridges;
   clearButton.disabled = bridgeLines.length === 0;
   if (!bridgeLines.length) {
     const empty = document.createElement("p");
     empty.className = "bridge-list-empty";
-    empty.textContent = "No bridges yet. Import them from a file or your clipboard.";
+    empty.textContent = t("No bridges yet. Import them from a file or your clipboard.");
     bridgeListNode.append(empty);
     return;
   }
@@ -366,8 +367,8 @@ function renderBridgeList() {
     const number = document.createElement("span");
     number.className = "bridge-number";
     number.textContent = String(numberLabel);
-    number.setAttribute("aria-label", `Bridge ${numberLabel}${connected ? ", currently in use" : ""}`);
-    if (connected) number.title = "Currently connected bridge";
+    number.setAttribute("aria-label", t("Bridge {n}", { n: numberLabel }) + (connected ? ", " + t("currently in use") : ""));
+    if (connected) number.title = t("Currently connected bridge");
 
     const valid = isBridgeLineValid(line);
     if (!valid) item.dataset.invalid = "true";
@@ -386,7 +387,7 @@ function renderBridgeList() {
     if (!valid) {
       const invalidBadge = document.createElement("span");
       invalidBadge.className = "bridge-invalid";
-      invalidBadge.textContent = "Invalid";
+      invalidBadge.textContent = t("Invalid");
       primary.append(invalidBadge);
     }
 
@@ -399,8 +400,8 @@ function renderBridgeList() {
       countryBadge.className = "bridge-country-code";
       countryBadge.textContent = countryCode.toUpperCase();
       const countryName = new Intl.DisplayNames([globalThis.torI18n?.language || navigator.language || "en"], { type: "region" }).of(countryCode.toUpperCase()) || countryCode.toUpperCase();
-      flag.title = countryBadge.title = `Approximate bridge country: ${countryName}`;
-      flag.setAttribute("aria-label", `Approximate bridge country: ${countryName}`);
+      flag.title = countryBadge.title = t("Approximate bridge country: {country}", { country: countryName });
+      flag.setAttribute("aria-label", t("Approximate bridge country: {country}", { country: countryName }));
       primary.append(flag, countryBadge);
     }
     const fingerprintRow = document.createElement("div");
@@ -409,13 +410,13 @@ function renderBridgeList() {
     fingerprint.className = "bridge-fingerprint";
     const shortFingerprint = parts.fingerprint.length > 18
       ? `${parts.fingerprint.slice(0, 8)}…${parts.fingerprint.slice(-6)}` : parts.fingerprint;
-    fingerprint.textContent = parts.iat ? `${shortFingerprint} · iat-mode ${parts.iat}` : shortFingerprint || "Bridge details unavailable";
+    fingerprint.textContent = parts.iat ? `${shortFingerprint} · iat-mode ${parts.iat}` : shortFingerprint || t("Bridge details unavailable");
     fingerprint.title = line;
     fingerprintRow.append(fingerprint);
     if (connected) {
       const inUse = document.createElement("span");
       inUse.className = "bridge-in-use";
-      inUse.textContent = "In use";
+      inUse.textContent = t("In use");
       fingerprintRow.append(inUse);
     }
     main.append(primary, fingerprintRow);
@@ -425,7 +426,7 @@ function renderBridgeList() {
     pingNode.className = "bridge-ping";
     pingNode.dataset.level = String(ping.level);
     pingNode.dataset.timeout = String(ping.timeout);
-    pingNode.setAttribute("aria-label", `Ping: ${ping.label}`);
+    pingNode.setAttribute("aria-label", t("Ping: {label}", { label: ping.label }));
     const bars = document.createElement("span");
     bars.className = "ping-bars";
     bars.setAttribute("aria-hidden", "true");
@@ -439,12 +440,12 @@ function renderBridgeList() {
     toggle.className = "bridge-toggle";
     toggle.setAttribute("role", "switch");
     toggle.setAttribute("aria-checked", String(enabled && valid));
-    toggle.setAttribute("aria-label", `Use Bridge ${numberLabel}`);
-    toggle.title = !valid ? "Bridge line is invalid" : enabled ? "Bridge is included in connections" : "Bridge is excluded from connections";
+    toggle.setAttribute("aria-label", t("Use Bridge {n}", { n: numberLabel }));
+    toggle.title = !valid ? t("Bridge line is invalid") : enabled ? t("Bridge is included in connections") : t("Bridge is excluded from connections");
     toggle.disabled = !valid;
     toggle.addEventListener("click", () => {
       if (enabled && selectedMode === "manual" && allEnabledLines().length <= 1) {
-        showClipboardStatus("Keep at least one bridge enabled when using bridge lines.", "error");
+        showClipboardStatus(t("Keep at least one bridge enabled when using bridge lines."), "error");
         return;
       }
       if (enabled) disabledBridgeLines.add(line);
@@ -454,49 +455,49 @@ function renderBridgeList() {
         preferences.selectedBridge = allEnabledLines()[0] || "";
       }
       renderBridgeList();
-      showClipboardStatus(enabled ? `Bridge ${numberLabel} excluded. Save changes to apply it.` : `Bridge ${numberLabel} included. Save changes to apply it.`, "success");
+      showClipboardStatus(enabled ? t("Bridge {n} excluded. Save changes to apply it.", { n: numberLabel }) : t("Bridge {n} included. Save changes to apply it.", { n: numberLabel }), "success");
       markDirty();
     });
 
     const actions = document.createElement("div");
     actions.className = "bridge-row-actions";
-    const copyButton = makeIconButton("copy-bridge", `Copy Bridge ${numberLabel}`, '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="13" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h3"/></svg>');
+    const copyButton = makeIconButton("copy-bridge", t("Copy Bridge {n}", { n: numberLabel }), '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="13" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h3"/></svg>');
     copyButton.addEventListener("click", async () => {
       copyButton.disabled = true;
       try {
         const allowed = await requestClipboardPermission("clipboardWrite");
         if (!allowed) {
-          showClipboardStatus("Allow clipboard access to copy this bridge.", "error");
+          showClipboardStatus(t("Allow clipboard access to copy this bridge."), "error");
           return;
         }
         await navigator.clipboard.writeText(line);
         copyButton.classList.add("is-copied");
-        copyButton.setAttribute("aria-label", `Bridge ${numberLabel} copied`);
-        copyButton.title = "Copied";
-        showClipboardStatus(`Bridge ${numberLabel} copied.`, "success");
+        copyButton.setAttribute("aria-label", t("Bridge {n} copied", { n: numberLabel }));
+        copyButton.title = t(t("Copied"));
+        showClipboardStatus(t("Bridge {n} copied.", { n: numberLabel }), "success");
         clearTimeout(copiedTimers.get(line));
         copiedTimers.set(line, window.setTimeout(() => {
           copyButton.classList.remove("is-copied");
-          copyButton.setAttribute("aria-label", `Copy Bridge ${numberLabel}`);
-          copyButton.title = `Copy Bridge ${numberLabel}`;
+          copyButton.setAttribute("aria-label", t("Copy Bridge {n}", { n: numberLabel }));
+          copyButton.title = t("Copy Bridge {n}", { n: numberLabel });
           copiedTimers.delete(line);
         }, 1400));
       } catch {
-        showClipboardStatus("Could not copy the bridge. Check Chrome’s clipboard permission and try again.", "error");
+        showClipboardStatus(t("Could not copy the bridge. Check Chrome’s clipboard permission and try again."), "error");
       } finally {
         copyButton.disabled = false;
       }
     });
     const removeButton = makeIconButton("remove-bridge", `Remove Bridge ${numberLabel}`, '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg>');
     removeButton.addEventListener("click", () => {
-      if (!window.confirm(`Remove Bridge ${numberLabel}? This will save the change.`)) return;
+      if (!window.confirm(t("Remove Bridge {n}? This will save the change.", { n: numberLabel }))) return;
       bridgeLines.splice(index, 1);
       disabledBridgeLines.delete(line);
       pingResults.delete(line);
       countryResults.delete(line);
       renderBridgeList();
       markDirty();
-      saveBridgeList("Bridge removed and saved. Changes apply the next time you connect.");
+      saveBridgeList(t("Bridge removed and saved. Changes apply the next time you connect."));
     });
     actions.append(copyButton, removeButton);
     item.append(number, main, pingNode, toggle, actions);
@@ -533,7 +534,7 @@ function renderExitCountry() {
     if (exitCountryNavBadge) exitCountryNavBadge.textContent = code.toUpperCase();
   } else {
     exitCountryCurrentFlagNode.textContent = "ANY";
-    exitCountryCurrentNode.textContent = "Automatic";
+    exitCountryCurrentNode.textContent = t("Automatic");
     exitCountryCardNode.dataset.on = "false";
     exitCountryNoticeNode.hidden = true;
     if (exitCountryNavBadge) exitCountryNavBadge.textContent = "Auto";
@@ -566,7 +567,7 @@ exitCountryOptionButtons.forEach((btn) => {
         return;
       }
       preferences = nextPreferences;
-      if (isConnected) showChangeBanner("Exit country changed. Reconnect now to apply it.");
+      if (isConnected) showChangeBanner(t("Exit country changed. Reconnect now to apply it."));
     });
   });
 });
@@ -580,29 +581,29 @@ function renderKillSwitch() {
   killSwitchToggle.setAttribute("aria-checked", String(on));
   killSwitchCard.dataset.on = String(on);
   killSwitchActivePanel.hidden = !on;
-  protectionNavBadge.textContent = on ? "On" : "Off";
+  protectionNavBadge.textContent = on ? t("On") : t("Off");
 }
 
 function saveSettings() {
   if (selectedMode === "manual" && !allEnabledLines().length) {
-    markSaveState("Enable at least one bridge to use bridge lines.", "error");
+    markSaveState(t("Enable at least one bridge to use bridge lines."), "error");
     return;
   }
-  markSaveState("Saving changes…");
+  markSaveState(t("Saving changes…"));
   saveButton.disabled = true;
   const nextPreferences = storedPreferences();
   chrome.storage.local.set({ torConnectionPreferences: nextPreferences }, () => {
     if (chrome.runtime.lastError) {
       saveButton.disabled = false;
       isDirty = true;
-      markSaveState("Could not save settings. Try again.", "error");
+      markSaveState(t("Could not save settings. Try again."), "error");
       return;
     }
     saveButton.disabled = false;
     preferences = nextPreferences;
     isDirty = false;
-    markSaveState("All changes saved");
-    if (isConnected) showChangeBanner("Settings saved. Reconnect now to apply them.");
+    markSaveState(t("All changes saved"));
+    if (isConnected) showChangeBanner(t("Settings saved. Reconnect now to apply them."));
     renderBridgeList();
   });
 }
@@ -614,23 +615,23 @@ function saveBridgeList(successMessage, kind = "success") {
     if (revision !== bridgeSaveRevision) return;
     if (chrome.runtime.lastError) {
       isDirty = true;
-      markSaveState("Could not save settings. Try again.", "error");
-      showClipboardStatus("Could not save bridge changes.", "error");
+      markSaveState(t("Could not save settings. Try again."), "error");
+      showClipboardStatus(t("Could not save bridge changes."), "error");
       return;
     }
     preferences = nextPreferences;
     isDirty = false;
-    markSaveState("All changes saved");
+    markSaveState(t("All changes saved"));
     showClipboardStatus(successMessage, kind);
-    if (isConnected) showChangeBanner("Bridge lines changed. Reconnect now to apply them.");
+    if (isConnected) showChangeBanner(t("Bridge lines changed. Reconnect now to apply them."));
     renderBridgeList();
   });
 }
 
-function importBridgeText(text, sourceName = "Clipboard") {
+function importBridgeText(text, sourceName = t("Clipboard")) {
   const incoming = String(text || "").split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
   if (!incoming.length) {
-    showClipboardStatus(`${sourceName} has no bridge lines.`, "error");
+    showClipboardStatus(t("{source} has no bridge lines.", { source: sourceName }), "error");
     return;
   }
   const knownLines = new Set(bridgeLines.map((line) => line.toLowerCase()));
@@ -645,19 +646,19 @@ function importBridgeText(text, sourceName = "Clipboard") {
   const duplicateCount = incoming.length - invalidCount - imported.length;
   if (!imported.length) {
     const parts = [];
-    if (duplicateCount) parts.push(`${duplicateCount} duplicate ${duplicateCount === 1 ? "line" : "lines"} skipped`);
-    if (invalidCount) parts.push(`${invalidCount} invalid ${invalidCount === 1 ? "line" : "lines"} skipped`);
-    showClipboardStatus(`No new bridges. ${parts.join(", ")}.`, invalidCount ? "warning" : "");
+    if (duplicateCount) parts.push(t("{n} duplicate {lines} skipped", { n: duplicateCount, lines: duplicateCount === 1 ? t("line") : t("lines") }));
+    if (invalidCount) parts.push(t("{n} invalid {lines} skipped", { n: invalidCount, lines: invalidCount === 1 ? t("line") : t("lines") }));
+    showClipboardStatus(t("No new bridges. {details}.", { details: parts.join(", ") }), invalidCount ? "warning" : "");
     return;
   }
   bridgeLines.push(...imported);
   renderBridgeList();
   markDirty();
-  const countText = `${imported.length} ${imported.length === 1 ? "bridge" : "bridges"} added and saved.`;
+  const countText = t("{n} {bridges} added and saved.", { n: imported.length, bridges: imported.length === 1 ? t("bridge") : t("bridges") });
   const skippedParts = [];
-  if (duplicateCount) skippedParts.push(`${duplicateCount} duplicate ${duplicateCount === 1 ? "line" : "lines"}`);
-  if (invalidCount) skippedParts.push(`${invalidCount} invalid ${invalidCount === 1 ? "line" : "lines"}`);
-  const savedText = skippedParts.length ? `${countText} ${skippedParts.join(" and ")} skipped.` : countText;
+  if (duplicateCount) skippedParts.push(t("{n} duplicate {lines}", { n: duplicateCount, lines: duplicateCount === 1 ? t("line") : t("lines") }));
+  if (invalidCount) skippedParts.push(t("{n} invalid {lines}", { n: invalidCount, lines: invalidCount === 1 ? t("line") : t("lines") }));
+  const savedText = skippedParts.length ? t("{count} {skipped} skipped.", { count: countText, skipped: skippedParts.join(t(" and ")) }) : countText;
   saveBridgeList(savedText, invalidCount ? "warning" : "success");
 }
 
@@ -668,12 +669,12 @@ pasteButton.addEventListener("click", async () => {
   try {
     const allowed = await requestClipboardPermission("clipboardRead");
     if (!allowed) {
-      showClipboardStatus("Allow clipboard access to import bridge lines.", "error");
+      showClipboardStatus(t("Allow clipboard access to import bridge lines."), "error");
       return;
     }
     importBridgeText(await navigator.clipboard.readText());
   } catch {
-    showClipboardStatus("Could not read the clipboard. Check Chrome’s clipboard permission and try again.", "error");
+    showClipboardStatus(t("Could not read the clipboard. Check Chrome’s clipboard permission and try again."), "error");
   } finally {
     pasteButton.disabled = false;
   }
@@ -699,7 +700,7 @@ bridgeFileInput.addEventListener("change", async () => {
   try {
     importBridgeText(await file.text(), file.name);
   } catch {
-    showClipboardStatus(`Could not read ${file.name}. Choose a plain text bridge file.`, "error");
+    showClipboardStatus(t("Could not read {name}. Choose a plain text bridge file.", { name: file.name }), "error");
   }
 });
 
@@ -708,26 +709,26 @@ copyAllButton.addEventListener("click", async () => {
   const copyStartedAt = Date.now();
   clearTimeout(copyAllSuccessTimer);
   copyAllButton.classList.remove("is-copied");
-  copyAllButtonLabel.textContent = "Copy all";
+  copyAllButtonLabel.textContent = t("Copy all");
   isCopyingAllBridges = true;
   copyAllButton.disabled = true;
   showClipboardStatus("");
   try {
     const allowed = await requestClipboardPermission("clipboardWrite");
     if (!allowed) {
-      showClipboardStatus("Allow clipboard access to copy bridges.", "error");
+      showClipboardStatus(t("Allow clipboard access to copy bridges."), "error");
       return;
     }
     await navigator.clipboard.writeText(bridgeLines.join("\n"));
     copyAllButton.classList.add("is-copied");
-    copyAllButtonLabel.textContent = "Copied";
+    copyAllButtonLabel.textContent = t(t("Copied"));
     copyAllSuccessTimer = setTimeout(() => {
       copyAllButton.classList.remove("is-copied");
-      copyAllButtonLabel.textContent = "Copy all";
+      copyAllButtonLabel.textContent = t("Copy all");
     }, 1200);
-    showClipboardStatus("All bridges copied.", "success");
+    showClipboardStatus(t("All bridges copied."), "success");
   } catch {
-    showClipboardStatus("Could not copy bridges. Check Chrome’s clipboard permission and try again.", "error");
+    showClipboardStatus(t("Could not copy bridges. Check Chrome’s clipboard permission and try again."), "error");
   } finally {
     const remainingBusyTime = 500 - (Date.now() - copyStartedAt);
     if (remainingBusyTime > 0) await new Promise((resolve) => setTimeout(resolve, remainingBusyTime));
@@ -738,7 +739,7 @@ copyAllButton.addEventListener("click", async () => {
 
 clearButton.addEventListener("click", () => {
   if (!bridgeLines.length) return;
-  if (!window.confirm("Remove all bridge lines? This will save the change.")) return;
+  if (!window.confirm(t("Remove all bridge lines? This will save the change."))) return;
   bridgeLines = [];
   disabledBridgeLines.clear();
   pingResults.clear();
@@ -746,14 +747,14 @@ clearButton.addEventListener("click", () => {
   preferences.selectedBridge = "";
   renderBridgeList();
   markDirty();
-  saveBridgeList("All bridges removed and saved. Changes apply the next time you connect.");
+  saveBridgeList(t("All bridges removed and saved. Changes apply the next time you connect."));
 });
 
 pingButton.addEventListener("click", () => {
   if (!bridgeLines.length || isPingingBridges) return;
   const pingStartedAt = Date.now();
   isPingingBridges = true;
-  pingButtonLabel.textContent = "Pinging";
+  pingButtonLabel.textContent = t("Pinging");
   pingButton.disabled = true;
   pingButton.setAttribute("aria-busy", "true");
   const finishPinging = () => {
@@ -761,7 +762,7 @@ pingButton.addEventListener("click", () => {
     setTimeout(() => {
       isPingingBridges = false;
       pingButton.removeAttribute("aria-busy");
-      pingButtonLabel.textContent = "Ping all";
+      pingButtonLabel.textContent = t("Ping all");
       renderBridgeList();
     }, Math.max(0, remainingBusyTime));
   };
@@ -769,7 +770,7 @@ pingButton.addEventListener("click", () => {
   if (!validLines.length) { finishPinging(); return; }
   chrome.runtime.sendMessage({ type: "pingBridges", bridges: validLines.join("\n") }, async (result) => {
     if (chrome.runtime.lastError || !result?.ok || !Array.isArray(result.results)) {
-      showClipboardStatus(result?.error || "Could not ping bridges.", "error");
+      showClipboardStatus(result?.error || t("Could not ping bridges."), "error");
       finishPinging();
       return;
     }
@@ -802,7 +803,7 @@ pingButton.addEventListener("click", () => {
     renderBridgeList();
     finishPinging();
     markDirty();
-    saveBridgeList("Sorted fastest first and saved.");
+    saveBridgeList(t("Sorted fastest first and saved."));
   });
 });
 
@@ -817,7 +818,7 @@ function sendStatus() {
   chrome.runtime.sendMessage({ type: "status" }, (result) => {
     if (chrome.runtime.lastError) {
       isConnected = false;
-      setConnectionBadge("Connection unavailable", "error", "Could not check the Tor connection. Restart your browser and check the helper installation.");
+      setConnectionBadge(t("Connection unavailable"), "error", t("Could not check the Tor connection. Restart your browser and check the helper installation."));
       diagnosticTextNode.textContent = chrome.runtime.lastError.message;
       hideChangeBanner();
       scheduleStatusRefresh();
@@ -841,20 +842,20 @@ function sendStatus() {
     isConnected = result?.state === "connected";
     renderBridgeList();
     diagnosticTextNode.textContent = diagnosticLines.length ? diagnosticLines.join("\n")
-      : result?.error || result?.message || "No additional Tor diagnostics are available.";
+      : result?.error || result?.message || t("No additional Tor diagnostics are available.");
 
     if (!result?.ok || result.state === "failed" || result.state === "missing_runtime") {
-      setConnectionBadge("Connection needs attention", "error", result?.error || result?.message || "Tor could not connect.");
+      setConnectionBadge(t("Connection needs attention"), "error", result?.error || result?.message || t("Tor could not connect."));
     } else if (result.state === "connected") {
-      const bridgeLabel = selectedMode === "manual" && connectedBridgeIndex ? ` · Bridge ${connectedBridgeIndex}`
+      const bridgeLabel = selectedMode === "manual" && connectedBridgeIndex ? ` · ` + t("Bridge {n}", { n: connectedBridgeIndex })
         : selectedMode === "snowflake" ? " · Snowflake" : "";
-      const activity = result.bridgeActivity === "trying" ? "Reconnecting" : "Connected";
+      const activity = result.bridgeActivity === "trying" ? t("Reconnecting") : t("Connected");
       setConnectionBadge(`${activity}${bridgeLabel}`, result.bridgeActivity === "trying" ? "starting" : "connected",
-        result.bridgeActivity === "trying" ? "Tor is reconnecting through a bridge." : `Tor is connected${bridgeLabel ? ` through${bridgeLabel}` : ""}.`);
+        result.bridgeActivity === "trying" ? t("Tor is reconnecting through a bridge.") : t("Tor is connected{via}.", { via: bridgeLabel ? ` through${bridgeLabel}` : "" }));
     } else if (result.state === "starting") {
-      setConnectionBadge(result.bridgeActivity === "trying" ? "Reconnecting…" : "Connecting…", "starting", result.message || "Tor is connecting.");
+      setConnectionBadge(result.bridgeActivity === "trying" ? t("Reconnecting…") : t("Connecting…"), "starting", result.message || t("Tor is connecting."));
     } else {
-      setConnectionBadge("Not connected", "disconnected", "Tor is disconnected.");
+      setConnectionBadge(t("Not connected"), "disconnected", t("Tor is disconnected."));
     }
     if (!isConnected) hideChangeBanner();
     scheduleStatusRefresh();
@@ -899,7 +900,7 @@ async function reconnectUsingSavedSettings() {
   const allLines = bridgeLines;
   const enabled = allEnabledLines();
   if (selectedMode === "manual" && !enabled.length) {
-    showClipboardStatus("Enable at least one bridge before reconnecting.", "error");
+    showClipboardStatus(t("Enable at least one bridge before reconnecting."), "error");
     return;
   }
   const selectedBridgeIndex = selectedMode === "manual" && !preferences.autoBridgeSelection
@@ -907,16 +908,16 @@ async function reconnectUsingSavedSettings() {
   const bridges = selectedBridgeIndex ? preferences.selectedBridge : enabled.join("\n");
   reconnectNowButton.disabled = true;
   hideChangeBanner();
-  setConnectionBadge("Reconnecting…", "starting", "Restarting Tor with the saved settings.");
+  setConnectionBadge(t("Reconnecting…"), "starting", t("Restarting Tor with the saved settings."));
   const stopped = await send("disconnect");
   if (!stopped?.ok) {
-    setConnectionBadge("Could not reconnect", "error", stopped?.error || "Could not stop the current connection.");
+    setConnectionBadge(t("Could not reconnect"), "error", stopped?.error || t("Could not stop the current connection."));
     reconnectNowButton.disabled = false;
     return;
   }
   const result = await send("connect", { mode: selectedMode, bridges, selectedBridgeIndex, exitCountry: preferences.exitCountry || "" });
-  if (!result?.ok) setConnectionBadge("Connection needs attention", "error", result?.error || "Could not reconnect.");
-  else setConnectionBadge("Connecting…", "starting", result.message || "Tor is reconnecting.");
+  if (!result?.ok) setConnectionBadge(t("Connection needs attention"), "error", result?.error || "Could not reconnect.");
+  else setConnectionBadge(t("Connecting…"), "starting", result.message || "Tor is reconnecting.");
   reconnectNowButton.disabled = false;
   sendStatus();
 }

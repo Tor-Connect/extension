@@ -16,35 +16,36 @@ const platform = String(navigator.userAgentData?.platform || navigator.platform 
 const platformName = platform.includes("win") ? "windows"
   : platform.includes("linux") ? "linux"
     : platform.includes("mac") ? "mac" : "unknown";
+const t = (key, params) => (globalThis.torI18n?.t || ((s) => s))(key, params);
 const isFirefox = typeof browser !== "undefined" && typeof browser.runtime?.getBrowserInfo === "function";
 document.querySelectorAll("[data-platform]").forEach((section) => {
   section.hidden = section.dataset.platform !== platformName;
 });
 document.querySelector("#setupEyebrow").textContent = platformName === "mac"
-  ? "ONE-TIME MAC SETUP"
-  : `ONE-TIME ${platformName.toUpperCase()} SETUP`;
-document.querySelector("h1").textContent = "Connect your browser through Tor";
-document.querySelector("#setupIntro").textContent = "A small companion app installs Tor on this computer and connects it to your browser. You only need to set it up once.";
+  ? t("ONE-TIME MAC SETUP")
+  : t("ONE-TIME {platform} SETUP", { platform: platformName.toUpperCase() });
+document.querySelector("h1").textContent = t("Connect your browser through Tor");
+document.querySelector("#setupIntro").textContent = t("A small companion app installs Tor on this computer and connects it to your browser. You only need to set it up once.");
 document.querySelector("#osDetected").textContent = platformName === "unknown"
-  ? "Choose your device"
-  : `${platformName === "mac" ? "macOS" : platformName[0].toUpperCase() + platformName.slice(1)} detected`;
-document.querySelector("#blockedHelpChip").textContent = platformName === "mac" ? "macOS blocked the setup app"
-  : platformName === "windows" ? "Windows blocked the setup app"
-    : platformName === "linux" ? "The Linux installer won’t open" : "The setup app won’t open";
-document.querySelector("#blockedInlineHelp span").textContent = platformName === "mac" ? "macOS blocked the setup app"
-  : platformName === "windows" ? "Windows blocked the setup app"
-    : platformName === "linux" ? "The Linux installer won’t open" : "The setup app won’t open";
-document.querySelector("#permissionHelpChip").textContent = platformName === "windows" ? "PowerShell says scripts are disabled"
-  : platformName === "mac" ? "macOS says “Permission denied”"
-    : platformName === "linux" ? "Terminal says “Permission denied”" : "Permission denied";
-document.querySelector("#whyHelpChip").textContent = "Why a separate setup app?";
+  ? t("Choose your device")
+  : t("{os} detected", { os: platformName === "mac" ? "macOS" : platformName[0].toUpperCase() + platformName.slice(1) });
+document.querySelector("#blockedHelpChip").textContent = platformName === "mac" ? t("macOS blocked the setup app")
+  : platformName === "windows" ? t("Windows blocked the setup app")
+    : platformName === "linux" ? t("The Linux installer won’t open") : t("The setup app won’t open");
+document.querySelector("#blockedInlineHelp span").textContent = platformName === "mac" ? t("macOS blocked the setup app")
+  : platformName === "windows" ? t("Windows blocked the setup app")
+    : platformName === "linux" ? t("The Linux installer won’t open") : t("The setup app won’t open");
+document.querySelector("#permissionHelpChip").textContent = platformName === "windows" ? t("PowerShell says scripts are disabled")
+  : platformName === "mac" ? t("macOS says “Permission denied”")
+    : platformName === "linux" ? t("Terminal says “Permission denied”") : t("Permission denied");
+document.querySelector("#whyHelpChip").textContent = t("Why a separate setup app?");
 const setupInstructions = document.querySelector("#setupInstructions");
 if (platformName === "linux") {
-  setupInstructions.textContent = "It includes Tor and sets up the helper for your browser.";
+  setupInstructions.textContent = t("It includes Tor and sets up the helper for your browser.");
 } else if (platformName === "windows") {
-  setupInstructions.textContent = "It includes Tor and sets up the helper for your browser.";
+  setupInstructions.textContent = t("It includes Tor and sets up the helper for your browser.");
 } else if (platformName === "mac") {
-  setupInstructions.textContent = "It includes Tor and sets up the helper for your browser.";
+  setupInstructions.textContent = t("It includes Tor and sets up the helper for your browser.");
 }
 
 const installerByPlatform = {
@@ -64,8 +65,8 @@ if (installer) {
   }
 }
 if (platformName === "unknown") {
-  document.querySelector("#setupEyebrow").textContent = "ONE-TIME SETUP";
-  setupInstructions.textContent = "Open this page in your browser on the computer you want to set up.";
+  document.querySelector("#setupEyebrow").textContent = t("ONE-TIME SETUP");
+  setupInstructions.textContent = t("Open this page in your browser on the computer you want to set up.");
 }
 
 const extensionId = globalThis.chrome?.runtime?.id || "<Chrome extension ID>";
@@ -177,9 +178,9 @@ Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/Tor-Connect/extension/
 }
 
 const commandCopyOptions = [
-  ["#copyMacManualCommand", "#macManualCommand", "#macCommandStatus", "Copied. Paste it into Terminal."],
-  ["#copyWindowsManualCommand", "#windowsManualCommand", "#windowsCommandStatus", "Copied. Paste it into PowerShell."],
-  ["#copyLinuxManualCommand", "#linuxManualCommand", "#linuxCommandStatus", "Copied. Paste it into Terminal."]
+  ["#copyMacManualCommand", "#macManualCommand", "#macCommandStatus", t("Copied. Paste it into Terminal.")],
+  ["#copyWindowsManualCommand", "#windowsManualCommand", "#windowsCommandStatus", t("Copied. Paste it into PowerShell.")],
+  ["#copyLinuxManualCommand", "#linuxManualCommand", "#linuxCommandStatus", t("Copied. Paste it into Terminal.")]
 ];
 commandCopyOptions.forEach(([buttonSelector, commandSelector, statusSelector, successMessage]) => {
   const button = document.querySelector(buttonSelector);
@@ -193,7 +194,7 @@ commandCopyOptions.forEach(([buttonSelector, commandSelector, statusSelector, su
     try {
       const allowed = await new Promise((resolve) => chrome.permissions.request({ permissions: ["clipboardWrite"] }, resolve));
       if (!allowed) {
-        status.textContent = "Allow clipboard access to copy the command.";
+        status.textContent = t("Allow clipboard access to copy the command.");
         status.dataset.kind = "error";
         return;
       }
@@ -201,13 +202,13 @@ commandCopyOptions.forEach(([buttonSelector, commandSelector, statusSelector, su
       status.textContent = successMessage;
       status.dataset.kind = "success";
       // Change button label to "Copied" for 1400ms, matching the design
-      buttonLabel.textContent = "Copied";
+      buttonLabel.textContent = t("Copied");
       clearTimeout(copiedTimer);
-      copiedTimer = setTimeout(() => { buttonLabel.textContent = "Copy"; }, 1400);
-      // Start auto-polling and trigger "Listening…" state on the connection card
+      copiedTimer = setTimeout(() => { buttonLabel.textContent = t("Copy"); }, 1400);
+      // Start auto-polling and trigger t("Listening…") state on the connection card
       startTerminalPoll();
     } catch {
-      status.textContent = "Could not copy the command. Select the command text to copy it manually.";
+      status.textContent = t("Could not copy the command. Select the command text to copy it manually.");
       status.dataset.kind = "error";
     } finally {
       button.disabled = false;
@@ -310,13 +311,13 @@ function setHelperVisualState(state) {
   const statusBar = document.querySelector(".connection-status");
   statusBar.classList.toggle("is-success", state === "ready");
   statusBar.classList.toggle("is-error", false);
-  helperNodeStatus.textContent = state === "checking" ? "Listening…"
-    : state === "ready" ? "Found" : "Not installed yet";
-  torNode.querySelector("small").textContent = state === "ready" ? "Ready" : "Not started";
+  helperNodeStatus.textContent = state === "checking" ? t("Listening…")
+    : state === "ready" ? t("Found") : t("Not installed yet");
+  torNode.querySelector("small").textContent = state === "ready" ? t("Ready") : t("Not started");
   connectionStatus.textContent = state === "ready"
-    ? "Helper found. Tor is ready. You can close this tab."
-    : state === "checking" ? "Listening for the helper…"
-      : "Waiting for you to install the helper";
+    ? t("Helper found. Tor is ready. You can close this tab.")
+    : state === "checking" ? t("Listening for the helper…")
+      : t("Waiting for you to install the helper");
 }
 
 async function requestHelperStatus() {
@@ -327,7 +328,7 @@ async function requestHelperStatus() {
 // Auto-polling: starts when triggered, runs until helper found or generation changes.
 async function pollForHelper(statusNode, activeSetupPanel) {
   const generation = ++helperCheckGeneration;
-  statusNode.textContent = "Listening…";
+  statusNode.textContent = t("Listening…");
   statusNode.dataset.kind = "";
   setHelperVisualState("checking");
   while (generation === helperCheckGeneration) {
@@ -335,7 +336,7 @@ async function pollForHelper(statusNode, activeSetupPanel) {
       const result = await requestHelperStatus();
       if (generation !== helperCheckGeneration) return;
       if (result?.ok && setupVersionOk(result?.helperVersion)) {
-        statusNode.textContent = "Helper found";
+        statusNode.textContent = t("Helper found");
         statusNode.dataset.kind = "success";
         setHelperVisualState("ready");
         setStepProgress(activeSetupPanel, 4, 3);
@@ -350,11 +351,11 @@ async function pollForHelper(statusNode, activeSetupPanel) {
 appDetectButton.addEventListener("click", () => {
   setStepProgress(guidedSetupPanel, 2, 1);
   appDetectButton.disabled = true;
-  appDetectButton.textContent = "Checking…";
+  appDetectButton.textContent = t("Checking…");
   pollForHelper(appHelperStatus, guidedSetupPanel).then(() => {
     if (appHelperStatus.dataset.kind !== "success") {
       appDetectButton.disabled = false;
-      appDetectButton.textContent = "I opened it";
+      appDetectButton.textContent = t("I opened it");
     }
   });
 });
