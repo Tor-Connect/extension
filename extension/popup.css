@@ -254,7 +254,7 @@ body.popup-page .live-stats { position: fixed; right: 0; bottom: 0; left: 0; z-i
 body.popup-page .live-stats.is-open { transform: translateY(0); }
 body.popup-page .live-stats.site-check-sheet { z-index: 23; padding: 8px 20px 20px; }
 body.popup-page .stats-close { display: flex; width: 100%; height: 44px; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 0; border: 0; color: #eaf1ee; background: transparent; font-size: 14px; font-weight: 600; cursor: pointer; }
-body.popup-page .stats-close span { width: 36px; height: 4px; border-radius: 2px; background: #3a4642; }
+body.popup-page .stats-close span:first-child { width: 36px; height: 4px; border-radius: 2px; background: #3a4642; }
 body.popup-page .stats-close.site-check-close { height: 56px; gap: 8px; }
 body.popup-page .stats-close.site-check-close .site-check-title-group { display: flex; width: auto; height: auto; flex-direction: column; align-items: center; gap: 2px; background: transparent; }
 body.popup-page .stats-close.site-check-close .site-check-heading { width: auto; height: auto; background: transparent; }
