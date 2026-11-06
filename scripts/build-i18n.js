@@ -13,19 +13,12 @@ const STATIC_ORDER = [
   "ru", "pt", "tr", "ur", "bn", "id", "my", "ro",
 ];
 
-// Order for the dynamic translations object (torDynamicTranslations)
-// en has no dynamic block; fa appears after ru historically
-const DYNAMIC_ORDER = [
-  "de", "es", "ar", "zh", "hi", "fr", "ru", "fa",
-  "pt", "tr", "ur", "bn", "id", "my", "ro",
-];
-
 const I18N_DIR = path.join(__dirname, "../extension/i18n");
 const OUT_FILE = path.join(__dirname, "../extension/i18n-translations.js");
 
 // ---------------------------------------------------------------------------
 // Extract the inner text of the first block matching `  KEY: OPEN … CLOSE`
-// Returns null when the block is empty (e.g. `dynamic: []`).
+// Returns null when the block is empty (e.g. `static: {}`).
 // ---------------------------------------------------------------------------
 function extractInner(source, key, open, close) {
   const header  = `  ${key}: ${open}`;
@@ -33,7 +26,7 @@ function extractInner(source, key, open, close) {
   if (start === -1) return null;
 
   const lineEnd = source.indexOf("\n", start);
-  // Single-line empty block: "  static: {}," or "  dynamic: [],"
+  // Single-line empty block: "  static: {},"
   const restOfLine = source.slice(start + header.length, lineEnd).trim();
   if (restOfLine.startsWith(close)) return null;
 
@@ -56,9 +49,8 @@ function extractInner(source, key, open, close) {
 // ---------------------------------------------------------------------------
 // Load source files
 // ---------------------------------------------------------------------------
-const all = new Set([...STATIC_ORDER, ...DYNAMIC_ORDER]);
 const sources = {};
-for (const lang of all) {
+for (const lang of STATIC_ORDER) {
   const file = path.join(I18N_DIR, `${lang}.js`);
   if (!fs.existsSync(file)) {
     console.error(`Missing: ${file}`);
@@ -79,34 +71,15 @@ for (const lang of STATIC_ORDER) {
     staticParts.push(`    ${lang}: {\n${sInner}\n    },`);
   }
 }
-// Last static entry has no trailing comma in the original file
+// Last static entry has no trailing comma
 staticParts[staticParts.length - 1] = staticParts[staticParts.length - 1].replace(/,$/, "");
 
 // ---------------------------------------------------------------------------
-// Build dynamic section
-// Languages that were added later have a preceding blank line in the original
-// ---------------------------------------------------------------------------
-const DYNAMIC_BLANK_BEFORE = new Set(["id", "my", "ro"]);
-const dynamicParts = [];
-for (const lang of DYNAMIC_ORDER) {
-  const dInner = extractInner(sources[lang], "dynamic", "[", "]");
-  if (dInner) {
-    const prefix = DYNAMIC_BLANK_BEFORE.has(lang) ? "\n" : "";
-    dynamicParts.push(`${prefix}    ${lang}: [\n${dInner}\n    ],`);
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Assemble output — mirror exact original structure
+// Assemble output
 // ---------------------------------------------------------------------------
 const output = [
   "  window.torTranslations = {",
   staticParts.join("\n"),
-  "  };",
-  "",
-  "  window.torDynamicTranslations = {",
-  dynamicParts.join("\n"),
-  "",
   "  };",
   "",
 ].join("\n");

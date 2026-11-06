@@ -62,7 +62,7 @@ const sorted = [...allKeys].sort((a, b) => a.localeCompare(b, "en"));
 const lines = sorted.map((key) => {
   // Escape backslashes and double-quotes in the key
   const escaped = key.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
-  return `      "${escaped}": "${escaped}"`;
+  return `      "${escaped}": ""`;
 });
 
 const output = `// English — source of truth for all translation keys.
