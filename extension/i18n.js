@@ -52,6 +52,24 @@
   // Allowed inline tags for data-i18n-html translations (tag → [allowed attrs]).
   const ALLOWED_TAGS = { strong: [], em: [], code: [], br: [], a: ["href", "target", "rel"] };
 
+  function sanitizeHref(value) {
+    const v = value.trim();
+    if (v.startsWith("/") || v.startsWith("#")) return v;
+    const lower = v.toLowerCase();
+    if (lower.startsWith("http://") || lower.startsWith("https://") || lower.startsWith("mailto:")) return v;
+    return null; // reject javascript:, data:, etc.
+  }
+
+  function sanitizeAttr(tagLC, attr, value) {
+    if (tagLC === "a" && attr === "href") return sanitizeHref(value);
+    if (tagLC === "a" && attr === "target") {
+      const v = value.trim().toLowerCase();
+      return (v === "_blank" || v === "_self") ? v : null;
+    }
+    if (tagLC === "a" && attr === "rel") return value.trim();
+    return value;
+  }
+
   // Regex that tokenises a restricted-HTML string into text runs and simple tags.
   // Matches either an opening tag with optional attrs, a closing tag, or a text chunk.
   // No innerHTML or DOMParser is used — the string is never interpreted as live HTML.
@@ -70,16 +88,23 @@
         (stack[stack.length - 1] ?? { append: (n) => nodes.push(n) }).append(tn);
       } else if (!slash) {
         // Opening tag
-        const allowedAttrs = ALLOWED_TAGS[tagName.toLowerCase()];
+        const tagLC = tagName.toLowerCase();
+        const allowedAttrs = ALLOWED_TAGS[tagLC];
         if (allowedAttrs) {
-          const el2 = document.createElement(tagName.toLowerCase());
+          const el2 = document.createElement(tagLC);
           // Extract only explicitly allowed attributes via regex (no innerHTML)
           allowedAttrs.forEach((attr) => {
             const m = new RegExp(`\\s${attr}="([^"]*)"`, "i").exec(attrsStr);
-            if (m) el2.setAttribute(attr, m[1]);
+            if (!m) return;
+            const safeValue = sanitizeAttr(tagLC, attr, m[1]);
+            if (safeValue !== null) el2.setAttribute(attr, safeValue);
           });
+          // Ensure _blank links have a safe rel
+          if (tagLC === "a" && el2.getAttribute("target") === "_blank" && !el2.hasAttribute("rel")) {
+            el2.setAttribute("rel", "noopener noreferrer");
+          }
           stack.push(el2);
-          if (tagName.toLowerCase() === "br") stack.pop(), nodes.push(el2);
+          if (tagLC === "br") stack.pop(), nodes.push(el2);
         }
       } else {
         // Closing tag — pop stack and attach to parent or root
