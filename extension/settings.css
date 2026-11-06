@@ -70,6 +70,7 @@ button:focus-visible, a:focus-visible, summary:focus-visible { outline: 3px soli
 .exit-country-copy span { color: #a9b3ae; font-size: 14px; line-height: 1.55; }
 .exit-country-picker-wrap { position: relative; flex: 0 0 200px; width: 200px; }
 .exit-country-trigger { background: #080c0b !important; }
+html[data-theme="light"] .exit-country-trigger { background: #fff !important; }
 .exit-country-trigger > span:not(.picker-code-badge):not(.language-chevron) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .exit-country-notice { display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px; margin: 0 20px 18px; border: 1px solid #262d2b; border-radius: 0 0 18px 18px; background: #0a100e; font-size: 13px; line-height: 1.5; color: #a9b3ae; }
 .exit-country-notice[hidden] { display: none !important; }
