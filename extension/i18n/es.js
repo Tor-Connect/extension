@@ -3,6 +3,15 @@ module.exports = {
   // prettier-ignore
   static: {
       " and ": " y ",
+      "Allow scripts for this PowerShell window only, then run the setup command again:": "Permite scripts solo para esta ventana de PowerShell, luego vuelve a ejecutar el comando de instalación:",
+      "If SmartScreen appears, click More info, then Run anyway. Continue only if you downloaded Tor Connect Setup from the official Tor Connect release.": "Si aparece SmartScreen, haz clic en <strong>Más información</strong> y luego en <strong>Ejecutar de todas formas</strong>. Continúa solo si descargaste Tor Connect Setup desde la <a href=\"https://github.com/Tor-Connect/extension/releases/latest\" target=\"_blank\" rel=\"noreferrer\">versión oficial de Tor Connect</a>.",
+      "Only continue if you downloaded it from the official Tor Connect release.": "Continúa solo si lo descargaste desde la <a href=\"https://github.com/Tor-Connect/extension/releases/latest\" target=\"_blank\" rel=\"noreferrer\">versión oficial de Tor Connect</a>.",
+      "Open it once, then go to Apple menu → System Settings → Privacy & Security. Under Security, choose Open Anyway next to Tor Connect Setup and open the app again.": "Ábrelo una vez, luego ve a <strong>Menú Apple → Configuración del Sistema → Privacidad y Seguridad</strong>. En <strong>Seguridad</strong>, elige <strong>Abrir de todas formas</strong> junto a Tor Connect Setup y vuelve a abrir la app.",
+      "Run the copied command in your own Terminal window. The manual setup script installs the helper in your user folder and does not need administrator access.": "Ejecuta el comando copiado en tu propia ventana de Terminal. El script de instalación manual instala el asistente en tu carpeta de usuario y no necesita acceso de administrador.",
+      "This removes quarantine only from this Tor bundle; it does not disable Gatekeeper globally.": "Esto elimina la cuarentena solo de este paquete de Tor; no desactiva Gatekeeper globalmente.",
+      "Tor Connect's Linux setup package is for Debian or Ubuntu on x64. Open the downloaded .deb file with your system's software installer.": "El paquete de instalación de Linux de Tor Connect es para Debian o Ubuntu en x64. Abre el archivo <code>.deb</code> descargado con el instalador de software de tu sistema.",
+      "Tor Project signature verification instructions ↗": "Instrucciones de verificación de firma del Proyecto Tor ↗",
+      "Verify the Tor bundle came from the Tor Project and check its signature. If it is verified, remove the quarantine flag from the installed copy in Terminal:": "Verifica que el paquete de Tor proviene del Proyecto Tor y comprueba su firma. Si está verificado, elimina el indicador de cuarentena de la copia instalada en Terminal:",
       "{coin} address copied": "Dirección {coin} copiada",
       "{count} {skipped} skipped.": "{count} {skipped} omitidos.",
       "{n} {bridges} added and saved.": "{n} {bridges} añadidos y guardados.",

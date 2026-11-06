@@ -3,6 +3,15 @@ module.exports = {
   // prettier-ignore
   static: {
       " and ": " и ",
+      "Allow scripts for this PowerShell window only, then run the setup command again:": "Разрешите выполнение скриптов только для этого окна PowerShell, затем снова запустите команду установки:",
+      "If SmartScreen appears, click More info, then Run anyway. Continue only if you downloaded Tor Connect Setup from the official Tor Connect release.": "Если появится SmartScreen, нажмите <strong>Подробнее</strong>, затем <strong>Выполнить в любом случае</strong>. Продолжайте только в том случае, если вы загрузили Tor Connect Setup с <a href=\"https://github.com/Tor-Connect/extension/releases/latest\" target=\"_blank\" rel=\"noreferrer\">официального выпуска Tor Connect</a>.",
+      "Only continue if you downloaded it from the official Tor Connect release.": "Продолжайте только в том случае, если вы загрузили его с <a href=\"https://github.com/Tor-Connect/extension/releases/latest\" target=\"_blank\" rel=\"noreferrer\">официального выпуска Tor Connect</a>.",
+      "Open it once, then go to Apple menu → System Settings → Privacy & Security. Under Security, choose Open Anyway next to Tor Connect Setup and open the app again.": "Откройте его один раз, затем перейдите в <strong>Меню Apple → Системные настройки → Конфиденциальность и безопасность</strong>. В разделе <strong>Безопасность</strong> нажмите <strong>Всё равно открыть</strong> рядом с Tor Connect Setup и откройте приложение снова.",
+      "Run the copied command in your own Terminal window. The manual setup script installs the helper in your user folder and does not need administrator access.": "Запустите скопированную команду в своём окне Терминала. Скрипт ручной установки устанавливает помощник в вашу папку пользователя и не требует прав администратора.",
+      "This removes quarantine only from this Tor bundle; it does not disable Gatekeeper globally.": "Это снимает карантин только с данного пакета Tor; глобальный Gatekeeper не отключается.",
+      "Tor Connect's Linux setup package is for Debian or Ubuntu on x64. Open the downloaded .deb file with your system's software installer.": "Пакет установки Tor Connect для Linux предназначен для Debian или Ubuntu на x64. Откройте загруженный файл <code>.deb</code> с помощью установщика программ вашей системы.",
+      "Tor Project signature verification instructions ↗": "Инструкции по проверке подписи проекта Tor ↗",
+      "Verify the Tor bundle came from the Tor Project and check its signature. If it is verified, remove the quarantine flag from the installed copy in Terminal:": "Убедитесь, что пакет Tor получен из проекта Tor, и проверьте его подпись. Если он прошёл проверку, снимите флаг карантина с установленной копии в Терминале:",
       "{coin} address copied": "Адрес {coin} скопирован",
       "{count} {skipped} skipped.": "{count} {skipped} пропущено.",
       "{n} {bridges} added and saved.": "{n} {bridges} добавлено и сохранено.",

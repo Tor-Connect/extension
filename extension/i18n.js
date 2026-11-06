@@ -50,6 +50,11 @@
   const I18N_ATTRS = ["title", "aria-label", "aria-description", "placeholder", "alt"];
 
   function translateElement(el) {
+    if (el.hasAttribute("data-i18n-html")) {
+      const key = el.getAttribute("data-i18n-html");
+      const translated = t(key);
+      if (translated !== key) el.innerHTML = translated;
+    }
     if (el.hasAttribute("data-i18n")) {
       const key = el.dataset.i18nKey || el.textContent.trim();
       if (!el.dataset.i18nKey) el.dataset.i18nKey = key;
@@ -64,7 +69,7 @@
   }
 
   function translatePage() {
-    document.querySelectorAll("[data-i18n], " + I18N_ATTRS.map(a => `[data-i18n-${a}]`).join(", "))
+    document.querySelectorAll("[data-i18n-html], [data-i18n], " + I18N_ATTRS.map(a => `[data-i18n-${a}]`).join(", "))
       .forEach(translateElement);
   }
 
@@ -75,10 +80,10 @@
     for (const record of records) {
       for (const node of record.addedNodes) {
         if (node.nodeType !== Node.ELEMENT_NODE) continue;
-        if (node.hasAttribute?.("data-i18n") || I18N_ATTRS.some(a => node.hasAttribute?.(`data-i18n-${a}`))) {
+        if (node.hasAttribute?.("data-i18n-html") || node.hasAttribute?.("data-i18n") || I18N_ATTRS.some(a => node.hasAttribute?.(`data-i18n-${a}`))) {
           translateElement(node);
         }
-        node.querySelectorAll?.("[data-i18n], " + I18N_ATTRS.map(a => `[data-i18n-${a}]`).join(", "))
+        node.querySelectorAll?.("[data-i18n-html], [data-i18n], " + I18N_ATTRS.map(a => `[data-i18n-${a}]`).join(", "))
           .forEach(translateElement);
       }
     }

@@ -145,32 +145,32 @@
       <div id="setupHelpPanel" class="setup-help-panel" role="region" aria-labelledby="stuckTitle" aria-live="polite" hidden>
         <article data-help-content="blocked" data-platform="mac" hidden>
           <h3 data-i18n="If macOS blocks the setup app">If macOS blocks the setup app</h3>
-          <p>Open it once, then go to <strong>Apple menu → System Settings → Privacy &amp; Security</strong>. Under <strong>Security</strong>, choose <strong>Open Anyway</strong> next to Tor Connect Setup and open the app again.</p>
-          <p>Only continue if you downloaded it from the <a href="https://github.com/Tor-Connect/extension/releases/latest" target="_blank" rel="noreferrer">official Tor Connect release</a>.</p>
+          <p data-i18n-html="Open it once, then go to Apple menu → System Settings → Privacy &amp; Security. Under Security, choose Open Anyway next to Tor Connect Setup and open the app again.">Open it once, then go to <strong>Apple menu → System Settings → Privacy &amp; Security</strong>. Under <strong>Security</strong>, choose <strong>Open Anyway</strong> next to Tor Connect Setup and open the app again.</p>
+          <p data-i18n-html="Only continue if you downloaded it from the official Tor Connect release.">Only continue if you downloaded it from the <a href="https://github.com/Tor-Connect/extension/releases/latest" target="_blank" rel="noreferrer">official Tor Connect release</a>.</p>
         </article>
         <article data-help-content="blocked" data-platform="windows" hidden>
           <h3 data-i18n="Windows blocked the setup app">Windows blocked the setup app</h3>
-          <p>If SmartScreen appears, click <strong>More info</strong>, then <strong>Run anyway</strong>. Continue only if you downloaded Tor Connect Setup from the <a href="https://github.com/Tor-Connect/extension/releases/latest" target="_blank" rel="noreferrer">official Tor Connect release</a>.</p>
+          <p data-i18n-html="If SmartScreen appears, click More info, then Run anyway. Continue only if you downloaded Tor Connect Setup from the official Tor Connect release.">If SmartScreen appears, click <strong>More info</strong>, then <strong>Run anyway</strong>. Continue only if you downloaded Tor Connect Setup from the <a href="https://github.com/Tor-Connect/extension/releases/latest" target="_blank" rel="noreferrer">official Tor Connect release</a>.</p>
         </article>
         <article data-help-content="blocked" data-platform="linux" hidden>
-          <h3 data-i18n="The Linux installer won’t open">The Linux installer won’t open</h3>
-          <p>Tor Connect’s Linux setup package is for Debian or Ubuntu on x64. Open the downloaded <code>.deb</code> file with your system’s software installer.</p>
+          <h3 data-i18n="The Linux installer won't open">The Linux installer won't open</h3>
+          <p data-i18n-html="Tor Connect's Linux setup package is for Debian or Ubuntu on x64. Open the downloaded .deb file with your system's software installer.">Tor Connect's Linux setup package is for Debian or Ubuntu on x64. Open the downloaded <code>.deb</code> file with your system's software installer.</p>
         </article>
         <article data-help-content="permission" data-platform="mac" hidden>
-          <h3 data-i18n="macOS says “Permission denied”">macOS says “Permission denied”</h3>
-          <p>Verify the Tor bundle came from the Tor Project and check its signature. If it is verified, remove the quarantine flag from the installed copy in Terminal:</p>
+          <h3 data-i18n="macOS says "Permission denied"">macOS says "Permission denied"</h3>
+          <p data-i18n="Verify the Tor bundle came from the Tor Project and check its signature. If it is verified, remove the quarantine flag from the installed copy in Terminal:">Verify the Tor bundle came from the Tor Project and check its signature. If it is verified, remove the quarantine flag from the installed copy in Terminal:</p>
           <pre>xattr -dr com.apple.quarantine "$HOME/Library/Application Support/TorChrome/runtime/bundle"</pre>
-          <p>This removes quarantine only from this Tor bundle; it does not disable Gatekeeper globally.</p>
-          <a href="https://support.torproject.org/little-t-tor/getting-started/verifying/" target="_blank" rel="noreferrer">Tor Project signature verification instructions ↗</a>
+          <p data-i18n="This removes quarantine only from this Tor bundle; it does not disable Gatekeeper globally.">This removes quarantine only from this Tor bundle; it does not disable Gatekeeper globally.</p>
+          <a href="https://support.torproject.org/little-t-tor/getting-started/verifying/" target="_blank" rel="noreferrer" data-i18n="Tor Project signature verification instructions ↗">Tor Project signature verification instructions ↗</a>
         </article>
         <article data-help-content="permission" data-platform="windows" hidden>
           <h3 data-i18n="PowerShell says scripts are disabled">PowerShell says scripts are disabled</h3>
-          <p>Allow scripts for this PowerShell window only, then run the setup command again:</p>
+          <p data-i18n="Allow scripts for this PowerShell window only, then run the setup command again:">Allow scripts for this PowerShell window only, then run the setup command again:</p>
           <pre>Set-ExecutionPolicy -Scope Process -ExecutionPolicy RemoteSigned</pre>
         </article>
         <article data-help-content="permission" data-platform="linux" hidden>
           <h3 data-i18n="Permission denied in Terminal">Permission denied in Terminal</h3>
-          <p>Run the copied command in your own Terminal window. The manual setup script installs the helper in your user folder and does not need administrator access.</p>
+          <p data-i18n="Run the copied command in your own Terminal window. The manual setup script installs the helper in your user folder and does not need administrator access.">Run the copied command in your own Terminal window. The manual setup script installs the helper in your user folder and does not need administrator access.</p>
         </article>
         <article data-help-content="why">
           <h3 data-i18n="Why is a separate setup app needed?">Why is a separate setup app needed?</h3>

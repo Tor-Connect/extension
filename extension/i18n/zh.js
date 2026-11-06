@@ -3,6 +3,15 @@ module.exports = {
   // prettier-ignore
   static: {
       " and ": " 和 ",
+      "Allow scripts for this PowerShell window only, then run the setup command again:": "仅允许此 PowerShell 窗口运行脚本，然后再次运行设置命令：",
+      "If SmartScreen appears, click More info, then Run anyway. Continue only if you downloaded Tor Connect Setup from the official Tor Connect release.": "如果出现 SmartScreen，请点击<strong>更多信息</strong>，然后点击<strong>仍要运行</strong>。仅在您从<a href=\"https://github.com/Tor-Connect/extension/releases/latest\" target=\"_blank\" rel=\"noreferrer\">官方 Tor Connect 发布版</a>下载了 Tor Connect Setup 时继续。",
+      "Only continue if you downloaded it from the official Tor Connect release.": "仅在您从<a href=\"https://github.com/Tor-Connect/extension/releases/latest\" target=\"_blank\" rel=\"noreferrer\">官方 Tor Connect 发布版</a>下载时继续。",
+      "Open it once, then go to Apple menu → System Settings → Privacy & Security. Under Security, choose Open Anyway next to Tor Connect Setup and open the app again.": "打开一次，然后前往 <strong>Apple 菜单 → 系统设置 → 隐私与安全性</strong>。在<strong>安全性</strong>下，点击 Tor Connect Setup 旁边的<strong>仍然打开</strong>，再次打开应用。",
+      "Run the copied command in your own Terminal window. The manual setup script installs the helper in your user folder and does not need administrator access.": "在您自己的终端窗口中运行复制的命令。手动安装脚本将助手安装在您的用户文件夹中，不需要管理员权限。",
+      "This removes quarantine only from this Tor bundle; it does not disable Gatekeeper globally.": "这仅移除此 Tor 捆绑包的隔离标志，不会全局禁用 Gatekeeper。",
+      "Tor Connect's Linux setup package is for Debian or Ubuntu on x64. Open the downloaded .deb file with your system's software installer.": "Tor Connect 的 Linux 安装包适用于 x64 上的 Debian 或 Ubuntu。用系统的软件安装程序打开下载的 <code>.deb</code> 文件。",
+      "Tor Project signature verification instructions ↗": "Tor 项目签名验证说明 ↗",
+      "Verify the Tor bundle came from the Tor Project and check its signature. If it is verified, remove the quarantine flag from the installed copy in Terminal:": "验证 Tor 软件包来自 Tor 项目并检查其签名。如果已验证，在终端中删除已安装副本的隔离标志：",
       "{coin} address copied": "{coin} 地址已复制",
       "{count} {skipped} skipped.": "{count} {skipped} 已跳过。",
       "{n} {bridges} added and saved.": "已添加并保存 {n} 个{bridges}。",

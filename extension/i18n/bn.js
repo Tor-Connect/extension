@@ -3,6 +3,15 @@ module.exports = {
   // prettier-ignore
   static: {
       " and ": " এবং ",
+      "Allow scripts for this PowerShell window only, then run the setup command again:": "শুধুমাত্র এই PowerShell উইন্ডোর জন্য স্ক্রিপ্ট অনুমতি দিন, তারপর সেটআপ কমান্ডটি আবার চালান:",
+      "If SmartScreen appears, click More info, then Run anyway. Continue only if you downloaded Tor Connect Setup from the official Tor Connect release.": "SmartScreen দেখা দিলে <strong>আরও তথ্য</strong> ক্লিক করুন, তারপর <strong>যেভাবেই হোক চালান</strong>। শুধুমাত্র তখনই এগিয়ে যান যদি আপনি Tor Connect Setup <a href=\"https://github.com/Tor-Connect/extension/releases/latest\" target=\"_blank\" rel=\"noreferrer\">অফিসিয়াল Tor Connect রিলিজ</a> থেকে ডাউনলোড করে থাকেন।",
+      "Only continue if you downloaded it from the official Tor Connect release.": "শুধুমাত্র তখনই এগিয়ে যান যদি আপনি এটি <a href=\"https://github.com/Tor-Connect/extension/releases/latest\" target=\"_blank\" rel=\"noreferrer\">অফিসিয়াল Tor Connect রিলিজ</a> থেকে ডাউনলোড করে থাকেন।",
+      "Open it once, then go to Apple menu → System Settings → Privacy & Security. Under Security, choose Open Anyway next to Tor Connect Setup and open the app again.": "এটি একবার খুলুন, তারপর <strong>Apple menu → System Settings → Privacy &amp; Security</strong>-এ যান। <strong>Security</strong>-এর অধীনে, Tor Connect Setup-এর পাশে <strong>Open Anyway</strong> বেছে নিন এবং অ্যাপটি আবার খুলুন।",
+      "Run the copied command in your own Terminal window. The manual setup script installs the helper in your user folder and does not need administrator access.": "কপি করা কমান্ডটি আপনার নিজস্ব Terminal উইন্ডোতে চালান। ম্যানুয়াল সেটআপ স্ক্রিপ্ট আপনার ইউজার ফোল্ডারে হেল্পার ইনস্টল করে এবং অ্যাডমিনিস্ট্রেটর অ্যাক্সেসের প্রয়োজন নেই।",
+      "This removes quarantine only from this Tor bundle; it does not disable Gatekeeper globally.": "এটি শুধুমাত্র এই Tor বান্ডেল থেকে কোয়ারেন্টাইন সরায়; এটি Gatekeeper-কে বৈশ্বিকভাবে অক্ষম করে না।",
+      "Tor Connect's Linux setup package is for Debian or Ubuntu on x64. Open the downloaded .deb file with your system's software installer.": "Tor Connect-এর Linux সেটআপ প্যাকেজটি x64-এ Debian বা Ubuntu-র জন্য। ডাউনলোড করা <code>.deb</code> ফাইলটি আপনার সিস্টেমের সফটওয়্যার ইনস্টলার দিয়ে খুলুন।",
+      "Tor Project signature verification instructions ↗": "Tor প্রজেক্ট স্বাক্ষর যাচাইকরণ নির্দেশাবলী ↗",
+      "Verify the Tor bundle came from the Tor Project and check its signature. If it is verified, remove the quarantine flag from the installed copy in Terminal:": "যাচাই করুন যে Tor বান্ডেলটি Tor প্রজেক্ট থেকে এসেছে এবং এর স্বাক্ষর পরীক্ষা করুন। যদি যাচাই হয়, Terminal-এ ইনস্টল করা কপি থেকে কোয়ারেন্টাইন ফ্ল্যাগ সরিয়ে দিন:",
       "{coin} address copied": "{coin} ঠিকানা কপি হয়েছে",
       "{count} {skipped} skipped.": "{count} {skipped} বাদ দেওয়া হয়েছে।",
       "{n} {bridges} added and saved.": "{n}টি {bridges} যুক্ত ও সংরক্ষিত হয়েছে।",

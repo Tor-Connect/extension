@@ -3,6 +3,15 @@ module.exports = {
   // prettier-ignore
   static: {
       " and ": " و ",
+      "Allow scripts for this PowerShell window only, then run the setup command again:": "اسمح بالنصوص البرمجية لنافذة PowerShell هذه فقط، ثم قم بتشغيل أمر الإعداد مجددًا:",
+      "If SmartScreen appears, click More info, then Run anyway. Continue only if you downloaded Tor Connect Setup from the official Tor Connect release.": "إذا ظهر SmartScreen، انقر على <strong>مزيد من المعلومات</strong> ثم <strong>تشغيل على أي حال</strong>. تابع فقط إذا قمت بتنزيل Tor Connect Setup من <a href=\"https://github.com/Tor-Connect/extension/releases/latest\" target=\"_blank\" rel=\"noreferrer\">الإصدار الرسمي لـ Tor Connect</a>.",
+      "Only continue if you downloaded it from the official Tor Connect release.": "تابع فقط إذا قمت بتنزيله من <a href=\"https://github.com/Tor-Connect/extension/releases/latest\" target=\"_blank\" rel=\"noreferrer\">الإصدار الرسمي لـ Tor Connect</a>.",
+      "Open it once, then go to Apple menu → System Settings → Privacy & Security. Under Security, choose Open Anyway next to Tor Connect Setup and open the app again.": "افتحه مرة واحدة، ثم انتقل إلى <strong>قائمة Apple → إعدادات النظام → الخصوصية والأمان</strong>. ضمن <strong>الأمان</strong>، اختر <strong>فتح على أي حال</strong> بجانب Tor Connect Setup وأعد فتح التطبيق.",
+      "Run the copied command in your own Terminal window. The manual setup script installs the helper in your user folder and does not need administrator access.": "قم بتشغيل الأمر المنسوخ في نافذة Terminal الخاصة بك. يقوم البرنامج النصي للإعداد اليدوي بتثبيت المساعد في مجلد المستخدم الخاص بك ولا يحتاج إلى وصول مسؤول.",
+      "This removes quarantine only from this Tor bundle; it does not disable Gatekeeper globally.": "يؤدي هذا إلى إزالة الحجر الصحي من حزمة Tor هذه فقط؛ ولا يعطل Gatekeeper بشكل عام.",
+      "Tor Connect's Linux setup package is for Debian or Ubuntu on x64. Open the downloaded .deb file with your system's software installer.": "حزمة إعداد Linux لـ Tor Connect مخصصة لـ Debian أو Ubuntu على x64. افتح ملف <code>.deb</code> الذي تم تنزيله باستخدام مثبت البرامج في نظامك.",
+      "Tor Project signature verification instructions ↗": "تعليمات التحقق من توقيع مشروع Tor ↗",
+      "Verify the Tor bundle came from the Tor Project and check its signature. If it is verified, remove the quarantine flag from the installed copy in Terminal:": "تحقق من أن حزمة Tor جاءت من مشروع Tor وتحقق من توقيعها. إذا تم التحقق منها، أزل علامة الحجر الصحي من النسخة المثبتة في Terminal:",
       "{coin} address copied": "تم نسخ عنوان {coin}",
       "{count} {skipped} skipped.": "{count} {skipped} تم تخطيها.",
       "{n} {bridges} added and saved.": "تمت إضافة {n} {bridges} وحفظها.",

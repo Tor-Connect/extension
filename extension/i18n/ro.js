@@ -3,6 +3,15 @@ module.exports = {
   // prettier-ignore
   static: {
       " and ": " și ",
+      "Allow scripts for this PowerShell window only, then run the setup command again:": "Permite scripturile doar pentru această fereastră PowerShell, apoi rulează din nou comanda de configurare:",
+      "If SmartScreen appears, click More info, then Run anyway. Continue only if you downloaded Tor Connect Setup from the official Tor Connect release.": "Dacă apare SmartScreen, fă clic pe <strong>Mai multe informații</strong>, apoi pe <strong>Rulează oricum</strong>. Continuă doar dacă ai descărcat Tor Connect Setup din <a href=\"https://github.com/Tor-Connect/extension/releases/latest\" target=\"_blank\" rel=\"noreferrer\">versiunea oficială Tor Connect</a>.",
+      "Only continue if you downloaded it from the official Tor Connect release.": "Continuă doar dacă l-ai descărcat din <a href=\"https://github.com/Tor-Connect/extension/releases/latest\" target=\"_blank\" rel=\"noreferrer\">versiunea oficială Tor Connect</a>.",
+      "Open it once, then go to Apple menu → System Settings → Privacy & Security. Under Security, choose Open Anyway next to Tor Connect Setup and open the app again.": "Deschide-l o dată, apoi mergi la <strong>Meniu Apple → Setări sistem → Confidențialitate și securitate</strong>. La <strong>Securitate</strong>, alege <strong>Deschide oricum</strong> lângă Tor Connect Setup și redeschide aplicația.",
+      "Run the copied command in your own Terminal window. The manual setup script installs the helper in your user folder and does not need administrator access.": "Rulează comanda copiată în propria ta fereastră Terminal. Scriptul de configurare manuală instalează asistentul în folderul tău de utilizator și nu are nevoie de acces de administrator.",
+      "This removes quarantine only from this Tor bundle; it does not disable Gatekeeper globally.": "Aceasta elimină carantina doar pentru acest pachet Tor; nu dezactivează Gatekeeper global.",
+      "Tor Connect's Linux setup package is for Debian or Ubuntu on x64. Open the downloaded .deb file with your system's software installer.": "Pachetul de instalare Linux al Tor Connect este pentru Debian sau Ubuntu pe x64. Deschide fișierul <code>.deb</code> descărcat cu programul de instalare software al sistemului tău.",
+      "Tor Project signature verification instructions ↗": "Instrucțiuni de verificare a semnăturii Proiectului Tor ↗",
+      "Verify the Tor bundle came from the Tor Project and check its signature. If it is verified, remove the quarantine flag from the installed copy in Terminal:": "Verifică că pachetul Tor provine de la Proiectul Tor și verifică semnătura acestuia. Dacă este verificat, elimină indicatorul de carantină din copia instalată în Terminal:",
       "{coin} address copied": "Adresă {coin} copiată",
       "{count} {skipped} skipped.": "{count} {skipped} omise.",
       "{n} {bridges} added and saved.": "{n} {bridges} adăugat(e) și salvat(e).",
