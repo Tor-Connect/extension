@@ -49,16 +49,31 @@
   // ---------------------------------------------------------------------------
   const I18N_ATTRS = ["title", "aria-label", "aria-description", "placeholder", "alt"];
 
-  // Allowed inline tags for data-i18n-html translations.
-  const ALLOWED_TAGS = new Set(["strong", "em", "a", "code", "br"]);
+  // Allowed inline tags for data-i18n-html translations (tag name → allowed attrs).
+  const ALLOWED_TAGS = { strong: [], em: [], code: [], br: [], a: ["href", "target", "rel"] };
 
+  // Rebuild `el` from a parsed template using only createElement+textContent,
+  // so no tainted string ever reaches innerHTML on a live element.
   function setTranslatedHTML(el, html) {
-    const doc = new DOMParser().parseFromString(html, "text/html");
-    el.replaceChildren(...doc.body.childNodes);
-    // Strip any elements not in the allowed set.
-    el.querySelectorAll("*").forEach((child) => {
-      if (!ALLOWED_TAGS.has(child.localName)) child.replaceWith(...child.childNodes);
+    const tpl = document.createElement("template");
+    tpl.innerHTML = html; // parsed inert — no scripts run, no live DOM affected
+    const nodes = [];
+    tpl.content.childNodes.forEach((node) => {
+      if (node.nodeType === Node.TEXT_NODE) {
+        nodes.push(document.createTextNode(node.textContent));
+      } else if (node.nodeType === Node.ELEMENT_NODE) {
+        const allowed = ALLOWED_TAGS[node.localName];
+        if (allowed) {
+          const clone = document.createElement(node.localName);
+          clone.textContent = node.textContent;
+          allowed.forEach((attr) => { if (node.hasAttribute(attr)) clone.setAttribute(attr, node.getAttribute(attr)); });
+          nodes.push(clone);
+        } else {
+          nodes.push(document.createTextNode(node.textContent));
+        }
+      }
     });
+    el.replaceChildren(...nodes);
   }
 
   function translateElement(el) {
