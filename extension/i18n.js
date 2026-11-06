@@ -49,12 +49,23 @@
   // ---------------------------------------------------------------------------
   const I18N_ATTRS = ["title", "aria-label", "aria-description", "placeholder", "alt"];
 
+  // Allowed inline tags for data-i18n-html translations.
+  const ALLOWED_TAGS = new Set(["strong", "em", "a", "code", "br"]);
+
+  function setTranslatedHTML(el, html) {
+    const doc = new DOMParser().parseFromString(html, "text/html");
+    el.replaceChildren(...doc.body.childNodes);
+    // Strip any elements not in the allowed set.
+    el.querySelectorAll("*").forEach((child) => {
+      if (!ALLOWED_TAGS.has(child.localName)) child.replaceWith(...child.childNodes);
+    });
+  }
+
   function translateElement(el) {
     if (el.hasAttribute("data-i18n-html")) {
       const key = el.getAttribute("data-i18n-html");
       const translated = t(key);
-      // Values come from build-controlled locale files, not user input. // CodeQL[js/xss-through-dom]
-      if (translated !== key) el.innerHTML = translated;
+      if (translated !== key) setTranslatedHTML(el, translated);
     }
     if (el.hasAttribute("data-i18n")) {
       const key = el.dataset.i18nKey || el.textContent.trim();
