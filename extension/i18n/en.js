@@ -3,6 +3,9 @@ module.exports = {
   // prettier-ignore
   static: {
       " and ": "",
+      "Manage": "",
+      "Open": "",
+      "Run in Private Windows": "",
       "{coin} address copied": "",
       "{count} {skipped} skipped.": "",
       "{n} {bridges} added and saved.": "",
