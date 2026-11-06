@@ -49,30 +49,50 @@
   // ---------------------------------------------------------------------------
   const I18N_ATTRS = ["title", "aria-label", "aria-description", "placeholder", "alt"];
 
-  // Allowed inline tags for data-i18n-html translations (tag name → allowed attrs).
+  // Allowed inline tags for data-i18n-html translations (tag → [allowed attrs]).
   const ALLOWED_TAGS = { strong: [], em: [], code: [], br: [], a: ["href", "target", "rel"] };
 
-  // Rebuild `el` from a parsed template using only createElement+textContent,
-  // so no tainted string ever reaches innerHTML on a live element.
+  // Regex that tokenises a restricted-HTML string into text runs and simple tags.
+  // Matches either an opening tag with optional attrs, a closing tag, or a text chunk.
+  // No innerHTML or DOMParser is used — the string is never interpreted as live HTML.
+  const TAG_RE = /<(\/?)([\w]+)((?:\s+[\w-]+=(?:"[^"]*"|'[^']*'|[^\s>]*))*)\s*\/?>|([^<]+)/g;
+
   function setTranslatedHTML(el, html) {
-    const tpl = document.createElement("template");
-    tpl.innerHTML = html; // parsed inert — no scripts run, no live DOM affected
     const nodes = [];
-    tpl.content.childNodes.forEach((node) => {
-      if (node.nodeType === Node.TEXT_NODE) {
-        nodes.push(document.createTextNode(node.textContent));
-      } else if (node.nodeType === Node.ELEMENT_NODE) {
-        const allowed = ALLOWED_TAGS[node.localName];
-        if (allowed) {
-          const clone = document.createElement(node.localName);
-          clone.textContent = node.textContent;
-          allowed.forEach((attr) => { if (node.hasAttribute(attr)) clone.setAttribute(attr, node.getAttribute(attr)); });
-          nodes.push(clone);
-        } else {
-          nodes.push(document.createTextNode(node.textContent));
+    const stack = []; // tracks open allowed elements
+    let match;
+    TAG_RE.lastIndex = 0;
+    while ((match = TAG_RE.exec(html)) !== null) {
+      const [, slash, tagName, attrsStr, text] = match;
+      if (text !== undefined) {
+        // Plain text — append to current open element or root
+        const tn = document.createTextNode(text);
+        (stack[stack.length - 1] ?? { append: (n) => nodes.push(n) }).append(tn);
+      } else if (!slash) {
+        // Opening tag
+        const allowedAttrs = ALLOWED_TAGS[tagName.toLowerCase()];
+        if (allowedAttrs) {
+          const el2 = document.createElement(tagName.toLowerCase());
+          // Extract only explicitly allowed attributes via regex (no innerHTML)
+          allowedAttrs.forEach((attr) => {
+            const m = new RegExp(`\\s${attr}="([^"]*)"`, "i").exec(attrsStr);
+            if (m) el2.setAttribute(attr, m[1]);
+          });
+          stack.push(el2);
+          if (tagName.toLowerCase() === "br") stack.pop(), nodes.push(el2);
+        }
+      } else {
+        // Closing tag — pop stack and attach to parent or root
+        const tagLC = tagName.toLowerCase();
+        const idx = stack.map((e) => e.localName).lastIndexOf(tagLC);
+        if (idx !== -1) {
+          const closed = stack.splice(idx)[0];
+          (stack[stack.length - 1] ?? { append: (n) => nodes.push(n) }).append(closed);
         }
       }
-    });
+    }
+    // Flush anything left open
+    stack.forEach((e) => nodes.push(e));
     el.replaceChildren(...nodes);
   }
 
