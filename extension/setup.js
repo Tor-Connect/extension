@@ -178,9 +178,9 @@ Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/Tor-Connect/extension/
 }
 
 const commandCopyOptions = [
-  ["#copyMacManualCommand", "#macManualCommand", "#macCommandStatus", t("Copied. Paste it into Terminal.")],
-  ["#copyWindowsManualCommand", "#windowsManualCommand", "#windowsCommandStatus", t("Copied. Paste it into PowerShell.")],
-  ["#copyLinuxManualCommand", "#linuxManualCommand", "#linuxCommandStatus", t("Copied. Paste it into Terminal.")]
+  ["#copyMacManualCommand", "#macManualCommand", "#macCommandStatus", () => t("Copied. Paste it into Terminal.")],
+  ["#copyWindowsManualCommand", "#windowsManualCommand", "#windowsCommandStatus", () => t("Copied. Paste it into PowerShell.")],
+  ["#copyLinuxManualCommand", "#linuxManualCommand", "#linuxCommandStatus", () => t("Copied. Paste it into Terminal.")]
 ];
 commandCopyOptions.forEach(([buttonSelector, commandSelector, statusSelector, successMessage]) => {
   const button = document.querySelector(buttonSelector);
@@ -199,7 +199,7 @@ commandCopyOptions.forEach(([buttonSelector, commandSelector, statusSelector, su
         return;
       }
       await navigator.clipboard.writeText(document.querySelector(commandSelector).textContent);
-      status.textContent = successMessage;
+      status.textContent = successMessage();
       status.dataset.kind = "success";
       // Change button label to "Copied" for 1400ms, matching the design
       buttonLabel.textContent = t("Copied");

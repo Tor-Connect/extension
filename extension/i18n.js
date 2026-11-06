@@ -53,6 +53,7 @@
     if (el.hasAttribute("data-i18n-html")) {
       const key = el.getAttribute("data-i18n-html");
       const translated = t(key);
+      // Values come from build-controlled locale files, not user input. // CodeQL[js/xss-through-dom]
       if (translated !== key) el.innerHTML = translated;
     }
     if (el.hasAttribute("data-i18n")) {

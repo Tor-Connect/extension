@@ -850,8 +850,12 @@ function sendStatus() {
       const bridgeLabel = selectedMode === "manual" && connectedBridgeIndex ? ` · ` + t("Bridge {n}", { n: connectedBridgeIndex })
         : selectedMode === "snowflake" ? " · Snowflake" : "";
       const activity = result.bridgeActivity === "trying" ? t("Reconnecting") : t("Connected");
-      setConnectionBadge(`${activity}${bridgeLabel}`, result.bridgeActivity === "trying" ? "starting" : "connected",
-        result.bridgeActivity === "trying" ? t("Tor is reconnecting through a bridge.") : t("Tor is connected{via}.", { via: bridgeLabel ? ` through${bridgeLabel}` : "" }));
+      const connectedTooltip = result.bridgeActivity === "trying"
+        ? t("Tor is reconnecting through a bridge.")
+        : bridgeLabel
+          ? t("Tor is connected through {route}.", { route: bridgeLabel.slice(3) })
+          : t("Tor is connected.");
+      setConnectionBadge(`${activity}${bridgeLabel}`, result.bridgeActivity === "trying" ? "starting" : "connected", connectedTooltip);
     } else if (result.state === "starting") {
       setConnectionBadge(result.bridgeActivity === "trying" ? t("Reconnecting…") : t("Connecting…"), "starting", result.message || t("Tor is connecting."));
     } else {
