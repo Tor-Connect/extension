@@ -293,6 +293,7 @@ body.popup-page .meta-separator { color: #6b7771; transition: opacity .2s ease; 
 body.popup-page .orbit-stage { position: relative; width: min(320px, 100%); height: 320px; flex: 0 0 auto; margin: 4px auto 0; }
 body.popup-page .orbit-diagram { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
 body.popup-page .orbit-outer, body.popup-page .orbit-inner, body.popup-page .orbit-spoke, body.popup-page .orbit-flow { fill: none; }
+body.popup-page .orbit-inner-fill { display: none; fill: none; }
 body.popup-page .sonar-flash-ring { display: none; fill: none; }
 body.popup-page .orbit-outer { stroke: #cbd7d0; stroke-width: 2; stroke-dasharray: 3 9; stroke-linecap: round; }
 body.popup-page .orbit-inner { stroke: #dce4df; stroke-width: 2; }
@@ -657,6 +658,7 @@ html[data-theme="light"] body.popup-page .orbit-spoke { stroke: #e3ebe6; }
 html[data-theme="light"] body.popup-page .orbit-flow { stroke: #a4b3ab; }
 html[data-theme="light"] body.popup-page .orbit-card[data-state="connected"] .orbit-outer { stroke: #8fd2ac; }
 html[data-theme="light"] body.popup-page .orbit-card[data-state="connected"] .orbit-flow { stroke: #0f9b50; }
+html[data-theme="light"] body.popup-page .orbit-card[data-state="connected"] .orbit-inner-fill { display: block; fill: #0f9b50; fill-opacity: .08; }
 html[data-theme="light"] body.popup-page .orbit-card[data-state="starting"] .orbit-flow { stroke: #0f9b50; }
 html[data-theme="light"] body.popup-page .orbit-card[data-state="connected"][data-activity="trying"] .orbit-outer { stroke: #d99a28; }
 html[data-theme="light"] body.popup-page .orbit-card[data-state="connected"][data-activity="trying"] .orbit-flow { stroke: #d99a28; }
@@ -666,7 +668,12 @@ html[data-theme="light"] body.popup-page .orbit-card[data-state="connected"][dat
 html[data-theme="light"] body.popup-page .orbit-card[data-state="connected"][data-activity="closed"] .orbit-flow { stroke: #cc5a55; }
 html[data-theme="light"] body.popup-page button.power-button { border-color: #c5d2cb; background: #ffffff; box-shadow: 0 8px 24px rgba(15,45,28,.10); }
 html[data-theme="light"] body.popup-page button.power-button:hover { background: #f5f9f7; }
+html[data-theme="light"] body.popup-page button.power-button[data-state="starting"] { border-color: #bde3cc; color: #0f9b50; background: #e5f5eb; }
 html[data-theme="light"] body.popup-page button.power-button[data-state="connected"] { border-color: #0f9b50; color: #0f9b50; background: #e2f5ea; box-shadow: 0 0 0 8px rgba(15,155,80,.10), 0 0 40px rgba(15,155,80,.20); }
+html[data-theme="light"] body.popup-page .orbit-country { border-color: #d3dfd8; background: #ffffff; color: #4b5a52; box-shadow: 0 1px 3px rgba(15,45,28,.12); }
+html[data-theme="light"] body.popup-page .orbit-node-label { color: #5f6e65; }
+html[data-theme="light"] body.popup-page .orbit-node.is-active .orbit-country { border-color: #0f9b50; color: #0f9b50; background: #e2f5ea; box-shadow: 0 0 0 5px rgba(15,155,80,.14); }
+html[data-theme="light"] body.popup-page .orbit-node.is-active .orbit-node-label { color: #0f1a14; }
 html[data-theme="light"] body.popup-page .orbit-empty-node { border-color: #d6dfda; color: #8a948f; background: #edf2ef; }
 html[data-theme="light"] body.popup-page .orbit-card[data-initial-checking="true"] .orbit-outer { stroke: #cbd7d0; }
 html[data-theme="light"] body.popup-page .orbit-card[data-initial-checking="true"] .sonar-flash-ring { stroke: #16804a; }
