@@ -691,10 +691,10 @@ final class Helper {
                let snapshot = readControlReply(from: descriptor) {
                 processORConnectionSnapshot(snapshot, targets: targets)
             }
-            if sendControlCommand("GETINFO circuit-status", to: descriptor),
-               let snapshot = readControlReply(from: descriptor) {
-                processCircuitSnapshot(snapshot, targets: targets)
-            }
+        }
+        if sendControlCommand("GETINFO circuit-status", to: descriptor),
+           let snapshot = readControlReply(from: descriptor) {
+            processCircuitSnapshot(snapshot, targets: targets)
         }
         var buffered = Data()
         var chunk = [UInt8](repeating: 0, count: 8192)
@@ -732,7 +732,14 @@ final class Helper {
                 let lineData = buffered[..<newline.lowerBound]
                 buffered.removeSubrange(..<newline.upperBound)
                 if let line = String(data: lineData, encoding: .utf8) {
-                    if !targets.isEmpty { updateBridgeActivity(from: line, targets: targets) }
+                    if !targets.isEmpty {
+                        updateBridgeActivity(from: line, targets: targets)
+                    } else if line.contains(" CIRC ") {
+                        let fields = line.split(whereSeparator: \.isWhitespace)
+                        if fields.count >= 5 {
+                            updateCircuitActivity(id: String(fields[2]), status: String(fields[3]), path: String(fields[4]), targets: [])
+                        }
+                    }
                     if maybeAutoRecover() { return }
                 }
             }
