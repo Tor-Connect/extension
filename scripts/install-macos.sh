@@ -98,6 +98,8 @@ else
     "https://raw.githubusercontent.com/Tor-Connect/extension/main/native/tor-chrome-helper.swift" \
     --output "$temporary_helper"
 fi
+# Kill any running helper so the new binary is picked up immediately on next connect.
+pkill -x tor-chrome-helper 2>/dev/null || true
 swiftc "$temporary_helper" -o "$app_support/tor-chrome-helper"
 chmod 700 "$app_support/tor-chrome-helper"
 
