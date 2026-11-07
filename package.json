@@ -1,0 +1,8 @@
+{
+  "name": "tor-connect-extension",
+  "private": true,
+  "scripts": {
+    "build:i18n": "node scripts/build-i18n.js",
+    "extract:i18n": "node scripts/extract-i18n.js"
+  }
+}

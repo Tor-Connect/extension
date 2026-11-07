@@ -80,6 +80,7 @@ let copyFeedbackTimer;
 let statsCopyFeedbackTimer;
 let firefoxPermissionPollTimer;
 let firefoxPermissionSuccessTimer;
+const t = (key, params) => (globalThis.torI18n?.t || ((s) => s))(key, params);
 
 function closePermissionErrorDetails(restoreFocus = true) {
   const wasOpen = !permissionErrorSheetNode.hidden;
@@ -90,7 +91,7 @@ function closePermissionErrorDetails(restoreFocus = true) {
 }
 
 function openPermissionErrorDetails() {
-  permissionErrorTextNode.textContent = "Private browsing access is off for this add-on. Firefox blocks proxy control until it is allowed.";
+  permissionErrorTextNode.textContent = t("Private browsing access is off for this add-on. Firefox blocks proxy control until it is allowed.");
   permissionErrorBackdropNode.hidden = false;
   permissionErrorSheetNode.hidden = false;
   showPermissionErrorDetailsButton.setAttribute("aria-expanded", "true");
@@ -104,13 +105,13 @@ async function copyPermissionText(text, button) {
     if (!allowed) throw new Error("Clipboard permission was not granted");
     await navigator.clipboard.writeText(text);
     button.classList.add("is-copied");
-    button.setAttribute("aria-label", "Copied");
+    button.setAttribute("aria-label", t("Copied"));
     window.setTimeout(() => {
       button.classList.remove("is-copied");
       button.removeAttribute("aria-label");
     }, 1500);
   } catch {
-    button.title = "Could not copy text";
+    button.title = t("Could not copy text");
     window.setTimeout(() => { button.removeAttribute("title"); }, 1800);
   } finally {
     button.disabled = false;
@@ -136,13 +137,13 @@ async function watchFirefoxPermission() {
   if (await hasFirefoxPrivateWindowAccess()) {
     stopFirefoxPermissionWatch();
     firefoxPermissionPanelNode.classList.add("permission-granted");
-    firefoxPermissionTitleNode.textContent = "Allowed";
-    firefoxPermissionSubtitleNode.textContent = "You’re all set.";
+    firefoxPermissionTitleNode.textContent = t("Allowed");
+    firefoxPermissionSubtitleNode.textContent = t("You’re all set.");
     firefoxPermissionSuccessTimer = window.setTimeout(() => {
       firefoxPermissionPanelNode.hidden = true;
       firefoxPermissionPanelNode.classList.remove("permission-granted");
-      firefoxPermissionTitleNode.textContent = "One switch to flip";
-      firefoxPermissionSubtitleNode.textContent = "Firefox needs “Run in Private Windows” on to route your traffic, even in normal windows.";
+      firefoxPermissionTitleNode.textContent = t("One switch to flip");
+      firefoxPermissionSubtitleNode.textContent = t("Firefox needs “Run in Private Windows” on to route your traffic, even in normal windows.");
       renderResult({ ok: true, state: "disconnected" });
     }, 1600);
     return;
@@ -153,12 +154,12 @@ async function watchFirefoxPermission() {
 function showFirefoxPermission() {
   stopFirefoxPermissionWatch();
   closePermissionErrorDetails(false);
-  permissionErrorTextNode.textContent = "Private browsing access is off for this add-on. Firefox blocks proxy control until it is allowed.";
+  permissionErrorTextNode.textContent = t("Private browsing access is off for this add-on. Firefox blocks proxy control until it is allowed.");
   popupMainNode.dataset.view = "firefox-permission";
   firefoxPermissionPanelNode.hidden = false;
   firefoxPermissionPanelNode.classList.remove("permission-granted");
-  firefoxPermissionTitleNode.textContent = "One switch to flip";
-  firefoxPermissionSubtitleNode.textContent = "Firefox needs “Run in Private Windows” on to route your traffic, even in normal windows.";
+  firefoxPermissionTitleNode.textContent = t("One switch to flip");
+  firefoxPermissionSubtitleNode.textContent = t("Firefox needs “Run in Private Windows” on to route your traffic, even in normal windows.");
   setupPanelNode.hidden = true;
   routeCardNode.hidden = true;
   openSettingsButton.hidden = true;
@@ -213,7 +214,7 @@ function fadeText(node, updater) {
 function closeLiveStats() {
   const wasOpen = liveStatsNode.classList.contains("is-open");
   statsToggleNode.setAttribute("aria-expanded", "false");
-  statsToggleNode.setAttribute("aria-label", "Open live statistics");
+  statsToggleNode.setAttribute("aria-label", t("Open live statistics"));
   liveStatsNode.classList.remove("is-open");
   statsBackdropNode.classList.remove("is-open");
   if (statsPollTimer) clearInterval(statsPollTimer);
@@ -228,7 +229,7 @@ function closeLiveStats() {
 statsToggleNode.addEventListener("click", () => {
   if (!siteCheckSheetNode.hidden) closeSiteCheck();
   statsToggleNode.setAttribute("aria-expanded", "true");
-  statsToggleNode.setAttribute("aria-label", "Close live statistics");
+  statsToggleNode.setAttribute("aria-label", t("Close live statistics"));
   liveStatsNode.hidden = false;
   statsBackdropNode.hidden = false;
   requestAnimationFrame(() => requestAnimationFrame(() => {
@@ -297,7 +298,7 @@ nextRouteNode.addEventListener("click", async () => {
   // (Chrome closes the popup the moment focus leaves the window).
   connectionToggle.focus();
   closeSiteCheck();
-  setStatus("Connecting…", "starting");
+  setStatus(t("Connecting…"), "starting");
   if (preferences.mode === "manual") {
     const entries = allBridgeEntries();
     if (entries.length > 1) {
@@ -376,7 +377,7 @@ async function refreshLiveStats() {
   updateLiveStats(result || {});
 }
 
-// Gas-station digit roll: only the characters that changed slide in from below.
+// Gas-station digit roll: only the characters that changed slide in from above.
 // Unchanged characters stay perfectly still. No outgoing animation needed —
 // the container's overflow:hidden clips cleanly as the new char arrives.
 function rollText(node, newText) {
@@ -416,14 +417,20 @@ function updateLiveStats(result = {}) {
   routeIcon.innerHTML = snowflake
     ? '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v18M4.2 7.5l15.6 9M4.2 16.5l15.6-9M9.5 4.8 12 7l2.5-2.2M9.5 19.2 12 17l2.5 2.2"/></svg>'
     : (result.bridgeCountryCode || "—");
-  document.querySelector("#statsRouteName").textContent = snowflake ? "Snowflake" : (result.bridgeTransport || "Bridge");
-  document.querySelector("#statsRouteAddress").textContent = result.bridgeAddress || "—";
+  document.querySelector("#statsRouteName").textContent = snowflake ? t("Snowflake") : (result.bridgeTransport || t("Bridge"));
+  const statsAddr = document.querySelector("#statsRouteAddress");
+  statsAddr.textContent = snowflake
+    ? (result.builtCircuitCount > 0 ? t("{n} circuits", { n: result.builtCircuitCount }) : "—")
+    : (result.bridgeAddress || "—");
+  statsAddr.classList.toggle("is-label", snowflake);
   const summary = document.querySelector("#connectedStatsSummary");
   summary.hidden = result.state !== "connected";
   statsToggleNode.hidden = result.state !== "connected";
   if (result.state !== "connected" && !liveStatsNode.hidden) closeLiveStats();
-  document.querySelector("#summaryRouteName").textContent = snowflake ? "Snowflake" : (result.currentBridgeIndex ? `Bridge ${result.currentBridgeIndex}` : "Bridge");
-  document.querySelector("#summaryRouteAddress").textContent = result.bridgeAddress || "";
+  document.querySelector("#summaryRouteName").textContent = snowflake ? t("Snowflake") : (result.currentBridgeIndex ? t("Bridge {n}", { n: result.currentBridgeIndex }) : t("Bridge"));
+  const summaryAddr = document.querySelector("#summaryRouteAddress");
+  summaryAddr.textContent = snowflake ? t("Volunteer proxy") : (result.bridgeAddress || "");
+  summaryAddr.classList.toggle("is-label", snowflake);
   document.querySelector("#summaryDownloadRate").textContent = Number.isFinite(down) ? downRate : "—";
   document.querySelector("#summaryUploadRate").textContent = Number.isFinite(up) ? upRate : "—";
   const summaryIcon = document.querySelector("#summaryRouteIcon");
@@ -435,10 +442,10 @@ function updateLiveStats(result = {}) {
     navigator.clipboard.writeText(result.bridgeAddress).then(() => {
       if (statsCopyFeedbackTimer) clearTimeout(statsCopyFeedbackTimer);
       copy.classList.add("is-copied");
-      copy.setAttribute("aria-label", "Copied");
+      copy.setAttribute("aria-label", t("Copied"));
       statsCopyFeedbackTimer = window.setTimeout(() => {
         copy.classList.remove("is-copied");
-        copy.setAttribute("aria-label", "Copy bridge address");
+        copy.setAttribute("aria-label", t("Copy bridge address"));
         statsCopyFeedbackTimer = undefined;
       }, 1500);
     }).catch(() => {});
@@ -457,9 +464,9 @@ function renderSiteCheck(result = {}) {
   const pending = result.connectivityCheck === "pending" || sites.some((site) => site.state === "pending");
   siteCheckBadgeNode.hidden = !connected;
   siteCheckSummaryNode.hidden = !connected;
-  const checkLabel = pending ? "Checking 4 sites" : failures ? `${failures} of ${sites.length || 4} sites blocked` : "All 4 sites reachable";
-  siteCheckBadgeNode.setAttribute("aria-label", `Review site check: ${checkLabel}`);
-  siteCheckSummaryNode.setAttribute("aria-label", `Review site check: ${checkLabel}`);
+  const checkLabel = pending ? t("Checking 4 sites") : failures ? t("{n} of {total} sites blocked", { n: failures, total: sites.length || 4 }) : t("All 4 sites reachable");
+  siteCheckBadgeNode.setAttribute("aria-label", t("Review site check: {summary}", { summary: checkLabel }));
+  siteCheckSummaryNode.setAttribute("aria-label", t("Review site check: {summary}", { summary: checkLabel }));
   siteCheckBadgeNode.innerHTML = pending
     ? '<span class="site-check-spinner" aria-hidden="true"></span>'
     : failures
@@ -471,17 +478,16 @@ function renderSiteCheck(result = {}) {
   siteCheckSummaryNode.classList.toggle("is-failed", failures > 0 && !pending);
   siteCheckSummaryNode.classList.toggle("is-pending", pending);
   siteCheckSummaryNode.classList.toggle("is-passed", !pending && !failures && result.connectivityCheck === "passed");
-  const t = globalThis.torI18n?.t || ((s) => s);
   if (pending) {
     siteCheckSummaryNode.innerHTML = `<span class="site-check-spinner" aria-hidden="true"></span>${t("Checking sites…")}`;
   } else if (failures) {
-    siteCheckSummaryNode.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4 3 20h18L12 4z"/><path d="M12 10v4m0 3.2v.1"/></svg>${t("{n} of 4 sites blocked").replace("{n}", failures)}<svg class="site-check-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg>`;
+    siteCheckSummaryNode.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4 3 20h18L12 4z"/><path d="M12 10v4m0 3.2v.1"/></svg>${t("{n} of 4 sites blocked", { n: failures })}<svg class="site-check-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg>`;
   } else if (result.connectivityCheck === "passed") {
     siteCheckSummaryNode.textContent = t("all sites reachable");
   } else {
     siteCheckSummaryNode.textContent = t("Checking sites…");
   }
-  const blockedSummary = failures ? t("{n} of 4 sites blocked").replace("{n}", failures) : t("All sites reachable");
+  const blockedSummary = failures ? t("{n} of 4 sites blocked", { n: failures }) : t("All sites reachable");
   siteCheckCountNode.textContent = pending ? t("Checking 4 sites…") : failures ? blockedSummary : t("All 4 sites reachable");
   siteCheckCountNode.classList.toggle("has-failures", failures > 0 && !pending);
   siteCheckSheetNode.classList.toggle("is-pending", pending);
@@ -657,9 +663,9 @@ function renderBridgeCountry(result, position = -1) {
   bridgeCountryFlagNode.textContent = flag;
   if (flag) {
     const countryName = new Intl.DisplayNames([globalThis.torI18n?.language || navigator.language || "en"], { type: "region" }).of(code) || code;
-    const bridgeLabel = position >= 0 ? "Bridge " + (position + 1) : "Bridge";
-    bridgeCountryFlagNode.title = "Approximate country of " + bridgeLabel + ": " + countryName;
-    bridgeCountryFlagNode.setAttribute("aria-label", "Approximate country of " + bridgeLabel + ": " + countryName);
+    const bridgeLabel = position >= 0 ? t("Bridge {n}", { n: position + 1 }) : t("Bridge");
+    bridgeCountryFlagNode.title = t("Approximate country of {bridge}: {country}", { bridge: bridgeLabel, country: countryName });
+    bridgeCountryFlagNode.setAttribute("aria-label", t("Approximate country of {bridge}: {country}", { bridge: bridgeLabel, country: countryName }));
   } else {
     bridgeCountryFlagNode.removeAttribute("title");
     bridgeCountryFlagNode.removeAttribute("aria-label");
@@ -689,9 +695,9 @@ function renderBridgeSelector() {
   autoBridgeSelectionNode.checked = preferences.autoBridgeSelection;
   autoBridgeHintNode.textContent = preferences.autoBridgeSelection
     ? entries.length
-      ? "Tries " + entries.length + " saved " + (entries.length === 1 ? "bridge" : "bridges") + " in order"
-      : "No saved bridges"
-    : "Off: you choose";
+      ? t("{n} saved {bridges} in order", { n: entries.length, bridges: entries.length === 1 ? t("bridge") : t("bridges") })
+      : t("No saved bridges")
+    : t("Off: you choose");
 }
 
 function renderOrbitNodes(focusPosition, activePosition) {
@@ -746,14 +752,14 @@ function renderOrbitNodes(focusPosition, activePosition) {
     const label = document.createElement("span");
     label.className = "orbit-node-label";
     const bridgeNumber = bridgeNumberForLine(line);
-    label.textContent = "Bridge " + bridgeNumber;
+    label.textContent = t("Bridge {n}", { n: bridgeNumber });
     button.append(country, label);
     const name = /^[A-Z]{2}$/.test(countryCode)
       ? new Intl.DisplayNames([globalThis.torI18n?.language || navigator.language || "en"], { type: "region" }).of(countryCode)
-      : "country unknown";
-    button.setAttribute("aria-label", "Bridge " + bridgeNumber + ", " + name
-      + (active ? ", currently connected" : selected ? ", selected" : ""));
-    button.title = "Bridge " + bridgeNumber + " · " + name;
+      : t("country unknown");
+    button.setAttribute("aria-label", t("Bridge {n}", { n: bridgeNumber }) + ", " + name
+      + (active ? ", " + t("currently connected") : selected ? ", " + t("selected") : ""));
+    button.title = t("Bridge {n}", { n: bridgeNumber }) + " · " + name;
     button.addEventListener("click", () => {
       saveBridgeSelection(false, line);
       renderRoute(currentResult);
@@ -786,7 +792,7 @@ async function selectConnectionMethod(mode) {
     const stopped = await send("disconnect");
     if (!stopped?.ok) {
       methodButtons.forEach((button) => { button.disabled = false; });
-      renderResult(stopped || { ok: false, state: "failed", error: "Could not stop the current Tor connection." });
+      renderResult(stopped || { ok: false, state: "failed", error: t("Could not stop the current Tor connection.") });
       return;
     }
     currentResult = stopped;
@@ -887,80 +893,80 @@ function syncBridgeAttemptTimer(state) {
 }
 
 function explain(result) {
-  if (!result) return "Tor status unavailable";
+  if (!result) return t("Tor status unavailable");
   if (!result.ok) return summarizeConnectionError(result.error || result.message);
   if (result.state === "connected") {
-    if (result.bridgeActivity === "trying") return "Reconnecting…";
-    if (result.bridgeActivity === "failed" || result.bridgeActivity === "closed") return "Connection interrupted";
-    return "Connected";
+    if (result.bridgeActivity === "trying") return t("Reconnecting…");
+    if (result.bridgeActivity === "failed" || result.bridgeActivity === "closed") return t("Connection interrupted");
+    return t("Connected");
   }
   if (result.state === "starting") {
-    return "Connecting…";
+    return t("Connecting…");
   }
-  if (result.state === "disconnected") return "Not connected";
+  if (result.state === "disconnected") return t("Not connected");
   if (result.state === "missing_runtime") {
-    return "Tor setup is incomplete";
+    return t("Tor setup is incomplete");
   }
   if (result.state === "failed") return summarizeConnectionError(result.error || result.message);
-  return "Tor status needs attention";
+  return t("Tor status needs attention");
 }
 
 function summarizeConnectionError(error) {
   const message = typeof error === "string" ? error : "";
   if (/proxy\.settings requires private browsing permission|private browsing permission/i.test(message)) {
-    return "Firefox permission needed";
+    return t("Firefox permission needed");
   }
   if (/address already in use|could not bind to|failed to bind|bind.*already in use/i.test(message)) {
-    return "A local Tor port is already in use";
+    return t("A local Tor port is already in use");
   }
   if (/permission denied|operation not permitted|access is denied/i.test(message)) {
-    return "Tor can’t access a required file";
+    return t("Tor can’t access a required file");
   }
   if (/failed to parse\/validate config|invalid config|invalid bridge|enter one or more valid|choose one valid bridge|choose snowflake or manual/i.test(message)) {
-    return "Check your bridge settings";
+    return t("Check your bridge settings");
   }
   if (/signal\s+\d+|killed|terminated unexpectedly/i.test(message)) {
-    return "Tor stopped before connecting";
+    return t("Tor stopped before connecting");
   }
   if (/timed out|timeout|no route to host|connection refused/i.test(message)) {
-    return "Couldn’t connect through this bridge";
+    return t("Couldn’t connect through this bridge");
   }
   if (/no such file|does not exist|doesn’t exist|not found/i.test(message)) {
-    return "Tor files are missing";
+    return t("Tor files are missing");
   }
   if (/native helper (?:unavailable|disconnected)|native messaging host not found|native host.*not registered/i.test(message)) {
-    return "Tor helper isn’t available";
+    return t("Tor helper isn’t available");
   }
-  return "Tor couldn’t connect. Try again.";
+  return t("Tor couldn’t connect. Try again.");
 }
 
 function connectionErrorHint(error) {
   const message = typeof error === "string" ? error : "";
   if (/proxy\.settings requires private browsing permission|private browsing permission/i.test(message)) {
-    return "Firefox requires this permission even in normal windows. Open menu ☰ → Extensions and Themes. On Tor Connect, click ⋯ → Manage. Under “Run in Private Windows,” select “Allow,” then return here and try again.";
+    return t("Firefox requires this permission even in normal windows. Open menu ☰ → Extensions and Themes. On Tor Connect, click ⋯ → Manage. Under “Run in Private Windows,” select “Allow,” then return here and try again.");
   }
   if (/address already in use|could not bind to|failed to bind|bind.*already in use/i.test(message)) {
-    return "Another app or Chrome profile may already have a Tor connection open.";
+    return t("Another app or Chrome profile may already have a Tor connection open.");
   }
   if (/permission denied|operation not permitted|access is denied/i.test(message)) {
-    return "Check that Tor Connect can access its installed files.";
+    return t("Check that Tor Connect can access its installed files.");
   }
   if (/failed to parse\/validate config|invalid config|invalid bridge|enter one or more valid|choose one valid bridge|choose snowflake or manual/i.test(message)) {
-    return "Review the bridge lines in Settings.";
+    return t("Review the bridge lines in Settings.");
   }
   if (/signal\s+\d+|killed|terminated unexpectedly/i.test(message)) {
-    return "Tor closed before it could connect. You can try again.";
+    return t("Tor closed before it could connect. You can try again.");
   }
   if (/timed out|timeout|no route to host|connection refused/i.test(message)) {
-    return "Try another saved bridge or connection method.";
+    return t("Try another saved bridge or connection method.");
   }
   if (/no such file|does not exist|doesn’t exist|not found/i.test(message)) {
-    return "Run setup again to install the Tor files.";
+    return t("Run setup again to install the Tor files.");
   }
   if (/native helper (?:unavailable|disconnected)|native messaging host not found|native host.*not registered/i.test(message)) {
-    return "Set up Tor Connect on this device, then restart your browser.";
+    return t("Set up Tor Connect on this device, then restart your browser.");
   }
-  return "Try again. Open the details if it keeps happening.";
+  return t("Try again. Open the details if it keeps happening.");
 }
 
 function renderErrorDetails(result) {
@@ -978,7 +984,7 @@ function renderErrorDetails(result) {
 function renderRoute(result = {}) {
   if (initialStatusPending && routeCardNode.dataset.initialChecking === "true") {
     snowflakeInfoNode.hidden = preferences.mode !== "snowflake";
-    snowflakeInfoTextNode.textContent = "Connect through volunteer proxies. No bridge lines to add.";
+    snowflakeInfoTextNode.textContent = t("Connect through volunteer proxies. No bridge lines to add.");
     return;
   }
   delete routeCardNode.dataset.initialChecking;
@@ -1023,23 +1029,23 @@ function renderRoute(result = {}) {
   snowflakeInfoNode.hidden = preferences.mode !== "snowflake" || result.state === "connected";
   if (preferences.mode === "snowflake") {
     const nextSnowflakeText = result.state === "failed"
-      ? "Couldn't connect. Check the error details or try again."
+      ? t("Couldn’t connect. Check the error details or try again.")
       : result.state === "starting"
-      ? "Asking volunteer proxies to relay your traffic."
+      ? t("Asking volunteer proxies to relay your traffic.")
       : result.state === "connected" && result.bridgeActivity === "trying"
-        ? "Trying another volunteer proxy."
+        ? t("Trying another volunteer proxy.")
         : result.state === "connected" && ["failed", "closed"].includes(result.bridgeActivity)
-          ? "The route was interrupted. Tor may retry automatically."
+          ? t("The route was interrupted. Tor may retry automatically.")
           : result.state === "connected"
-            ? "Your traffic is relayed through Snowflake proxies. The route may change."
-            : "Connect through volunteer proxies. No bridge lines to add.";
+            ? t("Your traffic is relayed through Snowflake proxies. The route may change.")
+            : t("Connect through volunteer proxies. No bridge lines to add.");
     if (snowflakeInfoTextNode.textContent !== nextSnowflakeText) {
       fadeText(snowflakeInfoTextNode, () => { snowflakeInfoTextNode.textContent = nextSnowflakeText; });
     }
   }
-  const nextRouteLabel = result.state === "connected" && shownPosition >= 0 ? "CONNECTED THROUGH"
-    : result.state === "starting" && shownPosition >= 0 ? "TRYING BRIDGE"
-      : result.state === "starting" ? "CONNECTING THROUGH" : "WILL CONNECT THROUGH";
+  const nextRouteLabel = result.state === "connected" && shownPosition >= 0 ? t("CONNECTED THROUGH")
+    : result.state === "starting" && shownPosition >= 0 ? t("TRYING BRIDGE")
+      : result.state === "starting" ? t("CONNECTING THROUGH") : t("WILL CONNECT THROUGH");
   if (routeLabelNode.textContent !== nextRouteLabel) {
     fadeText(routeLabelNode, () => { routeLabelNode.textContent = nextRouteLabel; });
   }
@@ -1051,7 +1057,7 @@ function renderRoute(result = {}) {
     const line = entries[shownPosition];
     const parts = line.split(/\s+/);
     const endpoint = parts[0] === "Bridge" ? (parts[2] || "") : (parts[1] || "");
-    const nextName = "Bridge " + bridgeNumberForLine(line);
+    const nextName = t("Bridge {n}", { n: bridgeNumberForLine(line) });
     if (routeNameNode.textContent !== nextName) {
       fadeText(routeNameNode, () => { routeNameNode.textContent = nextName; });
     }
@@ -1069,12 +1075,12 @@ function renderRoute(result = {}) {
     if (preferences.autoBridgeSelection) {
       routeIdentityNode.hidden = true;
     } else {
-      const nextName = "Automatic";
+      const nextName = t("Automatic");
       if (routeNameNode.textContent !== nextName) {
         fadeText(routeNameNode, () => { routeNameNode.textContent = nextName; });
       }
       if (bridgeCount) {
-        const nextDetail = bridgeCount + " saved " + (bridgeCount === 1 ? "bridge" : "bridges") + " · tries in order";
+        const nextDetail = t("{n} saved {bridges} · tries in order", { n: bridgeCount, bridges: bridgeCount === 1 ? t("bridge") : t("bridges") });
         if (prevDetail !== nextDetail) {
           fadeText(routeDetailNode, () => { routeDetailNode.textContent = nextDetail; });
         }
@@ -1134,7 +1140,7 @@ function renderResult(result) {
     routeCardNode.dataset.initialChecking = "true";
     routeIdentityNode.hidden = true;
     openSettingsButton.hidden = false;
-    setStatus("Checking connection…", "starting", "Waiting for the Tor helper");
+    setStatus(t("Checking connection…"), "starting", t("Waiting for the Tor helper"));
     setToggleState("disconnected");
     connectionToggle.dataset.initialChecking = "true";
     renderConnectionMethodSwitch();
@@ -1178,8 +1184,8 @@ function renderResult(result) {
     openSettingsButton.hidden = true;
     errorDetailsNode.hidden = true;
     setupDescriptionNode.textContent = result?.state === "missing_runtime"
-      ? "Install Tor and its helper once to connect through Chrome."
-      : "Install the Tor helper once to connect through Chrome.";
+      ? t("Install Tor and its helper once to connect through Chrome.")
+      : t("Install the Tor helper once to connect through Chrome.");
     setToggleState("disconnected");
     if (pollTimer) { clearTimeout(pollTimer); pollTimer = undefined; }
     return;
@@ -1200,23 +1206,23 @@ function renderResult(result) {
   const detail = result?.state === "failed" || !result?.ok
     ? connectionErrorHint(failureMessage)
     : result?.state === "connected" && ["failed", "closed"].includes(result?.bridgeActivity)
-    ? preferences.mode === "snowflake" ? "Tor may retry the Snowflake route" : "Tor may retry the bridge"
+    ? preferences.mode === "snowflake" ? t("Tor may retry the Snowflake route") : t("Tor may retry the bridge")
     : result?.state === "connected" && result?.bridgeActivity === "trying"
-      ? preferences.mode === "snowflake" ? "Trying another volunteer proxy" : "Trying another bridge"
+      ? preferences.mode === "snowflake" ? t("Trying another volunteer proxy") : t("Trying another bridge")
       : result?.state === "connected" && ["pending", "passed", "failed"].includes(result?.connectivityCheck) ? ""
-      : result?.state === "connected" ? "Tap the center to disconnect"
+      : result?.state === "connected" ? t("Tap the center to disconnect")
     : result?.state === "starting"
-      ? Number(result.currentBridgeIndex) > 0 ? `Crossing through Bridge ${Number(result.currentBridgeIndex)}`
-        : preferences.mode === "manual" ? "Trying saved bridges" : "Finding a volunteer proxy · tap to cancel"
+      ? Number(result.currentBridgeIndex) > 0 ? t("Crossing through Bridge {n}", { n: Number(result.currentBridgeIndex) })
+        : preferences.mode === "manual" ? t("Trying saved bridges") : t("Finding a volunteer proxy · tap to cancel")
       : result?.state === "disconnected"
         ? preferences.mode === "manual" && !bridgeEntries().length
-          ? "Add bridge lines in Settings to connect this way"
+          ? t("Add bridge lines in Settings to connect this way")
           : preferences.mode === "manual" && !preferences.autoBridgeSelection
-          ? "Pick a bridge, then tap the center"
-          : preferences.mode === "manual" ? "Tap the center to try saved bridges" : "Tap the center to connect"
+          ? t("Pick a bridge, then tap the center")
+          : preferences.mode === "manual" ? t("Tap the center to try saved bridges") : t("Tap the center to connect")
         : "";
   setStatus(preferences.mode === "manual" && !bridgeEntries().length && result?.state === "disconnected"
-    ? "No bridges yet" : explain(result), statusKind, detail);
+    ? t("No bridges yet") : explain(result), statusKind, detail);
   setToggleState(result?.state || "disconnected", result?.bridgeActivity);
   if (result?.state === "starting" || result?.state === "connected") pollForProgress();
   else if (pollTimer) { clearTimeout(pollTimer); pollTimer = undefined; }
@@ -1234,13 +1240,13 @@ function setToggleState(state, bridgeActivity) {
   connectionToggle.dataset.mode = preferences.mode;
   connectionToggle.dataset.empty = String(preferences.mode === "manual" && !bridgeEntries().length);
   connectionProgress.hidden = state !== "starting";
-  const label = state === "connected" ? "Disconnect" : state === "starting" ? "Cancel connection" : "Connect";
+  const label = state === "connected" ? t("Disconnect") : state === "starting" ? t("Cancel connection") : t("Connect");
   const accessibleLabel = state === "connected" && bridgeActivity === "trying"
-    ? "Disconnect from Tor; the bridge is reconnecting"
+    ? t("Disconnect from Tor; the bridge is reconnecting")
     : state === "connected" && ["failed", "closed"].includes(bridgeActivity)
-      ? "Disconnect from Tor; the bridge connection is interrupted"
-      : label === "Connect" && preferences.mode === "manual" && !bridgeEntries().length ? "Add bridge lines in Settings"
-        : label === "Connect" ? "Connect to Tor" : label === "Disconnect" ? "Disconnect from Tor" : "Cancel Tor connection";
+      ? t("Disconnect from Tor; the bridge connection is interrupted")
+      : label === t("Connect") && preferences.mode === "manual" && !bridgeEntries().length ? t("Add bridge lines in Settings")
+        : label === t("Connect") ? t("Connect to Tor") : label === t("Disconnect") ? t("Disconnect from Tor") : t("Cancel Tor connection");
   connectionToggle.setAttribute("aria-label", accessibleLabel);
   connectionToggle.title = accessibleLabel;
 }
@@ -1295,11 +1301,11 @@ connectionToggle.addEventListener("click", async () => {
   connectionToggle.disabled = true;
   connectionToggle.classList.add("is-pressing");
   if (currentState === "connected" || currentState === "starting") {
-    setStatus("Disconnecting…", "starting");
+    setStatus(t("Disconnecting…"), "starting");
     renderResult(await send("disconnect"));
     return;
   }
-  setStatus("Connecting…", "starting");
+  setStatus(t("Connecting…"), "starting");
   beginBridgeAttemptTimer();
   renderResult(await connectWithSavedPreferences());
 });
@@ -1308,28 +1314,28 @@ copyBridgeButton.addEventListener("click", async () => {
   if (!routeBridgeLine) return;
   if (copyFeedbackTimer) clearTimeout(copyFeedbackTimer);
   copyBridgeButton.classList.remove("is-copied");
-  copyBridgeButton.setAttribute("aria-label", "Copy full bridge line");
-  copyBridgeButton.title = "Copy full bridge line";
+  copyBridgeButton.setAttribute("aria-label", t("Copy full bridge line"));
+  copyBridgeButton.title = t("Copy full bridge line");
   copyBridgeButton.disabled = true;
   try {
     const allowed = await new Promise((resolve) => chrome.permissions.request({ permissions: ["clipboardWrite"] }, resolve));
     if (!allowed) {
-      copyBridgeButton.title = "Allow clipboard access to copy the bridge line";
+      copyBridgeButton.title = t("Allow clipboard access to copy the bridge line");
       return;
     }
     await navigator.clipboard.writeText(routeBridgeLine);
     copyBridgeButton.classList.add("is-copied");
-    copyBridgeButton.setAttribute("aria-label", "Bridge line copied");
-    copyBridgeButton.title = "Bridge line copied";
+    copyBridgeButton.setAttribute("aria-label", t("Bridge line copied"));
+    copyBridgeButton.title = t("Bridge line copied");
     copyFeedbackTimer = window.setTimeout(() => {
       copyBridgeButton.classList.remove("is-copied");
-      copyBridgeButton.setAttribute("aria-label", "Copy full bridge line");
-      copyBridgeButton.title = "Copy full bridge line";
+      copyBridgeButton.setAttribute("aria-label", t("Copy full bridge line"));
+      copyBridgeButton.title = t("Copy full bridge line");
       copyFeedbackTimer = undefined;
     }, 1400);
   } catch {
-    copyBridgeButton.title = "Could not copy bridge line";
-    window.setTimeout(() => { copyBridgeButton.title = "Copy full bridge line"; }, 1800);
+    copyBridgeButton.title = t("Could not copy bridge line");
+    window.setTimeout(() => { copyBridgeButton.title = t("Copy full bridge line"); }, 1800);
   } finally {
     copyBridgeButton.disabled = false;
   }

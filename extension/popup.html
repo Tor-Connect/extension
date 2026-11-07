@@ -14,17 +14,17 @@
         <svg class="brand-mark-broken" viewBox="0 0 128 128"><g fill="none" stroke="currentColor" stroke-width="10" stroke-linecap="round"><path d="M20 88H48"/><path d="M80 88H108"/><path d="M20 88A44 44 0 0 1 108 88" stroke-dasharray="54 30 54"/><path d="M35 88A29 29 0 0 1 93 88" stroke-dasharray="33.5 24 33.5"/><path d="M50 88A14 14 0 0 1 78 88" stroke-dasharray="14 16 14"/></g></svg>
       </span>
       <h1>Tor Connect</h1>
-      <button id="openSettings" class="expand-button" type="button" aria-label="Open settings" title="Settings">
+      <button id="openSettings" class="expand-button" type="button" data-i18n-aria-label="Open settings" data-i18n-title="Settings">
         <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg>
       </button>
-      <button id="openFullScreen" class="expand-button" type="button" aria-label="Open Tor controls in a new tab" title="Open in a tab">
+      <button id="openFullScreen" class="expand-button" type="button" data-i18n-aria-label="Open Tor controls in a new tab" data-i18n-title="Open in a tab">
         <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M8 4H4v4M16 4h4v4M20 16v4h-4M4 16v4h4"/></svg>
       </button>
     </header>
     <section id="firefoxPermissionPanel" class="firefox-permission-panel" aria-labelledby="firefoxPermissionTitle" hidden>
       <div class="firefox-permission-overview" aria-live="polite">
-        <h2 id="firefoxPermissionTitle">One switch to flip</h2>
-        <p id="firefoxPermissionSubtitle">Firefox needs “Run in Private Windows” on to route your traffic, even in normal windows.</p>
+        <h2 id="firefoxPermissionTitle" data-i18n>One switch to flip</h2>
+        <p id="firefoxPermissionSubtitle" data-i18n>Firefox needs "Run in Private Windows" on to route your traffic, even in normal windows.</p>
       </div>
       <div class="firefox-permission-content">
         <div class="permission-lock-stage" aria-hidden="true">
@@ -34,28 +34,28 @@
             <svg class="permission-check-icon" viewBox="0 0 24 24"><path d="m5 12 4.5 4.5L19 7.5"/></svg>
           </span>
         </div>
-        <ol class="firefox-permission-steps" aria-label="Steps to allow private windows">
-          <li><span class="permission-step-number">1</span><span>Open <kbd>about:addons</kbd></span></li>
-          <li><span class="permission-step-number">2</span><span>Tor Connect <i aria-hidden="true">›</i> <kbd>⋯</kbd> <i aria-hidden="true">›</i> Manage</span></li>
-          <li class="permission-step-current"><span class="permission-step-number">3</span><span>Run in Private Windows <i aria-hidden="true">›</i> <strong>Allow</strong></span></li>
+        <ol class="firefox-permission-steps" data-i18n-aria-label="Steps to allow private windows">
+          <li><span class="permission-step-number">1</span><span><span data-i18n>Open</span> <kbd>about:addons</kbd></span></li>
+          <li><span class="permission-step-number">2</span><span>Tor Connect <i aria-hidden="true">›</i> <kbd>⋯</kbd> <i aria-hidden="true">›</i> <span data-i18n>Manage</span></span></li>
+          <li class="permission-step-current"><span class="permission-step-number">3</span><span><span data-i18n>Run in Private Windows</span> <i aria-hidden="true">›</i> <strong data-i18n>Allow</strong></span></li>
         </ol>
       </div>
       <div class="firefox-permission-actions">
         <button id="copyAboutAddons" class="permission-primary-action" type="button">
           <svg class="permission-copy-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h8"/></svg>
           <svg class="permission-copied-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4.5 4.5L19 7.5"/></svg>
-          <span>Copy about:addons</span>
+          <span data-i18n>Copy about:addons</span>
         </button>
         <div class="firefox-permission-secondary-actions">
-          <button id="keepPermissionStepsOpen" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/></svg>Keep steps open in a tab</button>
-          <button id="showPermissionErrorDetails" type="button" aria-expanded="false" aria-controls="permissionErrorSheet"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 7.6v.1"/></svg>Error details</button>
+          <button id="keepPermissionStepsOpen" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/></svg><span data-i18n>Keep steps open in a tab</span></button>
+          <button id="showPermissionErrorDetails" type="button" aria-expanded="false" aria-controls="permissionErrorSheet"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 7.6v.1"/></svg><span data-i18n>Error details</span></button>
         </div>
       </div>
-      <button id="permissionErrorBackdrop" class="permission-error-backdrop" type="button" aria-label="Close error details" hidden></button>
-      <section id="permissionErrorSheet" class="permission-error-sheet" role="dialog" aria-label="Error details" aria-modal="true" hidden>
-        <button id="closePermissionErrorDetails" class="permission-error-close" type="button" aria-label="Close error details"><span></span>Error details</button>
+      <button id="permissionErrorBackdrop" class="permission-error-backdrop" type="button" data-i18n-aria-label="Close error details" hidden></button>
+      <section id="permissionErrorSheet" class="permission-error-sheet" role="dialog" data-i18n-aria-label="Error details" aria-modal="true" hidden>
+        <button id="closePermissionErrorDetails" class="permission-error-close" type="button" data-i18n-aria-label="Close error details"><span></span><span data-i18n>Error details</span></button>
         <pre id="permissionErrorText"></pre>
-        <button id="copyPermissionErrorDetails" class="permission-copy-details" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h8"/></svg>Copy details</button>
+        <button id="copyPermissionErrorDetails" class="permission-copy-details" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h8"/></svg><span data-i18n>Copy details</span></button>
       </section>
     </section>
     <section id="setupPanel" class="setup-panel" aria-labelledby="setupTitle" hidden>
@@ -77,22 +77,22 @@
           <svg viewBox="0 0 24 24"><path d="M12 4v12m-5-5 5 5 5-5M5 20h14"/></svg>
         </span>
       </div>
-      <h2 id="setupTitle" class="setup-title" aria-live="polite">Set up Tor</h2>
-      <p id="setupDescription" class="setup-description">Install the Tor helper once to connect through Chrome.</p>
-      <ol class="setup-steps" aria-label="Setup steps">
-        <li class="is-current" aria-current="step"><span class="step-marker">1</span><span>Install helper</span></li>
-        <li><span class="step-marker">2</span><span>Pick a bridge</span></li>
-        <li><span class="step-marker">3</span><span>Connect</span></li>
+      <h2 id="setupTitle" class="setup-title" aria-live="polite" data-i18n>Set up Tor</h2>
+      <p id="setupDescription" class="setup-description" data-i18n>Install the Tor helper once to connect through Chrome.</p>
+      <ol class="setup-steps" data-i18n-aria-label="Setup steps">
+        <li class="is-current" aria-current="step"><span class="step-marker">1</span><span data-i18n>Install helper</span></li>
+        <li><span class="step-marker">2</span><span data-i18n>Pick a bridge</span></li>
+        <li><span class="step-marker">3</span><span data-i18n>Connect</span></li>
       </ol>
-      <a class="setup-cta" href="setup.html" target="_blank" rel="noreferrer">Set up this device</a>
+      <a class="setup-cta" href="setup.html" target="_blank" rel="noreferrer" data-i18n>Set up this device</a>
     </section>
     <section id="outdatedPanel" class="outdated-panel" aria-labelledby="outdatedTitle" hidden>
       <header class="outdated-header">
         <div class="outdated-header-brand">
           <svg class="outdated-brand-mark" viewBox="0 0 128 128" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="10" stroke-linecap="round"><path d="M20 88H48"/><path d="M80 88H108"/><path d="M20 88A44 44 0 0 1 108 88" stroke-dasharray="54 30 54"/><path d="M35 88A29 29 0 0 1 93 88" stroke-dasharray="33.5 24 33.5"/><path d="M50 88A14 14 0 0 1 78 88" stroke-dasharray="14 16 14"/></g></svg>
-          <span class="outdated-header-name">Tor connection</span>
+          <span class="outdated-header-name" data-i18n>Tor connection</span>
         </div>
-        <span class="outdated-badge" aria-label="Update required">UPDATE</span>
+        <span class="outdated-badge" data-i18n-aria-label="Update required" data-i18n>UPDATE</span>
       </header>
 
       <div class="outdated-diagram" aria-hidden="true">
@@ -110,57 +110,58 @@
           <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V6M6 12l6-6 6 6"/></svg>
         </span>
         <div class="outdated-diagram-label outdated-diagram-label-ext">
-          <span class="outdated-diagram-caption">EXTENSION</span>
+          <span class="outdated-diagram-caption" data-i18n>EXTENSION</span>
           <span class="outdated-diagram-status outdated-diagram-status-ok">
-            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>Up to date
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><span data-i18n>Up to date</span>
           </span>
         </div>
         <div class="outdated-diagram-label outdated-diagram-label-helper">
-          <span class="outdated-diagram-caption">TOR HELPER</span>
-          <span class="outdated-diagram-status outdated-diagram-status-warn">Needs update</span>
+          <span class="outdated-diagram-caption" data-i18n>TOR HELPER</span>
+          <span class="outdated-diagram-status outdated-diagram-status-warn" data-i18n>Needs update</span>
         </div>
       </div>
 
       <div class="outdated-title-row" aria-live="polite">
         <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5L2.8 19.5h18.4z"/><path d="M12 10v4.5M12 17.2v.1"/></svg>
-        <h2 id="outdatedTitle" class="outdated-title">Update required</h2>
+        <h2 id="outdatedTitle" class="outdated-title" data-i18n>Update required</h2>
       </div>
-      <p class="outdated-description">Your Tor helper needs to be updated to work with this version of the extension.</p>
+      <p class="outdated-description" data-i18n>Your Tor helper needs to be updated to work with this version of the extension.</p>
 
       <div class="outdated-info-card">
         <div class="outdated-info-row">
           <span class="outdated-info-icon outdated-info-icon-ok"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>
-          <span>Your settings are kept</span>
+          <span data-i18n>Your settings are kept</span>
         </div>
         <div class="outdated-info-row">
           <span class="outdated-info-icon outdated-info-icon-muted"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span>
-          <span>Takes about a minute, same steps as setup</span>
+          <span data-i18n>Takes about a minute, same steps as setup</span>
         </div>
       </div>
 
       <a id="outdatedCta" class="outdated-cta" href="setup.html" target="_blank" rel="noreferrer">
         <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 11l5 5 5-5M5 20h14"/></svg>
-        Update helper
+        <span data-i18n>Update helper</span>
       </a>
     </section>
     <section id="routeCard" class="route-card orbit-card">
-      <p id="routeLabel" class="route-label visually-hidden">CONNECTION METHOD</p>
+      <p id="routeLabel" class="route-label visually-hidden" data-i18n>CONNECTION METHOD</p>
       <div class="connection-overview">
-        <p id="status" class="status" role="status" aria-live="polite">Checking…</p>
+        <p id="status" class="status" role="status" aria-live="polite" data-i18n>Checking…</p>
         <div class="connection-meta">
-          <span id="bridgeAttemptTimer" class="bridge-attempt-timer" aria-label="Elapsed connection time" hidden>00:00</span>
-          <span id="connectedDuration" class="connected-duration" aria-label="Connected duration" hidden></span>
+          <span id="bridgeAttemptTimer" class="bridge-attempt-timer" data-i18n-aria-label="Elapsed connection time" hidden>00:00</span>
+          <span id="connectedDuration" class="connected-duration" data-i18n-aria-label="Connected duration" hidden></span>
           <span class="meta-separator" aria-hidden="true" hidden>·</span>
           <p id="statusDetail" class="status-detail" hidden></p>
-          <button id="siteCheckSummary" class="site-check-summary" type="button" aria-label="Review site check" aria-expanded="false" aria-controls="siteCheckSheet" hidden></button>
+          <button id="siteCheckSummary" class="site-check-summary" type="button" data-i18n-aria-label="Review site check" aria-expanded="false" aria-controls="siteCheckSheet" hidden></button>
         </div>
         <details id="errorDetails" class="error-details" hidden>
-          <summary>Show error details</summary>
+          <summary data-i18n>Show error details</summary>
           <pre id="errorText"></pre>
         </details>
       </div>
       <div id="orbitStage" class="orbit-stage">
         <svg class="orbit-diagram" viewBox="0 0 320 320" aria-hidden="true" focusable="false">
+          <circle class="orbit-inner-fill" cx="160" cy="160" r="86"/>
           <circle class="orbit-outer" cx="160" cy="160" r="122"/>
           <circle class="orbit-inner" cx="160" cy="160" r="84"/>
           <circle class="sonar-flash-ring" cx="160" cy="160" r="122"/>
@@ -179,19 +180,19 @@
           <span class="snowflake-particle particle-5"><svg viewBox="0 0 24 24"><path d="M12 3v18M4.2 7.5l15.6 9M4.2 16.5l15.6-9M9.5 4.8 12 7l2.5-2.2M9.5 19.2 12 17l2.5 2.2"/></svg></span>
           <span class="snowflake-particle particle-6"><svg viewBox="0 0 24 24"><path d="M12 3v18M4.2 7.5l15.6 9M4.2 16.5l15.6-9M9.5 4.8 12 7l2.5-2.2M9.5 19.2 12 17l2.5 2.2"/></svg></span>
         </div>
-        <div id="orbitNodes" class="orbit-nodes" role="group" aria-label="Saved bridges"></div>
-        <button id="siteCheckBadge" class="site-check-badge" type="button" aria-label="Review site check" aria-expanded="false" aria-controls="siteCheckSheet" hidden></button>
-        <div id="connectionMethodSwitch" class="connection-method-switch" role="radiogroup" aria-label="Connection method" data-mode="snowflake">
+        <div id="orbitNodes" class="orbit-nodes" role="group" data-i18n-aria-label="Saved bridges"></div>
+        <button id="siteCheckBadge" class="site-check-badge" type="button" data-i18n-aria-label="Review site check" aria-expanded="false" aria-controls="siteCheckSheet" hidden></button>
+        <div id="connectionMethodSwitch" class="connection-method-switch" role="radiogroup" data-i18n-aria-label="Connection method" data-mode="snowflake">
           <span class="connection-method-thumb" aria-hidden="true"></span>
-          <button class="connection-method-option" type="button" role="radio" data-mode="snowflake" aria-label="Snowflake" title="Snowflake" aria-checked="true" tabindex="0">
+          <button class="connection-method-option" type="button" role="radio" data-mode="snowflake" data-i18n-aria-label="Snowflake" data-i18n-title="Snowflake" aria-checked="true" tabindex="0">
             <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3v18M4.2 7.5l15.6 9M4.2 16.5l15.6-9M9.5 4.8 12 7l2.5-2.2M9.5 19.2 12 17l2.5 2.2"/></svg>
           </button>
-          <button class="connection-method-option" type="button" role="radio" data-mode="manual" aria-label="Bridge lines" title="Bridge lines" aria-checked="false" tabindex="-1">
+          <button class="connection-method-option" type="button" role="radio" data-mode="manual" data-i18n-aria-label="Bridge lines" data-i18n-title="Bridge lines" aria-checked="false" tabindex="-1">
             <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="5" cy="6" r="1.4"/><circle cx="5" cy="12" r="1.4"/><circle cx="5" cy="18" r="1.4"/><path d="M10 6h10M10 12h10M10 18h6"/></svg>
           </button>
         </div>
-        <button id="connectionToggle" class="power-button" type="button" aria-label="Connect to Tor" disabled>
-          <span id="connectionProgress" class="visually-hidden" role="progressbar" aria-label="Tor connection progress" aria-valuemin="0" aria-valuemax="100" hidden></span>
+        <button id="connectionToggle" class="power-button" type="button" data-i18n-aria-label="Connect to Tor" disabled>
+          <span id="connectionProgress" class="visually-hidden" role="progressbar" data-i18n-aria-label="Tor connection progress" aria-valuemin="0" aria-valuemax="100" hidden></span>
           <svg class="connection-mark" viewBox="0 0 128 128" aria-hidden="true" focusable="false">
             <g class="mark-connected" fill="none" stroke="currentColor" stroke-width="7" stroke-linecap="round"><path d="M20 88H108"/><path d="M20 88A44 44 0 0 1 108 88"/><path d="M35 88A29 29 0 0 1 93 88"/><path d="M50 88A14 14 0 0 1 78 88"/></g>
             <g class="mark-connecting" fill="none" stroke="currentColor" stroke-width="9" stroke-linecap="round"><path d="M20 88H108" stroke-opacity=".6"/><path d="M20 88A44 44 0 0 1 108 88" stroke-dasharray="30 12" stroke-opacity=".6"/><path d="M35 88A29 29 0 0 1 93 88"/><path d="M50 88A14 14 0 0 1 78 88"/></g>
@@ -203,56 +204,56 @@
         <div id="connectedStatsSummary" class="connected-stats-summary" hidden>
           <span id="summaryRouteIcon" class="summary-route-icon" aria-hidden="true">—</span>
           <span class="summary-route"><strong id="summaryRouteName">—</strong><small id="summaryRouteAddress">—</small></span>
-          <button id="statsToggle" class="summary-rates" type="button" aria-label="Open live statistics" aria-expanded="false" aria-controls="liveStats"><span><svg class="rate-arrow rate-arrow-down" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v15M6 13l6 6 6-6"/></svg><strong id="summaryDownloadRate">—</strong></span><span><svg class="rate-arrow rate-arrow-up" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20V5M6 11l6-6 6 6"/></svg><strong id="summaryUploadRate">—</strong></span></button>
+          <button id="statsToggle" class="summary-rates" type="button" data-i18n-aria-label="Open live statistics" aria-expanded="false" aria-controls="liveStats"><span><svg class="rate-arrow rate-arrow-down" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v15M6 13l6 6 6-6"/></svg><strong id="summaryDownloadRate">—</strong></span><span><svg class="rate-arrow rate-arrow-up" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20V5M6 11l6-6 6 6"/></svg><strong id="summaryUploadRate">—</strong></span></button>
         </div>
         <div class="route-identity">
           <div class="route-title-line">
-            <strong id="routeName" class="route-name">Checking…</strong>
+            <strong id="routeName" class="route-name" data-i18n>Checking…</strong>
             <span id="bridgeCountryFlag" class="bridge-country-flag" hidden></span>
           </div>
           <span id="routeDetail" class="route-detail" hidden></span>
         </div>
-        <button id="copyBridge" class="copy-bridge-button" type="button" aria-label="Copy full bridge line" title="Copy full bridge line" hidden>
+        <button id="copyBridge" class="copy-bridge-button" type="button" data-i18n-aria-label="Copy full bridge line" data-i18n-title="Copy full bridge line" hidden>
           <svg class="copy-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h8"/></svg>
           <svg class="copied-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m5 12 4 4L19 6"/></svg>
         </button>
       </div>
-      <button id="siteCheckBackdrop" class="stats-backdrop site-check-backdrop" type="button" aria-label="Close site check" hidden></button>
-      <section id="siteCheckSheet" class="live-stats site-check-sheet" role="dialog" aria-label="Site check" aria-modal="true" hidden>
-        <button id="closeSiteCheck" class="stats-close site-check-close" type="button" aria-label="Close site check"><span class="site-check-grip"></span><span class="site-check-title-group"><span class="site-check-heading">Site check</span><strong id="siteCheckCount">Checking sites…</strong></span></button>
+      <button id="siteCheckBackdrop" class="stats-backdrop site-check-backdrop" type="button" data-i18n-aria-label="Close site check" hidden></button>
+      <section id="siteCheckSheet" class="live-stats site-check-sheet" role="dialog" data-i18n-aria-label="Site check" aria-modal="true" hidden>
+        <button id="closeSiteCheck" class="stats-close site-check-close" type="button" data-i18n-aria-label="Close site check"><span class="site-check-grip"></span><span class="site-check-title-group"><span class="site-check-heading" data-i18n>Site check</span><strong id="siteCheckCount" data-i18n>Checking sites…</strong></span></button>
         <div id="siteCheckRows" class="site-check-rows"></div>
         <div class="site-check-actions">
-          <button id="retestSites" class="site-check-retest" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 0 0-14-4.5L4 9M4 4v5h5M4 13a8 8 0 0 0 14 4.5L20 15M20 20v-5h-5"/></svg>Retest</button>
-          <button id="nextRoute" class="site-check-next" type="button">Next bridge</button>
+          <button id="retestSites" class="site-check-retest" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 0 0-14-4.5L4 9M4 4v5h5M4 13a8 8 0 0 0 14 4.5L20 15M20 20v-5h-5"/></svg><span data-i18n>Retest</span></button>
+          <button id="nextRoute" class="site-check-next" type="button" data-i18n>Next bridge</button>
         </div>
       </section>
-      <button id="statsBackdrop" class="stats-backdrop" type="button" aria-label="Close live statistics" hidden></button>
-      <section id="liveStats" class="live-stats" role="dialog" aria-label="Live statistics" aria-modal="true" hidden>
-        <button id="closeStats" class="stats-close" type="button" aria-label="Close live statistics"><span></span>Live statistics</button>
+      <button id="statsBackdrop" class="stats-backdrop" type="button" data-i18n-aria-label="Close live statistics" hidden></button>
+      <section id="liveStats" class="live-stats" role="dialog" data-i18n-aria-label="Live statistics" aria-modal="true" hidden>
+        <button id="closeStats" class="stats-close" type="button" data-i18n-aria-label="Close live statistics"><span></span><span data-i18n>Live statistics</span></button>
         <div class="stats-transfer">
-          <div><span class="stats-label"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v15M6 13l6 6 6-6"/></svg>Download</span><strong id="downloadTotal">—</strong><small id="downloadRate">—</small></div>
-          <div><span class="stats-label"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20V5M6 11l6-6 6 6"/></svg>Upload</span><strong id="uploadTotal">—</strong><small id="uploadRate">—</small></div>
+          <div><span class="stats-label"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v15M6 13l6 6 6-6"/></svg><span data-i18n>Download</span></span><strong id="downloadTotal">—</strong><small id="downloadRate">—</small></div>
+          <div><span class="stats-label"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20V5M6 11l6-6 6 6"/></svg><span data-i18n>Upload</span></span><strong id="uploadTotal">—</strong><small id="uploadRate">—</small></div>
         </div>
-        <div class="stats-row"><span>Memory in use</span><strong id="statsMemory">—</strong></div>
-        <div class="stats-route"><span id="statsRouteIcon" aria-hidden="true">❄</span><span><strong id="statsRouteName">—</strong><small id="statsRouteAddress">—</small></span><button id="statsCopyAddress" type="button" aria-label="Copy bridge address" hidden><svg class="copy-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h8"/></svg><svg class="copied-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></button></div>
+        <div class="stats-row"><span data-i18n>Memory in use</span><strong id="statsMemory">—</strong></div>
+        <div class="stats-route"><span id="statsRouteIcon" aria-hidden="true">❄</span><span><strong id="statsRouteName">—</strong><small id="statsRouteAddress">—</small></span><button id="statsCopyAddress" type="button" data-i18n-aria-label="Copy bridge address" hidden><svg class="copy-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h8"/></svg><svg class="copied-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></button></div>
       </section>
       <div id="emptyBridgeInfo" class="empty-bridge-info" hidden>
-        <p>Bridges are private Tor entry points. Request some from the Tor Project, then add them in Settings.</p>
+        <p data-i18n>Bridges are private Tor entry points. Request some from the Tor Project, then add them in Settings.</p>
         <button id="addBridges" class="add-bridges-button" type="button">
-          Add bridges in Settings
+          <span data-i18n>Add bridges in Settings</span>
           <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M7 17 17 7M9 7h8v8"/></svg>
         </button>
       </div>
       <div id="snowflakeInfo" class="snowflake-info" hidden>
         <span class="snowflake-info-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3v18M4.2 7.5l15.6 9M4.2 16.5l15.6-9M9.5 4.8 12 7l2.5-2.2M9.5 19.2 12 17l2.5 2.2"/></svg></span>
-        <div><strong>Snowflake</strong><span id="snowflakeInfoText"></span></div>
+        <div><strong data-i18n>Snowflake</strong><span id="snowflakeInfoText"></span></div>
       </div>
-      <div id="bridgeSelector" class="bridge-selector" aria-label="Bridge selection" hidden>
+      <div id="bridgeSelector" class="bridge-selector" data-i18n-aria-label="Bridge selection" hidden>
         <div class="auto-copy">
-          <span class="auto-title">Auto-select bridge</span>
-          <span id="autoBridgeHint" class="auto-hint">Tries saved bridges in order</span>
+          <span class="auto-title" data-i18n>Auto-select bridge</span>
+          <span id="autoBridgeHint" class="auto-hint" data-i18n>Tries saved bridges in order</span>
         </div>
-        <label class="bridge-auto-toggle" for="autoBridgeSelection" aria-label="Auto-select bridge">
+        <label class="bridge-auto-toggle" for="autoBridgeSelection" data-i18n-aria-label="Auto-select bridge">
           <input id="autoBridgeSelection" type="checkbox" checked>
           <span class="bridge-switch" aria-hidden="true"></span>
         </label>
