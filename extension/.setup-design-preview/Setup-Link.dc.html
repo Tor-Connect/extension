@@ -1,0 +1,332 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Setup page A: link and steps</title>
+<script src="./vendor/react.js"></script>
+<script src="./vendor/react-dom.js"></script>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600&amp;family=IBM+Plex+Mono:wght@400;500&amp;display=swap">
+<style>
+body{margin:0}
+button{font-family:inherit;cursor:pointer}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes flow{to{stroke-dashoffset:-28}}
+@keyframes pulse{0%,100%{transform:scale(1);opacity:0.9}50%{transform:scale(1.18);opacity:0.2}}
+@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@keyframes blink{0%,49%{opacity:1}50%,100%{opacity:0}}
+@keyframes twinkle{0%,100%{opacity:0.45}50%{opacity:1}}
+@media (prefers-reduced-motion: reduce){.an{animation:none !important}}
+</style>
+</helmet>
+<div style="position: relative; width: 1440px; height: 1100px; box-sizing: border-box; padding: 36px 80px 0; background: #080C0B; color: #EAF1EE; font-family: 'Space Grotesk', sans-serif; overflow: hidden">
+  <div style="position: absolute; right: -200px; top: -240px; width: 900px; height: 900px; border-radius: 50%; background: radial-gradient(circle, rgba(43, 213, 118, 0.14), rgba(43, 213, 118, 0) 65%)"></div>
+  <div style="position: relative; z-index: 2; display: flex; align-items: center; justify-content: space-between; height: 44px">
+    <div style="display: flex; align-items: center; gap: 12px"><svg viewBox="0 0 128 128" width="30" height="30" aria-hidden="true"><g fill="none" stroke="#2BD576" stroke-width="10" stroke-linecap="round"><path d="M20 88 H108"></path><path d="M20 88 A44 44 0 0 1 108 88"></path><path d="M35 88 A29 29 0 0 1 93 88"></path><path d="M50 88 A14 14 0 0 1 78 88"></path></g></svg><span style="font-size: 18px; font-weight: 600; letter-spacing: -0.01em">Tor Connect</span></div>
+    <div style="display: flex; align-items: center; gap: 10px">
+      <button style="height: 44px; padding: 0 16px; display: flex; align-items: center; gap: 8px; border: 1px solid #262D2B; border-radius: 22px; background: #121816; color: #EAF1EE; font-size: 14px; font-weight: 500"><span style="color: #8A948F"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"></path></svg></span>English<span style="color: #8A948F"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg></span></button>
+      <button aria-label="Toggle theme" style="width: 44px; height: 44px; padding: 0; display: flex; align-items: center; justify-content: center; border: 1px solid #262D2B; border-radius: 22px; background: #121816; color: #A9B3AE"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6L7 7M17 17l1.4 1.4M5.6 18.4L7 17M17 7l1.4-1.4"></path></svg></button>
+    </div>
+  </div>
+
+  <div style="position: relative; display: flex; gap: 64px; margin-top: 44px">
+    <div style="width: 560px; flex: none">
+      <div style="display: flex; align-items: center; gap: 12px; font-family: 'IBM Plex Mono', monospace; font-size: 13px; letter-spacing: 0.14em; color: #2BD576">ONE-TIME SETUP<span style="height: 26px; display: flex; align-items: center; padding: 0 12px; border-radius: 13px; border: 1px solid #1C5B3B; background: #10291C; letter-spacing: 0.02em; font-size: 12px">{{ osName }} detected</span></div>
+      <h1 style="margin: 22px 0 0; font-size: 58px; font-weight: 600; letter-spacing: -0.035em; line-height: 1.02">Connect your browser through Tor</h1>
+      <p style="margin: 22px 0 0; font-size: 19px; line-height: 1.5; color: #A9B3AE">A small companion app installs Tor on this computer and links it to your browser. You only do this once.</p>
+      <div role="radiogroup" aria-label="Setup method" style="position: relative; margin-top: 30px; width: 330px; height: 56px; box-sizing: border-box; border-radius: 28px; border: 1.5px solid #262D2B; background: #0E1412">
+        <span aria-hidden="true" style="position: absolute; top: 3px; left: {{ thumbLeft }}px; width: 160px; height: 46px; box-sizing: border-box; border-radius: 23px; background: #10291C; border: 1.5px solid #2BD576; box-shadow: 0 0 16px rgba(43, 213, 118, 0.25); transition: left 0.25s cubic-bezier(0.3, 0.9, 0.3, 1)"></span>
+        <button role="radio" aria-checked="{{ isApp }}" onClick="{{ pathApp }}" style="position: absolute; left: 3px; top: 3px; width: 160px; height: 46px; padding: 0; display: flex; align-items: center; justify-content: center; gap: 8px; border: 0; border-radius: 23px; background: transparent; color: {{ appFg }}; font-size: 15px; font-weight: 600"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 11l5 5 5-5M5 20h14"></path></svg>Setup app</button>
+        <button role="radio" aria-checked="{{ isTerm }}" onClick="{{ pathTerm }}" style="position: absolute; left: 165px; top: 3px; width: 160px; height: 46px; padding: 0; display: flex; align-items: center; justify-content: center; gap: 8px; border: 0; border-radius: 23px; background: transparent; color: {{ termFg }}; font-size: 15px; font-weight: 600"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2.5"></rect><path d="M7.5 10l3 2.5-3 2.5M13 15.5h4"></path></svg>Terminal</button>
+      </div>
+    </div>
+
+    <div style="position: relative; width: 640px; height: 330px; flex: none; box-sizing: border-box; border-radius: 28px; border: 1px solid #1D2421; background: #0C1210">
+      <svg viewBox="0 0 640 330" width="640" height="330" aria-hidden="true" style="position: absolute; left: 0; top: 0">
+        <path d="M154 130 H276" stroke="#2BD576" stroke-width="3" stroke-linecap="round" fill="none"></path>
+        <path class="an" d="M364 130 H486" stroke="{{ l2.c }}" stroke-width="3" stroke-linecap="round" stroke-dasharray="{{ l2.d }}" fill="none" style="animation: {{ l2.a }}"></path>
+      </svg>
+      <sc-for list="{{ nodes }}" as="n" hint-placeholder-count="3">
+        <div style="display: contents">
+          <span class="an" aria-hidden="true" style="position: absolute; left: {{ n.left }}px; top: 86px; width: 88px; height: 88px; box-sizing: border-box; display: flex; align-items: center; justify-content: center; border-radius: 50%; border: 3px {{ n.bstyle }} {{ n.border }}; background: {{ n.bg }}; color: {{ n.fg }}; box-shadow: {{ n.shadow }}; transition: background 0.4s ease, border-color 0.4s ease, color 0.4s ease">
+            <sc-if value="{{ n.isBrowser }}" hint-placeholder-val="{{ true }}"><svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2.5"></rect><path d="M3 9.5h18"></path></svg></sc-if>
+            <sc-if value="{{ n.isHelper }}" hint-placeholder-val="{{ false }}"><svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2.5"></rect><path d="M7.5 10l3 2.5-3 2.5M13 15.5h4"></path></svg></sc-if>
+            <sc-if value="{{ n.isTor }}" hint-placeholder-val="{{ false }}"><svg viewBox="0 0 128 128" width="48" height="48" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="9" stroke-linecap="round"><path d="M20 88 H108"></path><path d="M20 88 A44 44 0 0 1 108 88"></path><path d="M35 88 A29 29 0 0 1 93 88"></path><path d="M50 88 A14 14 0 0 1 78 88"></path></g></svg></sc-if>
+          </span>
+          <sc-if value="{{ n.pulse }}" hint-placeholder-val="{{ false }}"><span class="an" aria-hidden="true" style="position: absolute; left: {{ n.pl }}px; top: 80px; width: 100px; height: 100px; box-sizing: border-box; border-radius: 50%; border: 2px solid #2BD576; animation: pulse 1.6s ease-in-out infinite"></span></sc-if>
+          <span style="position: absolute; left: {{ n.lbl }}px; top: 188px; width: 160px; text-align: center; font-size: 16px; font-weight: 600">{{ n.name }}</span>
+          <span style="position: absolute; left: {{ n.lbl }}px; top: 212px; width: 160px; text-align: center; font-size: 13px; color: {{ n.subColor }}">{{ n.sub }}</span>
+        </div>
+      </sc-for>
+      <div style="position: absolute; left: 0; right: 0; bottom: 0; height: 56px; box-sizing: border-box; display: flex; align-items: center; justify-content: center; gap: 10px; border-top: 1px solid #1D2421; font-size: 15px; color: {{ statusColor }}">
+        <sc-if value="{{ detecting }}" hint-placeholder-val="{{ false }}"><svg class="an" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" style="animation: spin 1s linear infinite"><circle cx="12" cy="12" r="9" fill="none" stroke="#2BD576" stroke-width="3" stroke-linecap="round" stroke-dasharray="28 60"></circle></svg></sc-if>
+        <sc-if value="{{ done }}" hint-placeholder-val="{{ false }}"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></sc-if>
+        {{ statusText }}
+      </div>
+    </div>
+  </div>
+
+  <div style="position: relative; display: flex; gap: 24px; margin-top: 36px">
+    <div style="flex: 1; min-width: 0; box-sizing: border-box; height: 300px; padding: 24px; border-radius: 24px; border: 1px solid {{ s1.border }}; background: #0C1210; opacity: {{ s1.op }}; transition: opacity 0.3s ease, border-color 0.3s ease">
+      <div style="display: flex; align-items: center; gap: 12px"><span style="width: 36px; height: 36px; box-sizing: border-box; display: flex; align-items: center; justify-content: center; border-radius: 50%; border: 2px solid {{ s1.bb }}; background: {{ s1.bg }}; color: {{ s1.fg }}; font-family: 'IBM Plex Mono', monospace; font-size: 15px; font-weight: 500">{{ s1.badge }}</span><span style="font-size: 20px; font-weight: 600">{{ s1.title }}</span></div>
+      <div style="margin-top: 12px; font-size: 15px; line-height: 1.5; color: #8A948F">{{ s1.body }}</div>
+      <sc-if value="{{ isApp }}" hint-placeholder-val="{{ true }}">
+        <button onClick="{{ advance }}" style="margin-top: 22px; height: 52px; padding: 0 22px; display: flex; align-items: center; gap: 10px; border: 0; border-radius: 26px; background: #2BD576; color: #06150D; font-size: 15px; font-weight: 600"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 11l5 5 5-5M5 20h14"></path></svg>{{ appLabel }}</button>
+      </sc-if>
+      <sc-if value="{{ isTerm }}" hint-placeholder-val="{{ false }}">
+        <button onClick="{{ advance }}" style="margin-top: 22px; height: 52px; padding: 0 22px; display: flex; align-items: center; gap: 10px; border: 1.5px solid #262D2B; border-radius: 26px; background: #121816; color: #EAF1EE; font-size: 15px; font-weight: 600">Download Tor Expert Bundle<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17L17 7M9 7h8v8"></path></svg></button>
+      </sc-if>
+    </div>
+    <div style="flex: 1; min-width: 0; box-sizing: border-box; height: 300px; padding: 24px; border-radius: 24px; border: 1px solid {{ s2.border }}; background: #0C1210; opacity: {{ s2.op }}; transition: opacity 0.3s ease, border-color 0.3s ease">
+      <div style="display: flex; align-items: center; gap: 12px"><span style="width: 36px; height: 36px; box-sizing: border-box; display: flex; align-items: center; justify-content: center; border-radius: 50%; border: 2px solid {{ s2.bb }}; background: {{ s2.bg }}; color: {{ s2.fg }}; font-family: 'IBM Plex Mono', monospace; font-size: 15px; font-weight: 500">{{ s2.badge }}</span><span style="font-size: 20px; font-weight: 600">{{ s2.title }}</span></div>
+      <div style="margin-top: 12px; font-size: 15px; line-height: 1.5; color: #8A948F">{{ s2.body }}</div>
+      <sc-if value="{{ isApp }}" hint-placeholder-val="{{ true }}">
+        <button onClick="{{ detect }}" style="margin-top: 22px; height: 52px; padding: 0 22px; display: flex; align-items: center; gap: 10px; border: 0; border-radius: 26px; background: #2BD576; color: #06150D; font-size: 15px; font-weight: 600">I opened it</button>
+        <button onClick="{{ openBlocked }}" style="margin-top: 6px; height: 44px; padding: 0; display: flex; align-items: center; gap: 8px; border: 0; background: transparent; color: #FFC24D; font-size: 14px; font-weight: 500"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4L3 20h18L12 4z"></path><path d="M12 10v4M12 17.2v.1"></path></svg>{{ blockedTitle }}<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"></path></svg></button>
+      </sc-if>
+      <sc-if value="{{ isTerm }}" hint-placeholder-val="{{ false }}">
+        <div style="margin-top: 14px; display: flex; align-items: center; justify-content: space-between"><div style="display: inline-flex; padding: 3px; border-radius: 12px; background: #080C0B; border: 1px solid #1D2421">
+          <sc-for list="{{ osList }}" as="o" hint-placeholder-count="3">
+            <button onClick="{{ o.go }}" style="height: 34px; padding: 0 14px; border: 0; border-radius: 9px; background: {{ o.bg }}; color: {{ o.fg }}; font-size: 13px; font-weight: 600">{{ o.label }}</button>
+          </sc-for>
+        </div><span style="font-size: 13px; color: #6B7771">in {{ termName }}</span></div>
+        <div style="margin-top: 10px; display: flex; align-items: center; gap: 10px; box-sizing: border-box; height: 56px; padding: 0 6px 0 14px; border-radius: 14px; background: #080C0B; border: 1px solid #1D2421"><span style="font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: #2BD576">{{ prompt }}</span><span style="flex: 1; min-width: 0; font-family: 'IBM Plex Mono', monospace; font-size: 12.5px; color: #EAF1EE; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{ cmd }}</span><button onClick="{{ copyCmd }}" style="flex: none; height: 44px; padding: 0 14px; display: flex; align-items: center; gap: 6px; border: 0; border-radius: 22px; background: #2BD576; color: #06150D; font-size: 13px; font-weight: 600"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"></rect><path d="M5 15V6a2 2 0 0 1 2-2h8"></path></svg>{{ copyShort }}</button></div>
+      </sc-if>
+    </div>
+    <div style="flex: 1; min-width: 0; box-sizing: border-box; height: 300px; padding: 24px; border-radius: 24px; border: 1px solid {{ s3.border }}; background: #0C1210; opacity: {{ s3.op }}; transition: opacity 0.3s ease, border-color 0.3s ease">
+      <div style="display: flex; align-items: center; gap: 12px"><span style="width: 36px; height: 36px; box-sizing: border-box; display: flex; align-items: center; justify-content: center; border-radius: 50%; border: 2px solid {{ s3.bb }}; background: {{ s3.bg }}; color: {{ s3.fg }}; font-family: 'IBM Plex Mono', monospace; font-size: 15px; font-weight: 500">{{ s3.badge }}</span><span style="font-size: 20px; font-weight: 600">{{ s3.title }}</span></div>
+      <div style="margin-top: 12px; font-size: 15px; line-height: 1.5; color: #8A948F">{{ s3.body }}</div>
+      <div style="margin-top: 22px; display: flex; align-items: center; gap: 10px; height: 52px; box-sizing: border-box; padding: 0 18px; border-radius: 26px; border: 1.5px solid {{ pill.border }}; background: {{ pill.bg }}; color: {{ pill.fg }}; font-size: 15px; font-weight: 600; width: fit-content">
+        <sc-if value="{{ detecting }}" hint-placeholder-val="{{ false }}"><svg class="an" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" style="animation: spin 1s linear infinite"><circle cx="12" cy="12" r="9" fill="none" stroke="#2BD576" stroke-width="3" stroke-linecap="round" stroke-dasharray="28 60"></circle></svg></sc-if>
+        <sc-if value="{{ done }}" hint-placeholder-val="{{ false }}"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></sc-if>
+        {{ pill.text }}
+      </div>
+    </div>
+  </div>
+
+  <div style="position: relative; margin-top: 28px">
+    <div style="display: flex; align-items: center; gap: 12px">
+      <span style="font-size: 14px; color: #6B7771; font-family: 'IBM Plex Mono', monospace; letter-spacing: 0.08em">STUCK?</span>
+      <sc-for list="{{ helpChips }}" as="h" hint-placeholder-count="3">
+        <button onClick="{{ h.go }}" style="height: 44px; padding: 0 18px; display: flex; align-items: center; border: 1px solid {{ h.border }}; border-radius: 22px; background: {{ h.bg }}; color: {{ h.fg }}; font-size: 14px; font-weight: 500">{{ h.label }}</button>
+      </sc-for>
+    </div>
+      <sc-if value="{{ showHelp }}" hint-placeholder-val="{{ true }}">
+        <div class="an" style="margin-top: 12px; box-sizing: border-box; padding: 22px 26px; border-radius: 20px; border: 1px solid #1D2421; background: #0C1210; animation: rise 0.4s cubic-bezier(0.3, 0.9, 0.3, 1)">
+          <div style="font-size: 17px; font-weight: 600">{{ helpTitle }}</div>
+          <sc-if value="{{ helpIsBlocked }}" hint-placeholder-val="{{ true }}">
+            <div style="margin-top: 8px; font-size: 15px; line-height: 1.5; color: #8A948F">{{ blockedIntro }}</div>
+            <div style="margin-top: 10px; display: flex; flex-direction: column; gap: 8px">
+              <sc-for list="{{ blockedSteps }}" as="b" hint-placeholder-count="3">
+                <div style="display: flex; gap: 12px; font-size: 15px; line-height: 1.45; color: #EAF1EE"><span style="flex: none; width: 24px; height: 24px; box-sizing: border-box; display: flex; align-items: center; justify-content: center; border-radius: 50%; border: 1.5px solid #3A4642; color: #A9B3AE; font-family: 'IBM Plex Mono', monospace; font-size: 12px">{{ b.n }}</span><span>{{ b.t }}</span></div>
+              </sc-for>
+            </div>
+          </sc-if>
+          <sc-if value="{{ helpIsDenied }}" hint-placeholder-val="{{ false }}">
+            <div style="margin-top: 8px; font-size: 15px; line-height: 1.5; color: #8A948F">{{ deniedText }}</div>
+            <div style="margin-top: 12px; box-sizing: border-box; padding: 14px 16px; border-radius: 12px; background: #080C0B; border: 1px solid #1D2421; font-family: 'IBM Plex Mono', monospace; font-size: 13px; line-height: 1.55; color: #EAF1EE; word-break: break-all">{{ deniedCmd }}</div>
+          </sc-if>
+          <sc-if value="{{ helpIsWhy }}" hint-placeholder-val="{{ false }}">
+            <div style="margin-top: 8px; font-size: 15px; line-height: 1.5; color: #8A948F">{{ whyText }}</div>
+          </sc-if>
+        </div>
+      </sc-if>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1100}}'>
+const DEFAULT_PATH = 'app';
+const OS = {
+  mac: {
+    name: 'macOS', app: 'Mac setup app', term: 'Terminal', prompt: '$', file: 'Tor Connect Setup',
+    cmd: 'curl -fsSL https://torconnect.example/setup.sh | bash',
+    note: 'The script removes download quarantine and ad hoc signs the local Tor files macOS needs to load. No Apple developer certificate is used. Restart your browser after setup.',
+    blockedTitle: 'macOS blocked the setup app',
+    blockedIntro: 'Apple hasn’t notarized Tor Connect Setup, so macOS may block it.',
+    blocked: ['Try opening Tor Connect Setup once, then close the warning.', 'Open Apple menu › System Settings › Privacy & Security. Under Security, click Open Anyway next to Tor Connect Setup.', 'Confirm, then open Tor Connect Setup again.'],
+    deniedTitle: 'macOS says “Permission denied”',
+    deniedText: 'First verify that the Tor bundle came from the official Tor Project. If it is verified, remove the quarantine flag from the installed copy in Terminal:',
+    deniedCmd: 'xattr -dr com.apple.quarantine "$HOME/Library/Application Support/TorChrome/runtime/bundle"'
+  },
+  win: {
+    name: 'Windows', app: 'Windows setup app', term: 'PowerShell', prompt: 'PS>', file: 'Tor Connect Setup',
+    cmd: 'irm https://torconnect.example/setup.ps1 | iex',
+    note: 'The script installs the local Tor files for your user account only. It does not need administrator rights. Restart your browser after setup.',
+    blockedTitle: 'Windows blocked the setup app',
+    blockedIntro: 'Tor Connect Setup is not widely downloaded yet, so SmartScreen may warn you.',
+    blocked: ['In the blue warning, click More info.', 'Click Run anyway.', 'Confirm the prompt, then wait for the setup window.'],
+    deniedTitle: 'PowerShell says scripts are disabled',
+    deniedText: 'Allow scripts for this PowerShell window only, then paste the setup command again:',
+    deniedCmd: 'Set-ExecutionPolicy -Scope Process -ExecutionPolicy RemoteSigned'
+  },
+  linux: {
+    name: 'Linux', app: 'Linux AppImage', term: 'Terminal', prompt: '$', file: 'TorConnectSetup.AppImage',
+    cmd: 'curl -fsSL https://torconnect.example/setup.sh | bash',
+    note: 'The script installs the local Tor files in your home folder. It does not need root. Restart your browser after setup.',
+    blockedTitle: 'The AppImage won’t open',
+    blockedIntro: 'Downloaded files are not executable until you allow it.',
+    blocked: ['Right-click the file and open Properties.', 'Turn on “Allow executing file as program”.', 'Open it again.'],
+    deniedTitle: 'You see “Permission denied”',
+    deniedText: 'Make the downloaded file executable, then run it again:',
+    deniedCmd: 'chmod +x ~/Downloads/TorConnectSetup.AppImage'
+  }
+};
+const WHY = { title: 'Why a separate setup app?', text: 'Browser extensions cannot install or start Tor on their own. The setup app installs Tor on this computer and connects it to the extension.' };
+
+class Component extends DCLogic {
+  getS() {
+    const st = this.state || {};
+    return { os: st.os || 'mac', path: st.path === undefined ? DEFAULT_PATH : st.path, step: st.step || 0, phase: st.phase || 'idle', copied: !!st.copied, help: st.help || null };
+  }
+
+  componentDidMount() {
+    this._t = [];
+  }
+
+  componentWillUnmount() {
+    this.clear();
+  }
+
+  clear() {
+    (this._t || []).forEach((t) => clearTimeout(t));
+    this._t = [];
+  }
+
+  at(ms, fn) {
+    this._t.push(setTimeout(fn, ms));
+  }
+
+  setOs(k) {
+    this.setState({ os: k, copied: false, help: null });
+  }
+
+  toggleHelp(id) {
+    this.setState({ help: this.getS().help === id ? null : id });
+  }
+
+  // Prototype: stands in for the page noticing that the helper answered.
+  detect() {
+    this.clear();
+    this.setState({ phase: 'detecting', step: 2 });
+    this.at(3200, () => {
+      this.setState({ phase: 'done' });
+      this.at(7000, () => this.reset());
+    });
+  }
+
+  reset() {
+    this.clear();
+    this.setState({ phase: 'idle', step: 0, copied: false, help: null, path: DEFAULT_PATH });
+  }
+
+  copyCmd() {
+    this.setState({ copied: true });
+    this.at(1400, () => this.setState({ copied: false }));
+    if (this.getS().phase === 'idle') this.detect();
+  }
+
+  setPath(p) {
+    this.clear();
+    this.setState({ path: p, step: 0, phase: 'idle', copied: false, help: null });
+  }
+
+  advance() {
+    const st = this.getS();
+    if (st.step < 1) this.setState({ step: 1 });
+  }
+
+  // shared view data
+  commonVals(st) {
+    const o = OS[st.os];
+    const helpTitle = st.help === 'blocked' ? o.blockedTitle : (st.help === 'denied' ? o.deniedTitle : WHY.title);
+    return {
+      osName: o.name, appLabel: 'Download ' + o.app, termName: o.term, prompt: o.prompt, cmd: o.cmd, note: o.note, fileName: o.file,
+      osList: ['mac', 'win', 'linux'].map((k) => ({ label: OS[k].name, on: st.os === k, bg: st.os === k ? '#2A3230' : 'transparent', fg: st.os === k ? '#EAF1EE' : '#8A948F', go: () => this.setOs(k) })),
+      helpChips: [['blocked', 'macOS blocked the app'], ['denied', 'Permission denied'], ['why', 'Why a separate app?']].map((h) => ({
+        label: h[0] === 'blocked' ? o.blockedTitle : (h[0] === 'denied' ? o.deniedTitle : WHY.title),
+        on: st.help === h[0], bg: st.help === h[0] ? '#10291C' : '#121816', border: st.help === h[0] ? '#1C5B3B' : '#262D2B', fg: st.help === h[0] ? '#2BD576' : '#A9B3AE',
+        go: () => this.toggleHelp(h[0])
+      })),
+      showHelp: !!st.help,
+      helpTitle: helpTitle,
+      helpIsBlocked: st.help === 'blocked', helpIsDenied: st.help === 'denied', helpIsWhy: st.help === 'why',
+      blockedIntro: o.blockedIntro,
+      blockedSteps: o.blocked.map((t, i) => ({ n: String(i + 1), t: t })),
+      deniedText: o.deniedText, deniedCmd: o.deniedCmd, whyText: WHY.text,
+      copyLabel: st.copied ? 'Copied' : 'Copy command',
+      copyFg: st.copied ? '#06150D' : '#06150D',
+      detecting: st.phase === 'detecting', done: st.phase === 'done', idle: st.phase === 'idle',
+      copyCmd: () => this.copyCmd(), detect: () => this.detect(), advance: () => this.advance(), reset: () => this.reset(),
+      pathApp: () => this.setPath('app'), pathTerm: () => this.setPath('term')
+    };
+  }
+
+  openBlocked() {
+    this.setState({ help: 'blocked' });
+  }
+
+  renderVals() {
+    const st = this.getS();
+    const G = '#2BD576';
+    const c = this.commonVals(st);
+    const app = st.path === 'app';
+    const state = (i) => {
+      // i: 0..2 ; done / active / pending
+      if (st.phase === 'done') return 'done';
+      if (i < st.step) return 'done';
+      if (i === st.step || (i === 1 && st.step === 0 && false)) return 'act';
+      return 'pend';
+    };
+    const stepVals = (i, title, body) => {
+      const s = state(i);
+      return {
+        title: title, body: body,
+        border: s === 'act' ? '#1C5B3B' : '#1D2421', op: s === 'pend' ? 0.5 : 1,
+        bb: s === 'done' ? G : (s === 'act' ? G : '#3A4642'), bg: s === 'done' ? '#10291C' : 'transparent', fg: s === 'done' ? G : (s === 'act' ? G : '#8A948F'),
+        badge: s === 'done' ? '✓' : String(i + 1)
+      };
+    };
+    const hs = st.phase === 'done' ? 'done' : ((st.step >= 2 || st.phase === 'detecting') ? 'act' : 'pend');
+    const nd = (name, left, kind, s, sub) => ({
+      name: name, left: left, lbl: left - 36, pl: left - 6,
+      isBrowser: kind === 'b', isHelper: kind === 'h', isTor: kind === 't',
+      bstyle: s === 'pend' ? 'dashed' : 'solid',
+      border: s === 'pend' ? '#2A3430' : G, bg: s === 'done' ? '#10291C' : '#0E1412', fg: s === 'pend' ? '#4A5753' : G,
+      shadow: s === 'done' ? '0 0 0 8px rgba(43, 213, 118, 0.1)' : 'none',
+      pulse: s === 'act', sub: sub, subColor: s === 'done' ? G : (s === 'act' ? '#EAF1EE' : '#6B7771')
+    });
+    const all = st.phase === 'done';
+    const nodes = [
+      nd('Your browser', 66, 'b', 'done', 'Extension found'),
+      nd('Setup helper', 276, 'h', hs, hs === 'done' ? 'Found' : (hs === 'act' ? 'Listening…' : 'Not installed yet')),
+      nd('Tor', 486, 't', all ? 'done' : 'pend', all ? 'Ready' : 'Not started')
+    ];
+    const l2 = hs === 'done' ? { c: G, d: 'none', a: 'none' } : (hs === 'act' ? { c: G, d: '6 8', a: 'flow 1s linear infinite' } : { c: '#2A3430', d: '3 9', a: 'none' });
+    let statusText = 'Waiting for you to install the helper';
+    if (st.phase === 'detecting' || st.step >= 2) statusText = 'Listening for the helper…';
+    if (all) statusText = 'Helper found. Tor is ready. You can close this tab.';
+    const t1 = app ? 'Download the setup app' : 'Get the Tor Expert Bundle';
+    const b1 = app ? 'It includes Tor and sets up the helper for your browser.' : 'Download it from the Tor Project. The command in step 2 asks you to pick it.';
+    const t2 = app ? 'Open it' : 'Paste one command';
+    const b2 = app ? 'Open ' + c.fileName + ' and follow the prompt. You only do this once.' : 'Open ' + c.termName + ', paste the command and press Return.';
+    const pillState = all ? { text: 'Helper found', bg: '#10291C', border: '#1C5B3B', fg: G } : (st.phase === 'detecting' || st.step >= 2 ? { text: 'Listening…', bg: '#0E1412', border: '#262D2B', fg: '#EAF1EE' } : { text: 'Not detected yet', bg: '#0E1412', border: '#262D2B', fg: '#8A948F' });
+    return Object.assign({}, c, {
+      isApp: app, isTerm: !app,
+      thumbLeft: app ? 3 : 165, appFg: app ? G : '#8A948F', termFg: app ? '#8A948F' : G,
+      nodes: nodes, l2: l2, statusText: statusText, statusColor: all ? G : '#A9B3AE',
+      s1: stepVals(0, t1, b1), s2: stepVals(1, t2, b2), s3: stepVals(2, 'Come back here', 'This page notices the helper by itself. Nothing to click.'),
+      pill: pillState,
+      copyShort: st.copied ? 'Copied' : 'Copy',
+      blockedTitle: OS[st.os].blockedTitle,
+      openBlocked: () => this.openBlocked()
+    });
+  }
+}
+</script>
+</body>
+</html>

@@ -1029,7 +1029,7 @@ function renderRoute(result = {}) {
   snowflakeInfoNode.hidden = preferences.mode !== "snowflake" || result.state === "connected";
   if (preferences.mode === "snowflake") {
     const nextSnowflakeText = result.state === "failed"
-      ? t("Couldn't connect. Check the error details or try again.")
+      ? t("Couldn’t connect. Check the error details or try again.")
       : result.state === "starting"
       ? t("Asking volunteer proxies to relay your traffic.")
       : result.state === "connected" && result.bridgeActivity === "trying"

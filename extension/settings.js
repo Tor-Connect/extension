@@ -243,7 +243,7 @@ async function loadDonationAddresses() {
             copyButton.setAttribute("aria-label", t("Copy {coin} donation address", { coin }));
           }, 1500);
         } catch {
-          donationStatusNode.textContent = t("Could not copy the {coin} address. Check Chrome's clipboard permission and try again.", { coin });
+          donationStatusNode.textContent = t("Could not copy the {coin} address. Check Chrome’s clipboard permission and try again.", { coin });
         } finally {
           copyButton.disabled = false;
         }
