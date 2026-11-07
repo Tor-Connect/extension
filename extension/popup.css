@@ -771,6 +771,8 @@ html[data-theme="light"] body.popup-page .popup-main[data-view="cold-start"] {
   --setup-accent: #18845b;
   --setup-accent-ink: #fff;
 }
+html[data-theme="light"] body.popup-page .popup-main[data-view="cold-start"] button.expand-button { color: #66716b; background: #e9efeb; }
+html[data-theme="light"] body.popup-page .popup-main[data-view="cold-start"] .expand-button:hover { background: #e1e9e4; }
 body.popup-page .popup-main[data-view="cold-start"] .heading { justify-content: space-between; }
 body.popup-page .popup-main[data-view="cold-start"] .app-icon,
 body.popup-page .popup-main[data-view="cold-start"] .app-icon svg { color: var(--setup-mark); }
