@@ -952,7 +952,7 @@ killSwitchToggle.addEventListener("click", () => {
   });
 });
 
-document.addEventListener("tor-language-changed", () => { renderBridgeList(); renderExitCountry(); });
+document.addEventListener("tor-language-changed", () => { renderBridgeList(); renderExitCountry(); renderKillSwitch(); });
 
 chrome.storage.onChanged.addListener((changes, areaName) => {
   if (areaName !== "local" || !changes.torConnectionPreferences || isDirty) return;
