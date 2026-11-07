@@ -651,6 +651,22 @@ body.popup-page button.add-bridges-button:hover { background: #42e58a; }
 body.popup-page button.add-bridges-button svg { width: 18px; height: 18px; flex: 0 0 auto; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
 html[data-theme="light"] body.popup-page .connection-method-switch { border-color: #d6dfda; background: #e9efeb; box-shadow: 0 0 0 5px #f3f6f4; }
 html[data-theme="light"] body.popup-page .connection-method-thumb { background: #e8f6ee; }
+html[data-theme="light"] body.popup-page .orbit-outer { stroke: #b9c7c0; }
+html[data-theme="light"] body.popup-page .orbit-inner { stroke: #e3ebe6; }
+html[data-theme="light"] body.popup-page .orbit-spoke { stroke: #e3ebe6; }
+html[data-theme="light"] body.popup-page .orbit-flow { stroke: #a4b3ab; }
+html[data-theme="light"] body.popup-page .orbit-card[data-state="connected"] .orbit-outer { stroke: #8fd2ac; }
+html[data-theme="light"] body.popup-page .orbit-card[data-state="connected"] .orbit-flow { stroke: #0f9b50; }
+html[data-theme="light"] body.popup-page .orbit-card[data-state="starting"] .orbit-flow { stroke: #0f9b50; }
+html[data-theme="light"] body.popup-page .orbit-card[data-state="connected"][data-activity="trying"] .orbit-outer { stroke: #d99a28; }
+html[data-theme="light"] body.popup-page .orbit-card[data-state="connected"][data-activity="trying"] .orbit-flow { stroke: #d99a28; }
+html[data-theme="light"] body.popup-page .orbit-card[data-state="connected"][data-activity="failed"] .orbit-outer,
+html[data-theme="light"] body.popup-page .orbit-card[data-state="connected"][data-activity="closed"] .orbit-outer { stroke: #cc5a55; }
+html[data-theme="light"] body.popup-page .orbit-card[data-state="connected"][data-activity="failed"] .orbit-flow,
+html[data-theme="light"] body.popup-page .orbit-card[data-state="connected"][data-activity="closed"] .orbit-flow { stroke: #cc5a55; }
+html[data-theme="light"] body.popup-page button.power-button { border-color: #c5d2cb; background: #ffffff; box-shadow: 0 8px 24px rgba(15,45,28,.10); }
+html[data-theme="light"] body.popup-page button.power-button:hover { background: #f5f9f7; }
+html[data-theme="light"] body.popup-page button.power-button[data-state="connected"] { border-color: #0f9b50; color: #0f9b50; background: #e2f5ea; box-shadow: 0 0 0 8px rgba(15,155,80,.10), 0 0 40px rgba(15,155,80,.20); }
 html[data-theme="light"] body.popup-page .orbit-empty-node { border-color: #d6dfda; color: #8a948f; background: #edf2ef; }
 html[data-theme="light"] body.popup-page .orbit-card[data-initial-checking="true"] .orbit-outer { stroke: #cbd7d0; }
 html[data-theme="light"] body.popup-page .orbit-card[data-initial-checking="true"] .sonar-flash-ring { stroke: #16804a; }
