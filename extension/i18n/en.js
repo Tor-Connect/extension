@@ -17,6 +17,7 @@ module.exports = {
       "Memory in use": "",
       "Needs update": "",
       "Next bridge": "",
+      "New proxy": "",
       "Open": "",
       "Pick a bridge": "",
       "Retest": "",

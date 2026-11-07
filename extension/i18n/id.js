@@ -19,6 +19,7 @@ module.exports = {
       "Memory in use": "Memori terpakai",
       "Needs update": "Perlu pembaruan",
       "Next bridge": "Bridge berikutnya",
+      "New proxy": "Proksi baru",
       "Only continue if you downloaded it from the official Tor Connect release.": "Lanjutkan hanya jika Anda mengunduhnya dari <a href=\"https://github.com/Tor-Connect/extension/releases/latest\" target=\"_blank\" rel=\"noreferrer\">rilis resmi Tor Connect</a>.",
       "Open": "Buka",
       "Open it once, then go to Apple menu → System Settings → Privacy & Security. Under Security, choose Open Anyway next to Tor Connect Setup and open the app again.": "Buka sekali, lalu buka <strong>Menu Apple → Pengaturan Sistem → Privasi &amp; Keamanan</strong>. Di bawah <strong>Keamanan</strong>, pilih <strong>Buka Tetap</strong> di sebelah Tor Connect Setup dan buka ulang aplikasinya.",

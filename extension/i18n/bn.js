@@ -19,6 +19,7 @@ module.exports = {
       "Memory in use": "ব্যবহৃত মেমোরি",
       "Needs update": "আপডেট প্রয়োজন",
       "Next bridge": "পরবর্তী ব্রিজ",
+      "New proxy": "নতুন প্রক্সি",
       "Only continue if you downloaded it from the official Tor Connect release.": "শুধুমাত্র তখনই এগিয়ে যান যদি আপনি এটি <a href=\"https://github.com/Tor-Connect/extension/releases/latest\" target=\"_blank\" rel=\"noreferrer\">অফিসিয়াল Tor Connect রিলিজ</a> থেকে ডাউনলোড করে থাকেন।",
       "Open": "খুলুন",
       "Open it once, then go to Apple menu → System Settings → Privacy & Security. Under Security, choose Open Anyway next to Tor Connect Setup and open the app again.": "এটি একবার খুলুন, তারপর <strong>Apple menu → System Settings → Privacy &amp; Security</strong>-এ যান। <strong>Security</strong>-এর অধীনে, Tor Connect Setup-এর পাশে <strong>Open Anyway</strong> বেছে নিন এবং অ্যাপটি আবার খুলুন।",

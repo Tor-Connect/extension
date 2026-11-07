@@ -19,6 +19,7 @@ module.exports = {
       "Memory in use": "အသုံးပြုနေသောမှတ်ဉာဏ်",
       "Needs update": "အပ်ဒိတ်လိုအပ်သည်",
       "Next bridge": "နောက်တစ်ခု bridge",
+      "New proxy": "proxy အသစ်",
       "Only continue if you downloaded it from the official Tor Connect release.": "<a href=\"https://github.com/Tor-Connect/extension/releases/latest\" target=\"_blank\" rel=\"noreferrer\">တရားဝင် Tor Connect ထုတ်ဝေမှု</a>မှ ဒေါင်းလုဒ်လုပ်ထားမှသာ ဆက်လက်လုပ်ဆောင်ပါ။",
       "Open": "ဖွင့်ပါ",
       "Open it once, then go to Apple menu → System Settings → Privacy & Security. Under Security, choose Open Anyway next to Tor Connect Setup and open the app again.": "တစ်ကြိမ်ဖွင့်ပြီး <strong>Apple menu → System Settings → Privacy &amp; Security</strong> သို့သွားပါ။ <strong>Security</strong> အောက်တွင် Tor Connect Setup ဘေးရှိ <strong>Open Anyway</strong> ကိုရွေးချယ်ပြီး အက်ပ်ကို ထပ်မံဖွင့်ပါ။",
