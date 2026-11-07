@@ -393,7 +393,8 @@
       "Windows blocked the setup app": "",
       "You’re all set.": "",
       "Your browser": "",
-      "Your traffic is relayed through Snowflake proxies. The route may change.": ""
+      "Your traffic is relayed through Snowflake proxies. The route may change.": "",
+      "{n} circuits": ""
     },
     fa: {
       " and ": " و ",
@@ -789,7 +790,8 @@
       "Windows blocked the setup app": "ویندوز برنامه راه‌اندازی را مسدود کرد",
       "You’re all set.": "You’re all set.",
       "Your browser": "مرورگر شما",
-      "Your traffic is relayed through Snowflake proxies. The route may change.": "ترافیک شما از پراکسی‌های اسنو‌فلیک عبور می‌کند. مسیر ممکن است تغییر کند."
+      "Your traffic is relayed through Snowflake proxies. The route may change.": "ترافیک شما از پراکسی‌های اسنو‌فلیک عبور می‌کند. مسیر ممکن است تغییر کند.",
+      "{n} circuits": "{n} مدار"
     },
     de: {
       " and ": " und ",
@@ -1185,7 +1187,8 @@
       "Windows blocked the setup app": "Windows hat die Setup-App blockiert",
       "You’re all set.": "You’re all set.",
       "Your browser": "Dein Browser",
-      "Your traffic is relayed through Snowflake proxies. The route may change.": "Dein Datenverkehr wird über Snowflake-Proxys weitergeleitet. Die Route kann sich ändern."
+      "Your traffic is relayed through Snowflake proxies. The route may change.": "Dein Datenverkehr wird über Snowflake-Proxys weitergeleitet. Die Route kann sich ändern.",
+      "{n} circuits": "{n} Schaltkreise"
     },
     es: {
       " and ": " y ",
@@ -1581,7 +1584,8 @@
       "Windows blocked the setup app": "Windows bloqueó la aplicación de configuración",
       "You’re all set.": "You’re all set.",
       "Your browser": "Tu navegador",
-      "Your traffic is relayed through Snowflake proxies. The route may change.": "Tu tráfico se retransmite mediante proxies Snowflake. La ruta puede cambiar."
+      "Your traffic is relayed through Snowflake proxies. The route may change.": "Tu tráfico se retransmite mediante proxies Snowflake. La ruta puede cambiar.",
+      "{n} circuits": "{n} circuitos"
     },
     ar: {
       " and ": " و ",
@@ -1977,7 +1981,8 @@
       "Windows blocked the setup app": "حظر Windows تطبيق الإعداد",
       "You’re all set.": "You’re all set.",
       "Your browser": "متصفحك",
-      "Your traffic is relayed through Snowflake proxies. The route may change.": "يتم تمرير حركة مرورك عبر وكلاء Snowflake. قد يتغير المسار."
+      "Your traffic is relayed through Snowflake proxies. The route may change.": "يتم تمرير حركة مرورك عبر وكلاء Snowflake. قد يتغير المسار.",
+      "{n} circuits": "{n} دوائر"
     },
     zh: {
       " and ": " 和 ",
@@ -2373,7 +2378,8 @@
       "Windows blocked the setup app": "Windows 已阻止安装程序",
       "You’re all set.": "You’re all set.",
       "Your browser": "你的浏览器",
-      "Your traffic is relayed through Snowflake proxies. The route may change.": "你的流量通过 Snowflake 代理转发，连接路线可能会变化。"
+      "Your traffic is relayed through Snowflake proxies. The route may change.": "你的流量通过 Snowflake 代理转发，连接路线可能会变化。",
+      "{n} circuits": "{n} 条回路"
     },
     hi: {
       " and ": " और ",
@@ -2769,7 +2775,8 @@
       "Windows blocked the setup app": "Windows ने सेटअप ऐप को ब्लॉक किया",
       "You’re all set.": "You’re all set.",
       "Your browser": "आपका ब्राउज़र",
-      "Your traffic is relayed through Snowflake proxies. The route may change.": "आपका ट्रैफ़िक Snowflake प्रॉक्सी से जाता है। रूट बदल सकता है।"
+      "Your traffic is relayed through Snowflake proxies. The route may change.": "आपका ट्रैफ़िक Snowflake प्रॉक्सी से जाता है। रूट बदल सकता है।",
+      "{n} circuits": "{n} सर्किट"
     },
     fr: {
       " and ": " et ",
@@ -3165,7 +3172,8 @@
       "Windows blocked the setup app": "Windows a bloqué l'application de configuration",
       "You’re all set.": "You’re all set.",
       "Your browser": "Votre navigateur",
-      "Your traffic is relayed through Snowflake proxies. The route may change.": "Votre trafic passe par des proxys Snowflake. La route peut changer."
+      "Your traffic is relayed through Snowflake proxies. The route may change.": "Votre trafic passe par des proxys Snowflake. La route peut changer.",
+      "{n} circuits": "{n} circuits"
     },
     ru: {
       " and ": " и ",
@@ -3561,7 +3569,8 @@
       "Windows blocked the setup app": "Windows заблокировал приложение установки",
       "You’re all set.": "You’re all set.",
       "Your browser": "Ваш браузер",
-      "Your traffic is relayed through Snowflake proxies. The route may change.": "Ваш трафик передаётся через прокси Snowflake. Маршрут может измениться."
+      "Your traffic is relayed through Snowflake proxies. The route may change.": "Ваш трафик передаётся через прокси Snowflake. Маршрут может измениться.",
+      "{n} circuits": "{n} цепочки"
     },
     pt: {
       " and ": " e ",
@@ -3957,7 +3966,8 @@
       "Windows blocked the setup app": "O Windows bloqueou o app de configuração",
       "You’re all set.": "You’re all set.",
       "Your browser": "Seu navegador",
-      "Your traffic is relayed through Snowflake proxies. The route may change.": "Seu tráfego é retransmitido por proxies Snowflake. A rota pode mudar."
+      "Your traffic is relayed through Snowflake proxies. The route may change.": "Seu tráfego é retransmitido por proxies Snowflake. A rota pode mudar.",
+      "{n} circuits": "{n} circuitos"
     },
     tr: {
       " and ": " ve ",
@@ -4353,7 +4363,8 @@
       "Windows blocked the setup app": "Windows kurulum uygulamasını engelledi",
       "You’re all set.": "You’re all set.",
       "Your browser": "Tarayıcınız",
-      "Your traffic is relayed through Snowflake proxies. The route may change.": "Trafiğiniz Snowflake proxy'leri üzerinden iletiliyor. Rota değişebilir."
+      "Your traffic is relayed through Snowflake proxies. The route may change.": "Trafiğiniz Snowflake proxy'leri üzerinden iletiliyor. Rota değişebilir.",
+      "{n} circuits": "{n} devre"
     },
     ur: {
       " and ": " اور ",
@@ -4749,7 +4760,8 @@
       "Windows blocked the setup app": "Windows نے سیٹ اپ ایپ کو بلاک کر دیا",
       "You’re all set.": "You’re all set.",
       "Your browser": "آپ کا براؤزر",
-      "Your traffic is relayed through Snowflake proxies. The route may change.": "آپ کی ٹریفک Snowflake پراکسیز کے ذریعے ریلے ہو رہی ہے۔ راستہ بدل سکتا ہے۔"
+      "Your traffic is relayed through Snowflake proxies. The route may change.": "آپ کی ٹریفک Snowflake پراکسیز کے ذریعے ریلے ہو رہی ہے۔ راستہ بدل سکتا ہے۔",
+      "{n} circuits": "{n} سرکٹ"
     },
     bn: {
       " and ": " এবং ",
@@ -5145,7 +5157,8 @@
       "Windows blocked the setup app": "Windows সেটআপ অ্যাপটি ব্লক করেছে",
       "You’re all set.": "You’re all set.",
       "Your browser": "আপনার ব্রাউজার",
-      "Your traffic is relayed through Snowflake proxies. The route may change.": "আপনার ট্রাফিক Snowflake প্রক্সির মাধ্যমে রিলে হচ্ছে। রুট পরিবর্তন হতে পারে।"
+      "Your traffic is relayed through Snowflake proxies. The route may change.": "আপনার ট্রাফিক Snowflake প্রক্সির মাধ্যমে রিলে হচ্ছে। রুট পরিবর্তন হতে পারে।",
+      "{n} circuits": "{n} সার্কিট"
     },
     id: {
       " and ": " dan ",
@@ -5541,7 +5554,8 @@
       "Windows blocked the setup app": "Windows memblokir aplikasi pengaturan",
       "You’re all set.": "You’re all set.",
       "Your browser": "Browser Anda",
-      "Your traffic is relayed through Snowflake proxies. The route may change.": "Traffic Anda diteruskan melalui proksi Snowflake. Rute mungkin berubah."
+      "Your traffic is relayed through Snowflake proxies. The route may change.": "Traffic Anda diteruskan melalui proksi Snowflake. Rute mungkin berubah.",
+      "{n} circuits": "{n} sirkuit"
     },
     my: {
       " and ": " နှင့် ",
@@ -5937,7 +5951,8 @@
       "Windows blocked the setup app": "Windows က တပ်ဆင်ရေး app ကို ပိတ်ဆို့လိုက်သည်",
       "You’re all set.": "You’re all set.",
       "Your browser": "သင်၏ ဘရောက်ဇာ",
-      "Your traffic is relayed through Snowflake proxies. The route may change.": "သင်၏ traffic ကို Snowflake proxy များမှတစ်ဆင့် ဆက်ဆံပေးနေသည်။ လမ်းကြောင်း ပြောင်းလဲနိုင်သည်။"
+      "Your traffic is relayed through Snowflake proxies. The route may change.": "သင်၏ traffic ကို Snowflake proxy များမှတစ်ဆင့် ဆက်ဆံပေးနေသည်။ လမ်းကြောင်း ပြောင်းလဲနိုင်သည်။",
+      "{n} circuits": "လမ်းကြောင်း {n} ခု"
     },
     ro: {
       " and ": " și ",
@@ -6333,6 +6348,7 @@
       "Windows blocked the setup app": "Windows a blocat aplicația de configurare",
       "You’re all set.": "You’re all set.",
       "Your browser": "Browserul tău",
-      "Your traffic is relayed through Snowflake proxies. The route may change.": "Traficul tău este transmis prin proxy-uri Snowflake. Ruta se poate schimba."
+      "Your traffic is relayed through Snowflake proxies. The route may change.": "Traficul tău este transmis prin proxy-uri Snowflake. Ruta se poate schimba.",
+      "{n} circuits": "{n} circuite"
     }
   };

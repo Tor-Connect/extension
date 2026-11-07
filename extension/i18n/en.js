@@ -395,6 +395,7 @@ module.exports = {
       "Windows blocked the setup app": "",
       "You’re all set.": "",
       "Your browser": "",
-      "Your traffic is relayed through Snowflake proxies. The route may change.": ""
+      "Your traffic is relayed through Snowflake proxies. The route may change.": "",
+      "{n} circuits": ""
   },
 };

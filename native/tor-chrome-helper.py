@@ -552,8 +552,8 @@ class Helper:
                     # attaches, so seed our active bridge from Tor's current OR conns.
                     conn.sendall(b"GETINFO orconn-status\r\n")
                     self.process_orconn_snapshot(self.read_control_reply(conn), targets)
-                    conn.sendall(b"GETINFO circuit-status\r\n")
-                    self.process_circuit_snapshot(self.read_control_reply(conn), targets)
+                conn.sendall(b"GETINFO circuit-status\r\n")
+                self.process_circuit_snapshot(self.read_control_reply(conn), targets)
                 buffer = b""
                 exit_nodes_applied = False
                 while True:
@@ -578,8 +578,13 @@ class Helper:
                     buffer += data
                     while b"\r\n" in buffer:
                         raw, buffer = buffer.split(b"\r\n", 1)
+                        event = raw.decode("utf-8", "replace")
                         if targets:
-                            self.update_bridge_activity(raw.decode("utf-8", "replace"), targets)
+                            self.update_bridge_activity(event, targets)
+                        elif " CIRC " in event:
+                            fields = event.split()
+                            if len(fields) >= 5:
+                                self.update_circuit_activity(fields[2], fields[3], fields[4], [])
                         if self.maybe_auto_recover(): return
                     if len(buffer) > 65536: buffer = b""
         except OSError: return
