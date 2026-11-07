@@ -377,7 +377,7 @@ async function refreshLiveStats() {
   updateLiveStats(result || {});
 }
 
-// Gas-station digit roll: only the characters that changed slide in from below.
+// Gas-station digit roll: only the characters that changed slide in from above.
 // Unchanged characters stay perfectly still. No outgoing animation needed —
 // the container's overflow:hidden clips cleanly as the new char arrives.
 function rollText(node, newText) {
