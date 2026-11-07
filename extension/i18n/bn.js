@@ -376,6 +376,7 @@ module.exports = {
       "Trying another bridge": "অন্য একটি ব্রিজ চেষ্টা করা হচ্ছে",
       "Trying another volunteer proxy": "অন্য একটি স্বেচ্ছাসেবী প্রক্সি চেষ্টা করা হচ্ছে",
       "Trying another volunteer proxy.": "অন্য একটি স্বেচ্ছাসেবী প্রক্সি চেষ্টা করা হচ্ছে।",
+      "Volunteer proxy": "স্বেচ্ছাসেবী প্রক্সি",
       "TRYING BRIDGE": "ব্রিজ চেষ্টা করা হচ্ছে",
       "Trying saved bridges": "সংরক্ষিত ব্রিজ চেষ্টা করা হচ্ছে",
       "Ukraine": "ইউক্রেন",

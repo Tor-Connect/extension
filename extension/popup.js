@@ -418,15 +418,19 @@ function updateLiveStats(result = {}) {
     ? '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v18M4.2 7.5l15.6 9M4.2 16.5l15.6-9M9.5 4.8 12 7l2.5-2.2M9.5 19.2 12 17l2.5 2.2"/></svg>'
     : (result.bridgeCountryCode || "—");
   document.querySelector("#statsRouteName").textContent = snowflake ? t("Snowflake") : (result.bridgeTransport || t("Bridge"));
-  document.querySelector("#statsRouteAddress").textContent = snowflake
+  const statsAddr = document.querySelector("#statsRouteAddress");
+  statsAddr.textContent = snowflake
     ? (result.builtCircuitCount > 0 ? t("{n} circuits", { n: result.builtCircuitCount }) : "—")
     : (result.bridgeAddress || "—");
+  statsAddr.classList.toggle("is-label", snowflake);
   const summary = document.querySelector("#connectedStatsSummary");
   summary.hidden = result.state !== "connected";
   statsToggleNode.hidden = result.state !== "connected";
   if (result.state !== "connected" && !liveStatsNode.hidden) closeLiveStats();
   document.querySelector("#summaryRouteName").textContent = snowflake ? t("Snowflake") : (result.currentBridgeIndex ? t("Bridge {n}", { n: result.currentBridgeIndex }) : t("Bridge"));
-  document.querySelector("#summaryRouteAddress").textContent = result.bridgeAddress || "";
+  const summaryAddr = document.querySelector("#summaryRouteAddress");
+  summaryAddr.textContent = snowflake ? t("Volunteer proxy") : (result.bridgeAddress || "");
+  summaryAddr.classList.toggle("is-label", snowflake);
   document.querySelector("#summaryDownloadRate").textContent = Number.isFinite(down) ? downRate : "—";
   document.querySelector("#summaryUploadRate").textContent = Number.isFinite(up) ? upRate : "—";
   const summaryIcon = document.querySelector("#summaryRouteIcon");

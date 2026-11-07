@@ -376,6 +376,7 @@ module.exports = {
       "Trying another bridge": "正在尝试另一个网桥",
       "Trying another volunteer proxy": "正在尝试另一个志愿者代理",
       "Trying another volunteer proxy.": "正在尝试另一个志愿者代理。",
+      "Volunteer proxy": "志愿者代理",
       "TRYING BRIDGE": "正在尝试网桥",
       "Trying saved bridges": "正在尝试已保存的网桥",
       "Ukraine": "乌克兰",
