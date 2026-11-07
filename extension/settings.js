@@ -537,7 +537,7 @@ function renderExitCountry() {
     exitCountryCurrentNode.textContent = t("Automatic");
     exitCountryCardNode.dataset.on = "false";
     exitCountryNoticeNode.hidden = true;
-    if (exitCountryNavBadge) exitCountryNavBadge.textContent = "Auto";
+    if (exitCountryNavBadge) exitCountryNavBadge.textContent = t("Auto");
   }
 }
 

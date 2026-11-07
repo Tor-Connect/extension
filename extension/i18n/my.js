@@ -89,6 +89,7 @@ module.exports = {
       "Austria": "ဩစတြီးယား",
       "Auto-select bridge": "တံတား အလိုအလျောက် ရွေးချယ်ရန်",
       "Automatic": "အလိုအလျောက်",
+      "Auto": "အလိုအလျောက်",
       "Back to Tor Connect": "Tor Connect သို့ ပြန်သွားရန်",
       "Block traffic if Tor disconnects": "Tor ချိတ်ဆက်မှု ဖြတ်တောက်လျှင် traffic ကို ပိတ်ဆို့ရန်",
       "Blocked": "ပိတ်ဆို့ထားသည်",

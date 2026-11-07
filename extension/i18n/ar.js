@@ -89,6 +89,7 @@ module.exports = {
       "Austria": "النمسا",
       "Auto-select bridge": "اختيار الجسر تلقائياً",
       "Automatic": "تلقائي",
+      "Auto": "تلقائي",
       "Back to Tor Connect": "العودة إلى Tor Connect",
       "Block traffic if Tor disconnects": "حظر حركة المرور إذا انقطع Tor",
       "Blocked": "محجوب",

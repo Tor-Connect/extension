@@ -89,6 +89,7 @@ module.exports = {
       "Austria": "Áustria",
       "Auto-select bridge": "Selecionar bridge automaticamente",
       "Automatic": "Automático",
+      "Auto": "Auto",
       "Back to Tor Connect": "Voltar ao Tor Connect",
       "Block traffic if Tor disconnects": "Bloquear tráfego se o Tor desconectar",
       "Blocked": "Bloqueado",
