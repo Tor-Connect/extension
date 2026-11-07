@@ -1,3 +1,24 @@
+@font-face {
+  font-family: "Space Grotesk";
+  src: url("fonts/space-grotesk/SpaceGrotesk-latin.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 500 600;
+  font-display: swap;
+}
+@font-face {
+  font-family: "IBM Plex Mono";
+  src: url("fonts/ibm-plex-mono/IBMPlexMono-Regular-latin.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: "IBM Plex Mono";
+  src: url("fonts/ibm-plex-mono/IBMPlexMono-Medium-latin.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+}
 :root { color-scheme: light dark; font: 14px/1.45 "Space Grotesk", Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
 * { box-sizing: border-box; }
 body { width: 360px; height: 600px; margin: 0; overflow: auto; color: #252d29; background: #f3f6f4; }
@@ -279,6 +300,7 @@ body.popup-page .stats-route > span:first-child svg { width: 18px; height: 18px;
 body.popup-page .stats-route > span:nth-child(2) { display: flex; min-width: 0; flex: 1; flex-direction: column; gap: 2px; }
 body.popup-page .stats-route strong { font-size: 15px; }
 body.popup-page .stats-route small { overflow: hidden; color: #a9b3ae; font: 12px "IBM Plex Mono", monospace; text-overflow: ellipsis; white-space: nowrap; }
+body.popup-page .stats-route small.is-label { font-family: inherit; }
 body.popup-page .stats-route button { width: 44px; height: 44px; border: 0; border-radius: 12px; color: #a9b3ae; background: transparent; transition: color .15s ease, background .15s ease; }
 body.popup-page .stats-route button:hover { color: #eaf1ee; background: #1a2622; }
 body.popup-page .stats-route button.is-copied { color: #2bd576; background: #10291c; }
@@ -409,6 +431,7 @@ body.popup-page .summary-route-icon.is-snowflake::before { content: "❄"; font:
 body.popup-page .summary-route { display: flex; min-width: 0; flex: 1; flex-direction: column; gap: 2px; }
 body.popup-page .summary-route strong { overflow: hidden; color: #eaf1ee; font-size: 15px; text-overflow: ellipsis; white-space: nowrap; }
 body.popup-page .summary-route small { overflow: hidden; color: #a9b3ae; font: 12px "IBM Plex Mono", monospace; text-overflow: ellipsis; white-space: nowrap; }
+body.popup-page .summary-route small.is-label { font-family: inherit; }
 body.popup-page button.summary-rates { display: flex; width: auto; min-width: 92px; height: 56px; flex: none; flex-direction: column; align-items: flex-start; justify-content: center; gap: 4px; margin: 0; padding: 0 12px; border: 0; border-radius: 12px; color: #2bd576; background: #10291c; font: 12px "IBM Plex Mono", monospace; cursor: pointer; }
 body.popup-page .summary-rates:hover { background: #143522; }
 body.popup-page .summary-rates:focus-visible { outline: 2px solid #2bd576; outline-offset: 2px; }
@@ -701,7 +724,7 @@ html[data-theme="light"] body.popup-page .stats-close span:first-child { backgro
 html[data-theme="light"] body.popup-page .stats-transfer > div { border-color: #dce4df; background: #f5f8f6; }
 html[data-theme="light"] body.popup-page .stats-label { color: #66716b; }
 html[data-theme="light"] body.popup-page .stats-transfer strong { color: #252d29; }
-html[data-theme="light"] body.popup-page .stats-transfer small { color: #14864c; }
+html[data-theme="light"] body.popup-page .stats-transfer small { color: #0f9b50; }
 html[data-theme="light"] body.popup-page .stats-row { border-color: #dce4df; color: #66716b; }
 html[data-theme="light"] body.popup-page .stats-row strong { color: #252d29; }
 html[data-theme="light"] body.popup-page .stats-route { border-color: #dce4df; }
