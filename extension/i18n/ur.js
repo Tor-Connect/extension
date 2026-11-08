@@ -162,6 +162,7 @@ module.exports = {
       "Checking…": "جانچا جا رہا ہے…",
       "Choose a .txt with bridge lines": "برج لائنوں والی .txt فائل منتخب کریں",
       "Choose how Tor connects. Your bridge lines stay in this browser profile.": "Tor کے کنکشن کا طریقہ منتخب کریں۔ آپ کی برج لائنیں اس براؤزر پروفائل میں محفوظ رہتی ہیں۔",
+      "Manage your Tor connection, bridges, and preferences.": "اپنا Tor کنکشن، برج اور ترجیحات منظم کریں۔",
       "Choose your device": "اپنا ڈیوائس منتخب کریں",
       "Choose your operating system": "اپنا آپریٹنگ سسٹم منتخب کریں",
       "Chrome remains Chrome": "Chrome بدستور Chrome رہتا ہے",

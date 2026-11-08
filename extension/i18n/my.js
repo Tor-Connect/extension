@@ -163,6 +163,7 @@ module.exports = {
       "Checking…": "စစ်ဆေးနေသည်…",
       "Choose a .txt with bridge lines": "တံတားလိုင်းများ ပါသော .txt ရွေးချယ်ပါ",
       "Choose how Tor connects. Your bridge lines stay in this browser profile.": "Tor ချိတ်ဆက်မည့် နည်းလမ်း ရွေးချယ်ပါ။ သင်၏ တံတားလိုင်းများ ဤ ဘရောက်ဇာ ပရိုဖိုင်တွင် သိမ်းဆည်းထားသည်။",
+      "Manage your Tor connection, bridges, and preferences.": "သင်၏ Tor ချိတ်ဆက်မှု၊ တံတားများနှင့် နှစ်သက်ရာများကို စီမံပါ။",
       "Choose your device": "သင်၏ ကိရိယာ ရွေးချယ်ပါ",
       "Choose your operating system": "သင်၏ လည်ပတ်မှု စနစ် ရွေးချယ်ပါ",
       "Chrome remains Chrome": "Chrome သည် Chrome ပင် ဖြစ်သည်",

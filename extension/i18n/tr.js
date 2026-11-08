@@ -162,6 +162,7 @@ module.exports = {
       "Checking…": "Kontrol ediliyor…",
       "Choose a .txt with bridge lines": "Köprü satırları içeren bir .txt seçin",
       "Choose how Tor connects. Your bridge lines stay in this browser profile.": "Tor'un nasıl bağlanacağını seçin. Köprü satırlarınız bu tarayıcı profilinde saklanır.",
+      "Manage your Tor connection, bridges, and preferences.": "Tor bağlantınızı, köprülerinizi ve tercihlerinizi yönetin.",
       "Choose your device": "Cihazınızı seçin",
       "Choose your operating system": "İşletim sisteminizi seçin",
       "Chrome remains Chrome": "Chrome, Chrome olmaya devam eder",

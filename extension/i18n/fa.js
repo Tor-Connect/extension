@@ -163,6 +163,7 @@ module.exports = {
       "Checking…": "در حال بررسی…",
       "Choose a .txt with bridge lines": "یک فایل متنی شامل خطوط پل انتخاب کنید",
       "Choose how Tor connects. Your bridge lines stay in this browser profile.": "روش اتصال Tor را انتخاب کنید. خطوط پل در همین نمایه مرورگر ذخیره می‌شوند.",
+      "Manage your Tor connection, bridges, and preferences.": "مدیریت اتصال Tor، پل‌ها و تنظیمات.",
       "Choose your device": "دستگاه خود را انتخاب کنید",
       "Choose your operating system": "سیستم‌عامل خود را انتخاب کنید",
       "Chrome remains Chrome": "Chrome همان Chrome می‌ماند",

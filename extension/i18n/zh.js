@@ -162,6 +162,7 @@ module.exports = {
       "Checking…": "正在检查…",
       "Choose a .txt with bridge lines": "选择包含网桥线路的 .txt 文件",
       "Choose how Tor connects. Your bridge lines stay in this browser profile.": "Choose how Tor connects. Your bridge lines stay in this browser profile.",
+      "Manage your Tor connection, bridges, and preferences.": "管理您的 Tor 连接、网桥和偏好设置。",
       "Choose your device": "选择你的设备",
       "Choose your operating system": "选择操作系统",
       "Chrome remains Chrome": "Chrome 仍是 Chrome",

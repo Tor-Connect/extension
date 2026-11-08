@@ -162,6 +162,7 @@ module.exports = {
       "Checking…": "Проверка…",
       "Choose a .txt with bridge lines": "Выберите .txt-файл со строками мостов",
       "Choose how Tor connects. Your bridge lines stay in this browser profile.": "Choose how Tor connects. Your bridge lines stay in this browser profile.",
+      "Manage your Tor connection, bridges, and preferences.": "Управляйте подключением Tor, мостами и настройками.",
       "Choose your device": "Выберите устройство",
       "Choose your operating system": "Выберите операционную систему",
       "Chrome remains Chrome": "Chrome остаётся Chrome",

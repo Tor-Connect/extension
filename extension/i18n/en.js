@@ -155,6 +155,7 @@ module.exports = {
       "Checking…": "",
       "Choose a .txt with bridge lines": "",
       "Choose how Tor connects. Your bridge lines stay in this browser profile.": "",
+      "Manage your Tor connection, bridges, and preferences.": "",
       "Choose your device": "",
       "Choose your operating system": "",
       "Chrome remains Chrome": "",
