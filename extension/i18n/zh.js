@@ -145,6 +145,7 @@ module.exports = {
       "Bridge lines changed. Reconnect now to apply them.": "网桥线路已更改。请立即重新连接以应用。",
       "Bridge removed and saved. Changes apply the next time you connect.": "网桥已移除并保存。更改将在下次连接时生效。",
       "Bridge selection": "网桥选择",
+      "Bridge, transport and diagnostic information.": "网桥、传输方式和诊断信息。",
       "Bridge, transport and uptime": "网桥、传输方式和运行时间",
       "bridges": "网桥",
       "Browser extensions cannot install or start Tor on their own. The setup app installs Tor on this computer and connects it to your browser.": "浏览器扩展程序无法自行安装或启动 Tor。安装程序会在此计算机上安装 Tor 并将其连接到你的浏览器。",

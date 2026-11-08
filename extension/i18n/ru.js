@@ -145,6 +145,7 @@ module.exports = {
       "Bridge lines changed. Reconnect now to apply them.": "Строки мостов изменены. Переподключитесь, чтобы применить изменения.",
       "Bridge removed and saved. Changes apply the next time you connect.": "Мост удалён и сохранён. Изменения вступят в силу при следующем подключении.",
       "Bridge selection": "Выбор моста",
+      "Bridge, transport and diagnostic information.": "Информация о мосте, транспорте и диагностике.",
       "Bridge, transport and uptime": "Мост, транспорт и время работы",
       "bridges": "bridges",
       "Browser extensions cannot install or start Tor on their own. The setup app installs Tor on this computer and connects it to your browser.": "Расширения браузера не могут самостоятельно установить или запустить Tor. Приложение настройки устанавливает Tor на этот компьютер и подключает его к вашему браузеру.",

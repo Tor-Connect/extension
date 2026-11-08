@@ -145,6 +145,7 @@ module.exports = {
       "Bridge lines changed. Reconnect now to apply them.": "Liniile de bridge s-au schimbat. Reconectează-te acum pentru a le aplica.",
       "Bridge removed and saved. Changes apply the next time you connect.": "Bridge eliminat și salvat. Modificările se aplică la următoarea conectare.",
       "Bridge selection": "Selectare bridge",
+      "Bridge, transport and diagnostic information.": "Informații despre bridge, transport și diagnostic.",
       "Bridge, transport and uptime": "Bridge, transport și timp de funcționare",
       "bridges": "bridges",
       "Browser extensions cannot install or start Tor on their own. The setup app installs Tor on this computer and connects it to your browser.": "Extensiile de browser nu pot instala sau porni Tor singure. Aplicația de configurare instalează Tor pe acest computer și îl conectează la browserul tău.",

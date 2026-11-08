@@ -145,6 +145,7 @@ module.exports = {
       "Bridge lines changed. Reconnect now to apply them.": "برج لائنیں بدل گئیں۔ لاگو کرنے کے لیے ابھی دوبارہ منسلک ہوں۔",
       "Bridge removed and saved. Changes apply the next time you connect.": "برج ہٹا دیا گیا اور محفوظ ہو گیا۔ تبدیلیاں اگلی بار منسلک ہونے پر لاگو ہوں گی۔",
       "Bridge selection": "برج کا انتخاب",
+      "Bridge, transport and diagnostic information.": "برج، ٹرانسپورٹ اور تشخیصی معلومات۔",
       "Bridge, transport and uptime": "برج، ٹرانسپورٹ اور اپ ٹائم",
       "bridges": "برج",
       "Browser extensions cannot install or start Tor on their own. The setup app installs Tor on this computer and connects it to your browser.": "براؤزر ایکسٹینشنز خود سے Tor انسٹال یا شروع نہیں کر سکتیں۔ سیٹ اپ ایپ اس کمپیوٹر پر Tor انسٹال کرتی ہے اور اسے آپ کے براؤزر سے منسلک کرتی ہے۔",

@@ -145,6 +145,7 @@ module.exports = {
       "Bridge lines changed. Reconnect now to apply them.": "Köprü satırları değişti. Uygulamak için şimdi yeniden bağlanın.",
       "Bridge removed and saved. Changes apply the next time you connect.": "Köprü kaldırıldı ve kaydedildi. Değişiklikler bir sonraki bağlantıda uygulanır.",
       "Bridge selection": "Köprü seçimi",
+      "Bridge, transport and diagnostic information.": "Köprü, aktarım ve tanılama bilgileri.",
       "Bridge, transport and uptime": "Köprü, aktarım ve çalışma süresi",
       "bridges": "bridges",
       "Browser extensions cannot install or start Tor on their own. The setup app installs Tor on this computer and connects it to your browser.": "Tarayıcı uzantıları Tor'u kendi başlarına yükleyemez veya başlatamaz. Kurulum uygulaması bu bilgisayara Tor'u yükler ve tarayıcınıza bağlar.",
