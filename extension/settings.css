@@ -283,9 +283,9 @@ html[data-theme="light"] .picker-code-badge { background: #edf1ef; color: #14864
 .connection-details-body pre { max-height: 280px; overflow: auto; margin: 9px 0; padding: 12px; border-radius: 8px; color: #c3cdc8; background: #121816; font: 12px/1.5 "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace; overflow-wrap: anywhere; white-space: pre-wrap; }
 .connection-details-body code { font-family: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace; }
 .diagnostics-details { margin: 32px 0 0; }
-.diagnostics-summary { display: inline-flex; align-items: center; gap: 6px; list-style: none; cursor: pointer; font-size: 12px; font-weight: 500; letter-spacing: .04em; color: #3d4845; user-select: none; }
+.diagnostics-summary { display: inline-flex; align-items: center; gap: 6px; list-style: none; cursor: pointer; font-size: 12px; font-weight: 500; letter-spacing: .04em; color: #6b7771; user-select: none; }
 .diagnostics-summary::-webkit-details-marker { display: none; }
-.diagnostics-summary::before { content: ""; display: inline-block; width: 12px; height: 12px; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%233d4845' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 18l6-6-6-6'/%3E%3C/svg%3E") center/contain no-repeat; transition: transform .15s ease; }
+.diagnostics-summary::before { content: ""; display: inline-block; width: 12px; height: 12px; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236b7771' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 18l6-6-6-6'/%3E%3C/svg%3E") center/contain no-repeat; transition: transform .15s ease; }
 .diagnostics-details[open] .diagnostics-summary::before { transform: rotate(90deg); }
 .diagnostics-body { margin: 12px 0 0; padding: 16px; border: 1px solid #1d2421; border-radius: 12px; color: #6b7771; font-size: 13px; line-height: 1.6; }
 .diagnostics-body p { margin: 8px 0 0; }
