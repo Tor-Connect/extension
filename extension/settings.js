@@ -975,7 +975,7 @@ renderExitCountry();
 {
   let suppressUntil = 0;
   document.addEventListener("click", () => { suppressUntil = Date.now() + 400; }, { capture: true });
-  const sectionIds = ["method", "bridges", "exit-country", "protection", "appearance", "support"];
+  const sectionIds = ["method", "bridges", "exit-country", "protection", "appearance", "support", "community"];
   const THRESHOLD = 160; // px from top of viewport — just below the sticky header
   const updateActiveSection = () => {
     if (Date.now() < suppressUntil) return;
