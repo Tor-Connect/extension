@@ -16,6 +16,7 @@ const pingButtonLabel = pingButton.querySelector("span");
 const clearButton = document.querySelector("#clearBridges");
 const copyAllButton = document.querySelector("#copyAllBridges");
 const copyAllButtonLabel = copyAllButton.querySelector("span");
+const bridgeSectionHeadingNode = document.querySelector(".bridge-section-heading");
 const bridgeListNode = document.querySelector("#bridgeList");
 const bridgeCountNode = document.querySelector("#bridgeCount");
 const bridgeSummaryNode = document.querySelector("#bridgeSummary");
@@ -341,9 +342,10 @@ function renderBridgeList() {
   bridgeListNode.replaceChildren();
   bridgeCountNode.textContent = String(bridgeLines.length);
   bridgeSummaryCountNode.textContent = t("{n} saved", { n: bridgeLines.length });
-  pingButton.disabled = bridgeLines.length === 0 || isPingingBridges;
-  copyAllButton.disabled = bridgeLines.length === 0 || isCopyingAllBridges;
-  clearButton.disabled = bridgeLines.length === 0;
+  bridgeSectionHeadingNode.hidden = bridgeLines.length === 0;
+  pingButton.disabled = isPingingBridges;
+  copyAllButton.disabled = isCopyingAllBridges;
+  clearButton.disabled = false;
   if (!bridgeLines.length) {
     const empty = document.createElement("p");
     empty.className = "bridge-list-empty";
