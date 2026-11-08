@@ -484,6 +484,7 @@ html[dir="rtl"] .bridge-fingerprint { direction: rtl; text-align: right; unicode
 html[dir="rtl"] .connection-details pre,
 html[dir="rtl"] code { direction: ltr; text-align: left; unicode-bidi: plaintext; }
 html[dir="rtl"] .community-group-label { font-family: inherit; letter-spacing: 0; }
+html[dir="rtl"] .community-chip { font-family: inherit; }
 html[dir="rtl"] .nav-count { font-family: inherit; letter-spacing: 0; }
 @media (max-width: 760px) {
   html[dir="rtl"] .settings-layout { flex-direction: column; }
