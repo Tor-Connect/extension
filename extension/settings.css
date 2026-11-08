@@ -282,6 +282,16 @@ html[data-theme="light"] .picker-code-badge { background: #edf1ef; color: #14864
 .connection-details-body p { margin: 8px 0 0; }
 .connection-details-body pre { max-height: 280px; overflow: auto; margin: 9px 0; padding: 12px; border-radius: 8px; color: #c3cdc8; background: #121816; font: 12px/1.5 "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace; overflow-wrap: anywhere; white-space: pre-wrap; }
 .connection-details-body code { font-family: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace; }
+.diagnostics-details { margin: 32px 0 0; }
+.diagnostics-summary { display: inline-flex; align-items: center; gap: 6px; list-style: none; cursor: pointer; font-size: 12px; font-weight: 500; letter-spacing: .04em; color: #6b7771; user-select: none; }
+.diagnostics-summary::-webkit-details-marker { display: none; }
+.diagnostics-summary::before { content: ""; display: inline-block; width: 12px; height: 12px; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236b7771' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 18l6-6-6-6'/%3E%3C/svg%3E") center/contain no-repeat; transition: transform .15s ease; }
+.diagnostics-details[open] .diagnostics-summary::before { transform: rotate(90deg); }
+.diagnostics-body { margin: 12px 0 0; padding: 16px; border: 1px solid #1d2421; border-radius: 12px; color: #6b7771; font-size: 13px; line-height: 1.6; }
+.diagnostics-body p { margin: 8px 0 0; }
+.diagnostics-body p:first-child { margin: 0; }
+.diagnostics-body pre { max-height: 280px; overflow: auto; margin: 10px 0; padding: 12px; border-radius: 8px; color: #c3cdc8; background: #121816; font: 12px/1.5 "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace; overflow-wrap: anywhere; white-space: pre-wrap; }
+.diagnostics-body code { font-family: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace; }
 [hidden] { display: none !important; }
 
 html[data-theme="light"] { color-scheme: light; }
@@ -395,6 +405,10 @@ html[data-theme="light"] .connection-details { border-color: #dce4df; }
 html[data-theme="light"] .connection-details-toggle { color: #202b25; }
 html[data-theme="light"] .connection-details-toggle small, html[data-theme="light"] .connection-details-toggle svg { color: #66716b; stroke: #66716b; }
 html[data-theme="light"] .connection-details-body { color: #56645c; }
+html[data-theme="light"] .diagnostics-summary { color: #a0aba6; }
+html[data-theme="light"] .diagnostics-summary::before { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23a0aba6' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 18l6-6-6-6'/%3E%3C/svg%3E"); }
+html[data-theme="light"] .diagnostics-body { border-color: #dce4df; color: #8a9690; }
+html[data-theme="light"] .diagnostics-body pre { color: #344139; background: #edf1ef; }
 
 @media (prefers-reduced-motion: reduce) {
   #pingBridges[aria-busy="true"] .ping-loading-icon circle { animation: none; opacity: 1; transform: none; }
@@ -469,7 +483,54 @@ html[dir="rtl"] .bridge-transport { direction: ltr; text-align: left; unicode-bi
 html[dir="rtl"] .bridge-fingerprint { direction: rtl; text-align: right; unicode-bidi: embed; }
 html[dir="rtl"] .connection-details pre,
 html[dir="rtl"] code { direction: ltr; text-align: left; unicode-bidi: plaintext; }
+html[dir="rtl"] .community-group-label { font-family: inherit; letter-spacing: 0; }
+html[dir="rtl"] .community-chip { font-family: inherit; }
+html[dir="rtl"] .nav-count { font-family: inherit; letter-spacing: 0; }
 @media (max-width: 760px) {
   html[dir="rtl"] .settings-layout { flex-direction: column; }
   html[dir="rtl"] .settings-nav a.active { box-shadow: inset 0 -3px #2bd576; }
 }
+
+/* ── Community and support section ── */
+.community-group { display: flex; flex-direction: column; gap: 10px; }
+.community-group-header { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.community-group-label { margin: 0; font-family: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; font-weight: 500; letter-spacing: .14em; color: #6b7771; }
+.community-version { font-family: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; color: #6b7771; }
+.community-card { border: 1px solid #1d2421; border-radius: 16px; background: #0c1210; overflow: hidden; }
+.community-row { display: flex; align-items: center; gap: 14px; min-height: 68px; box-sizing: border-box; padding: 12px 18px; color: #eaf1ee; background: transparent; border-top: 1px solid #1d2421; text-decoration: none; outline: none; cursor: pointer; transition: background .15s ease; }
+.community-card > .community-row:first-child { border-top: 0; }
+.community-row:hover { background: #101714; }
+.community-row:active { background: #0b110f; }
+.community-row:focus-visible { background: #101714; box-shadow: inset 0 0 0 2px #2bd576; }
+.community-icon { flex: none; display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; box-sizing: border-box; border-radius: 12px; border: 1px solid #1d2421; background: #121816; color: #a9b3ae; transition: color .15s ease, border-color .15s ease; }
+.community-row:hover .community-icon, .community-row:focus-visible .community-icon { color: #2bd576; border-color: #1c5b3b; }
+.community-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.community-title { font-size: 15px; font-weight: 600; }
+.community-desc { font-size: 13px; line-height: 1.45; color: #8a948f; }
+.community-arrow { flex: none; color: #6b7771; transition: color .15s ease, transform .15s ease; }
+.community-row:hover .community-arrow, .community-row:focus-visible .community-arrow { color: #2bd576; transform: translate(1px, -1px); }
+.community-chip { flex: none; font-family: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; padding: 2px 8px; border-radius: 8px; border: 1px solid #2f3835; color: #a9b3ae; }
+.community-note { display: flex; gap: 10px; align-items: flex-start; margin: 0; padding: 12px 18px; border-top: 1px solid #1d2421; background: #0a100e; font-size: 13px; line-height: 1.5; color: #8a948f; }
+.community-note svg { flex: none; margin-top: 2px; }
+.community-disclaimer { display: flex; align-items: flex-start; gap: 8px; margin: 4px 0 0; font-size: 13px; line-height: 1.5; color: #6b7771; }
+.community-disclaimer svg { flex: none; margin-top: 2px; }
+/* light mode */
+html[data-theme="light"] .community-group-label { color: #8a948f; }
+html[data-theme="light"] .community-version { color: #8a948f; }
+html[data-theme="light"] .community-card { border-color: #dce4df; background: #f5f8f6; }
+html[data-theme="light"] .community-row { color: #252d29; border-top-color: #dce4df; }
+html[data-theme="light"] .community-row:hover { background: #edf2ef; }
+html[data-theme="light"] .community-row:active { background: #e5ecea; }
+html[data-theme="light"] .community-row:focus-visible { background: #edf2ef; box-shadow: inset 0 0 0 2px #0f9b50; }
+html[data-theme="light"] .community-icon { border-color: #dce4df; background: #edf2ef; color: #66716b; }
+html[data-theme="light"] .community-row:hover .community-icon, html[data-theme="light"] .community-row:focus-visible .community-icon { color: #0f9b50; border-color: #b3d9c0; }
+html[data-theme="light"] .community-desc { color: #66716b; }
+html[data-theme="light"] .community-arrow { color: #a9b3ae; }
+html[data-theme="light"] .community-row:hover .community-arrow, html[data-theme="light"] .community-row:focus-visible .community-arrow { color: #0f9b50; }
+html[data-theme="light"] .community-chip { border-color: #cbd8d1; color: #66716b; }
+html[data-theme="light"] .community-note { border-top-color: #dce4df; background: #edf2ef; color: #66716b; }
+html[data-theme="light"] .community-note svg { stroke: #0f9b50; }
+html[data-theme="light"] .community-disclaimer { color: #8a948f; }
+/* RTL */
+html[dir="rtl"] .community-arrow { transform: scaleX(-1); }
+html[dir="rtl"] .community-row:hover .community-arrow, html[dir="rtl"] .community-row:focus-visible .community-arrow { transform: scaleX(-1) translate(1px, -1px); }

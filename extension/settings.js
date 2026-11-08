@@ -30,10 +30,6 @@ const killSwitchToggle = document.querySelector("#killSwitchToggle");
 const killSwitchCard = document.querySelector("#killSwitchCard");
 const killSwitchActivePanel = document.querySelector("#killSwitchActivePanel");
 const protectionNavBadge = document.querySelector("#protectionNavBadge");
-const appVersionBadge = document.querySelector("#appVersionBadge");
-appVersionBadge.textContent = chrome.runtime.getManifest().version;
-const connectionDetailsToggle = document.querySelector("#connectionDetailsToggle");
-const connectionDetailsBody = document.querySelector("#connectionDetailsBody");
 const changeBanner = document.querySelector("#changeBanner");
 const changeBannerMessage = document.querySelector("#changeBannerMessage");
 const reconnectNowButton = document.querySelector("#reconnectNow");
@@ -149,17 +145,20 @@ function showClipboardStatus(message, kind = "") {
 const COIN_NAMES = { BTC: "Bitcoin", ETH: "Ethereum", ZEC: "Zcash", XMR: "Monero" };
 const COIN_SYMBOLS = { BTC: "₿", ETH: "Ξ", ZEC: "ⓩ", XMR: "ɱ" };
 
+let cachedDonationEntries = null;
 async function loadDonationAddresses() {
   try {
-    const response = await fetch(chrome.runtime.getURL("donation-addresses.txt"));
-    if (!response.ok) throw new Error("Donation address list is unavailable.");
-    const lines = (await response.text()).split(/\r?\n/);
-    const entries = lines.map((line) => line.trim()).filter((line) => line && !line.startsWith("#"))
-      .map((line) => line.split("|"))
-      .filter((parts) => parts.length === 3 && parts.every((part) => part.trim()))
-      .map(([coin, network, address]) => ({ coin: coin.trim().toUpperCase(), network: network.trim(), address: address.trim() }));
-
-    for (const { coin, network, address } of entries) {
+    if (!cachedDonationEntries) {
+      const response = await fetch(chrome.runtime.getURL("donation-addresses.txt"));
+      if (!response.ok) throw new Error("Donation address list is unavailable.");
+      const lines = (await response.text()).split(/\r?\n/);
+      cachedDonationEntries = lines.map((line) => line.trim()).filter((line) => line && !line.startsWith("#"))
+        .map((line) => line.split("|"))
+        .filter((parts) => parts.length === 3 && parts.every((part) => part.trim()))
+        .map(([coin, network, address]) => ({ coin: coin.trim().toUpperCase(), network: network.trim(), address: address.trim() }));
+    }
+    donationListNode.replaceChildren();
+    for (const { coin, network, address } of cachedDonationEntries) {
       const card = document.createElement("article");
       card.className = "donation-card";
 
@@ -934,12 +933,6 @@ sectionLinks.forEach((link) => {
   link.addEventListener("click", () => setActiveSection(link.dataset.sectionLink));
 });
 
-connectionDetailsToggle.addEventListener("click", () => {
-  const open = connectionDetailsBody.hidden;
-  connectionDetailsBody.hidden = !open;
-  connectionDetailsToggle.setAttribute("aria-expanded", String(open));
-});
-
 killSwitchToggle.addEventListener("click", () => {
   preferences.killSwitch = !preferences.killSwitch;
   renderKillSwitch();
@@ -954,7 +947,7 @@ killSwitchToggle.addEventListener("click", () => {
   });
 });
 
-document.addEventListener("tor-language-changed", () => { renderBridgeList(); renderExitCountry(); renderKillSwitch(); });
+document.addEventListener("tor-language-changed", () => { renderBridgeList(); renderExitCountry(); renderKillSwitch(); loadDonationAddresses(); });
 
 chrome.storage.onChanged.addListener((changes, areaName) => {
   if (areaName !== "local" || !changes.torConnectionPreferences || isDirty) return;
@@ -982,7 +975,7 @@ renderExitCountry();
 {
   let suppressUntil = 0;
   document.addEventListener("click", () => { suppressUntil = Date.now() + 400; }, { capture: true });
-  const sectionIds = ["method", "bridges", "exit-country", "protection", "appearance", "privacy", "support"];
+  const sectionIds = ["method", "bridges", "exit-country", "protection", "appearance", "support", "community"];
   const THRESHOLD = 160; // px from top of viewport — just below the sticky header
   const updateActiveSection = () => {
     if (Date.now() < suppressUntil) return;
@@ -1003,3 +996,25 @@ renderExitCountry();
 
 loadDonationAddresses();
 readPreferences().then(sendStatus);
+
+// Community and support section
+{
+  const isFirefox = typeof browser !== "undefined" && typeof browser.runtime?.getBrowserInfo === "function";
+  const rateLink = document.querySelector("#rateLink");
+  const storeNameChip = document.querySelector("#storeNameChip");
+  const communityVersion = document.querySelector("#communityVersion");
+  const storeUrl = isFirefox
+    ? "https://addons.mozilla.org/firefox/addon/tor-connect/"
+    : "https://chromewebstore.google.com/detail/bpakflmhpekikajckcncjgknbjebhkjm";
+  if (rateLink) rateLink.href = storeUrl;
+  if (communityVersion) communityVersion.textContent = "v" + chrome.runtime.getManifest().version;
+
+  function renderCommunitySection() {
+    if (!rateLink || !storeNameChip) return;
+    const storeName = isFirefox ? t("Firefox Add-ons") : t("Chrome Web Store");
+    rateLink.setAttribute("aria-label", t("Rate Tor Connect on {store}, opens in a new tab", { store: storeName }));
+    storeNameChip.textContent = storeName;
+  }
+  renderCommunitySection();
+  document.addEventListener("tor-language-changed", renderCommunitySection);
+}
