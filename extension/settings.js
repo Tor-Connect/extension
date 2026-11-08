@@ -998,21 +998,23 @@ loadDonationAddresses();
 readPreferences().then(sendStatus);
 
 // Community and support section
-(function () {
+{
   const isFirefox = typeof browser !== "undefined" && typeof browser.runtime?.getBrowserInfo === "function";
   const rateLink = document.querySelector("#rateLink");
   const storeNameChip = document.querySelector("#storeNameChip");
   const communityVersion = document.querySelector("#communityVersion");
-  if (rateLink && storeNameChip) {
+  const storeUrl = isFirefox
+    ? "https://addons.mozilla.org/firefox/addon/tor-connect/"
+    : "https://chromewebstore.google.com/detail/bpakflmhpekikajckcncjgknbjebhkjm";
+  if (rateLink) rateLink.href = storeUrl;
+  if (communityVersion) communityVersion.textContent = "v" + chrome.runtime.getManifest().version;
+
+  function renderCommunitySection() {
+    if (!rateLink || !storeNameChip) return;
     const storeName = isFirefox ? t("Firefox Add-ons") : t("Chrome Web Store");
-    const storeUrl = isFirefox
-      ? "https://addons.mozilla.org/firefox/addon/tor-connect/"
-      : "https://chromewebstore.google.com/detail/bpakflmhpekikajckcncjgknbjebhkjm";
-    rateLink.href = storeUrl;
     rateLink.setAttribute("aria-label", t("Rate Tor Connect on {store}, opens in a new tab", { store: storeName }));
     storeNameChip.textContent = storeName;
   }
-  if (communityVersion) {
-    communityVersion.textContent = "v" + chrome.runtime.getManifest().version;
-  }
-})();
+  renderCommunitySection();
+  document.addEventListener("tor-language-changed", renderCommunitySection);
+}
