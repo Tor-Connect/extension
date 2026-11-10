@@ -15,7 +15,6 @@ import sys
 import threading
 import tempfile
 import time
-import urllib.request
 from pathlib import Path
 
 HOST_NAME = "org.torconnect.torchrome"
@@ -470,6 +469,61 @@ class Helper:
             results.append(result)
         return {"ok": True, "results": results}
 
+    def check_via_socks5(self, host: str, port: int, timeout: float = 8.0) -> bool:
+        """Open a SOCKS5 TCP connection through the local Tor proxy to host:port.
+        Returns True if the SOCKS5 CONNECT succeeds, proving the site is reachable."""
+        try:
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.settimeout(timeout)
+            sock.connect(("127.0.0.1", PROXY_PORT))
+            # SOCKS5 handshake: client hello (no auth)
+            sock.sendall(bytes([0x05, 0x01, 0x00]))
+            reply = sock.recv(2)
+            if len(reply) < 2 or reply[0] != 0x05 or reply[1] != 0x00:
+                sock.close()
+                return False
+            # SOCKS5 CONNECT request with DOMAINNAME addressing
+            host_bytes = host.encode("utf-8")
+            if len(host_bytes) > 255:
+                sock.close()
+                return False
+            req = bytes([0x05, 0x01, 0x00, 0x03, len(host_bytes)]) + host_bytes
+            req += bytes([(port >> 8) & 0xff, port & 0xff])
+            sock.sendall(req)
+            # Read SOCKS5 CONNECT response (at least 10 bytes for IPv4 reply)
+            conn_reply = b""
+            while len(conn_reply) < 10:
+                chunk = sock.recv(10 - len(conn_reply))
+                if not chunk:
+                    break
+                conn_reply += chunk
+            if len(conn_reply) < 4 or conn_reply[0] != 0x05 or conn_reply[1] != 0x00:
+                sock.close()
+                return False
+            # Drain any extra address bytes (IPv6=22 bytes total, domain=variable)
+            atyp = conn_reply[3]
+            if atyp == 0x04:  # IPv6: need 22 bytes total, already read 10
+                extra = b""
+                while len(extra) < 12:
+                    chunk = sock.recv(12 - len(extra))
+                    if not chunk:
+                        break
+                    extra += chunk
+            elif atyp == 0x03:  # domain name: byte 4 is length, then domain + 2-byte port
+                dom_len = conn_reply[4] if len(conn_reply) > 4 else 0
+                remaining = dom_len + 2 - 5  # already consumed bytes 4..9 (5 bytes after atyp)
+                if remaining > 0:
+                    extra = b""
+                    while len(extra) < remaining:
+                        chunk = sock.recv(remaining - len(extra))
+                        if not chunk:
+                            break
+                        extra += chunk
+            sock.close()
+            return True
+        except Exception:
+            return False
+
     def check_sites(self, sites: list) -> dict:
         """Check reachability of sites through the Tor SOCKS5 proxy."""
         if not isinstance(sites, list):
@@ -480,24 +534,19 @@ class Helper:
             url = entry.get("url", "") if isinstance(entry, dict) else ""
             if not site or not url:
                 continue
-            started_at = time.monotonic()
-            state = "failed"
-            latency_ms = None
             try:
-                proxy_handler = urllib.request.ProxyHandler({
-                    "http": f"socks5h://127.0.0.1:{PROXY_PORT}",
-                    "https": f"socks5h://127.0.0.1:{PROXY_PORT}",
-                })
-                opener = urllib.request.build_opener(proxy_handler)
-                req = urllib.request.Request(url, method="GET", headers={"User-Agent": ""})
-                with opener.open(req, timeout=8) as resp:
-                    resp.read(1)
-                    if resp.status < 400:
-                        state = "passed"
-                        latency_ms = round((time.monotonic() - started_at) * 1000)
+                from urllib.parse import urlparse
+                parsed = urlparse(url)
+                host = parsed.hostname or ""
+                port = parsed.port or (443 if parsed.scheme == "https" else 80)
             except Exception:
-                pass
-            results.append({"site": site, "state": state, "latencyMs": latency_ms})
+                host, port = "", 80
+            if not host:
+                continue
+            started_at = time.monotonic()
+            reachable = self.check_via_socks5(host, port)
+            latency_ms = round((time.monotonic() - started_at) * 1000) if reachable else None
+            results.append({"site": site, "state": "passed" if reachable else "failed", "latencyMs": latency_ms})
         return {"ok": True, "results": results}
 
     def load_geo(self, version: int) -> list[tuple[int, int, str]]:
