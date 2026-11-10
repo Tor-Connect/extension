@@ -75,6 +75,8 @@ final class Helper {
             response = pingBridges(request["bridges"] as? String ?? "")
         case "countries":
             response = bridgeCountries(request["bridges"] as? String ?? "")
+        case "checkSites":
+            response = checkSites(request["sites"] as? [[String: String]] ?? [])
         case "start":
             response = start(
                 mode: request["mode"] as? String ?? "",
@@ -565,6 +567,86 @@ final class Helper {
         return ["ok": true, "results": results]
     }
 
+    // Checks reachability of sites by opening a SOCKS5 connection through the local
+    // Tor proxy. A successful SOCKS5 CONNECT is sufficient to prove reachability.
+    private func checkSites(_ sites: [[String: String]]) -> [String: Any] {
+        var results: [[String: Any]] = []
+        for entry in sites {
+            guard let site = entry["site"], let urlString = entry["url"],
+                  !site.isEmpty, !urlString.isEmpty,
+                  let url = URL(string: urlString),
+                  let host = url.host else { continue }
+            let port = url.port ?? (url.scheme == "https" ? 443 : 80)
+            let started = Date()
+            let reachable = checkViaSocks5(host: host, port: port, timeoutSeconds: 8)
+            let latencyMs = reachable ? Int(Date().timeIntervalSince(started) * 1000) : nil
+            var resultEntry: [String: Any] = ["site": site, "state": reachable ? "passed" : "failed"]
+            if let ms = latencyMs { resultEntry["latencyMs"] = ms } else { resultEntry["latencyMs"] = NSNull() }
+            results.append(resultEntry)
+        }
+        return ["ok": true, "results": results]
+    }
+
+    // Opens a SOCKS5 TCP connection through 127.0.0.1:proxyPort to host:port and
+    // returns true if SOCKS5 CONNECT succeeds. Fully synchronous, no runloop needed.
+    private func checkViaSocks5(host: String, port: Int, timeoutSeconds: Double) -> Bool {
+        let fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)
+        guard fd >= 0 else { return false }
+        defer { close(fd) }
+
+        var tv = timeval(tv_sec: Int(timeoutSeconds), tv_usec: 0)
+        setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, &tv, socklen_t(MemoryLayout<timeval>.size))
+        setsockopt(fd, SOL_SOCKET, SO_SNDTIMEO, &tv, socklen_t(MemoryLayout<timeval>.size))
+
+        // Connect to local SOCKS5 proxy
+        var addr = sockaddr_in()
+        addr.sin_family = sa_family_t(AF_INET)
+        addr.sin_port = in_port_t(9050).bigEndian
+        addr.sin_addr.s_addr = inet_addr("127.0.0.1")
+        let connectResult = withUnsafePointer(to: &addr) {
+            $0.withMemoryRebound(to: sockaddr.self, capacity: 1) {
+                Darwin.connect(fd, $0, socklen_t(MemoryLayout<sockaddr_in>.size))
+            }
+        }
+        guard connectResult == 0 else { return false }
+
+        // SOCKS5 handshake: client hello (no auth)
+        let hello: [UInt8] = [0x05, 0x01, 0x00]
+        guard send(fd, hello, hello.count, 0) == hello.count else { return false }
+        var reply = [UInt8](repeating: 0, count: 2)
+        guard recv(fd, &reply, 2, MSG_WAITALL) == 2, reply[0] == 0x05, reply[1] == 0x00 else { return false }
+
+        // SOCKS5 CONNECT request with DOMAINNAME addressing
+        let hostBytes = Array(host.utf8)
+        guard hostBytes.count <= 255 else { return false }
+        var req: [UInt8] = [0x05, 0x01, 0x00, 0x03, UInt8(hostBytes.count)]
+        req.append(contentsOf: hostBytes)
+        req.append(UInt8((port >> 8) & 0xff))
+        req.append(UInt8(port & 0xff))
+        guard send(fd, req, req.count, 0) == req.count else { return false }
+
+        // Read SOCKS5 CONNECT response (at least 10 bytes for IPv4)
+        var connReply = [UInt8](repeating: 0, count: 10)
+        guard recv(fd, &connReply, 10, MSG_WAITALL) >= 4,
+              connReply[0] == 0x05, connReply[1] == 0x00 else { return false }
+        // Drain any extra address bytes (IPv6 = 22 bytes total, domain = variable)
+        let atyp = connReply[3]
+        if atyp == 0x04 { // IPv6: need 12 more bytes (already read 10, need 22 total - 10 = 12)
+            var extra = [UInt8](repeating: 0, count: 12)
+            _ = recv(fd, &extra, 12, MSG_WAITALL)
+        } else if atyp == 0x03 { // domain name: byte 4 is length, then domain + 2-byte port
+            let domLen = Int(connReply[4])
+            let remaining = domLen + 2 - 5 // already read bytes 4..9 (5 bytes after atyp)
+            if remaining > 0 {
+                var extra = [UInt8](repeating: 0, count: remaining)
+                _ = recv(fd, &extra, remaining, MSG_WAITALL)
+            }
+        }
+
+        // SOCKS5 CONNECT succeeded — the site is reachable through Tor.
+        return true
+    }
+
     // Measures TCP connect time to the bridge endpoint. This is a reachability
     // estimate, not a Tor handshake or a guarantee that the bridge will work.
     private func tcpLatency(endpoint: String) -> Double? {
@@ -1048,11 +1130,14 @@ func readExact(_ count: Int) -> Data? {
     return data
 }
 
+let writeLock = NSLock()
 func writeMessage(_ object: [String: Any]) {
     guard let data = try? JSONSerialization.data(withJSONObject: object) else { return }
     var length = UInt32(data.count).littleEndian
     let prefix = Data(bytes: &length, count: 4)
+    writeLock.lock()
     FileHandle.standardOutput.write(prefix + data)
+    writeLock.unlock()
 }
 
 let firefoxAddonID = "{92FAAAD1-58C8-461B-8447-0A43AE6CF002}"
@@ -1072,6 +1157,15 @@ while let prefix = readExact(4) {
     let length = prefix.withUnsafeBytes { $0.load(as: UInt32.self).littleEndian }
     guard length > 0, length <= 1_048_576, let data = readExact(Int(length)),
           let request = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { break }
-    writeMessage(helper.handle(request))
+    // checkSites makes blocking network calls — run it off the main read loop so
+    // other commands (status heartbeats) are not blocked while it runs.
+    let command = request["command"] as? String
+    if command == "checkSites" {
+        DispatchQueue.global(qos: .utility).async {
+            writeMessage(helper.handle(request))
+        }
+    } else {
+        writeMessage(helper.handle(request))
+    }
 }
 _ = helper.handle(["id": 0, "command": "stop"])

@@ -15,6 +15,7 @@ import sys
 import threading
 import tempfile
 import time
+import urllib.request
 from pathlib import Path
 
 HOST_NAME = "org.torconnect.torchrome"
@@ -121,6 +122,7 @@ class Helper:
         if command == "status": result = self.status()
         elif command == "ping": result = self.ping(request.get("bridges", ""))
         elif command == "countries": result = self.countries(request.get("bridges", ""))
+        elif command == "checkSites": result = self.check_sites(request.get("sites", []))
         elif command == "start":
             result = self.start(request.get("mode", ""), request.get("bridges", ""), request.get("selectedBridgeIndex"), exit_country=request.get("exitCountry", ""))
         elif command == "stop": self.stop(); result = self.status()
@@ -466,6 +468,34 @@ class Helper:
             code = self.country_code(endpoint) if endpoint else None
             if code: result["countryCode"] = code
             results.append(result)
+        return {"ok": True, "results": results}
+
+    def check_sites(self, sites: list) -> dict:
+        """Check reachability of sites through the Tor SOCKS5 proxy."""
+        results = []
+        for entry in sites:
+            site = entry.get("site", "") if isinstance(entry, dict) else ""
+            url = entry.get("url", "") if isinstance(entry, dict) else ""
+            if not site or not url:
+                continue
+            started_at = time.monotonic()
+            state = "failed"
+            latency_ms = None
+            try:
+                proxy_handler = urllib.request.ProxyHandler({
+                    "http": f"socks5h://127.0.0.1:{PROXY_PORT}",
+                    "https": f"socks5h://127.0.0.1:{PROXY_PORT}",
+                })
+                opener = urllib.request.build_opener(proxy_handler)
+                req = urllib.request.Request(url, method="GET", headers={"User-Agent": ""})
+                with opener.open(req, timeout=8) as resp:
+                    resp.read(1)
+                    if resp.status < 400:
+                        state = "passed"
+                        latency_ms = round((time.monotonic() - started_at) * 1000)
+            except Exception:
+                pass
+            results.append({"site": site, "state": state, "latencyMs": latency_ms})
         return {"ok": True, "results": results}
 
     def load_geo(self, version: int) -> list[tuple[int, int, str]]:

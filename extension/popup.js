@@ -1125,7 +1125,7 @@ function renderResult(result) {
     return;
   }
   hideFirefoxPermission();
-  const helperNotInstalled = /native helper (?:unavailable|disconnected)|native messaging host not found|native host.*not registered|failed to start native messaging host|access to the specified native messaging host is forbidden/i.test(currentResult?.error || "");
+  const helperNotInstalled = /native messaging host not found|native host.*not registered|failed to start native messaging host|access to the specified native messaging host is forbidden/i.test(currentResult?.error || "");
   const transientStartupFailure = initialStatusPending && (!currentResult.ok || currentResult.state === "failed") && currentResult.state !== "missing_runtime" && !helperNotInstalled && initialStatusRetries < 6;
   if (transientStartupFailure) {
     initialStatusRetries++;
