@@ -473,54 +473,50 @@ class Helper:
         """Open a SOCKS5 TCP connection through the local Tor proxy to host:port.
         Returns True if the SOCKS5 CONNECT succeeds, proving the site is reachable."""
         try:
-            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            sock.settimeout(timeout)
-            sock.connect(("127.0.0.1", PROXY_PORT))
-            # SOCKS5 handshake: client hello (no auth)
-            sock.sendall(bytes([0x05, 0x01, 0x00]))
-            reply = sock.recv(2)
-            if len(reply) < 2 or reply[0] != 0x05 or reply[1] != 0x00:
-                sock.close()
-                return False
-            # SOCKS5 CONNECT request with DOMAINNAME addressing
-            host_bytes = host.encode("utf-8")
-            if len(host_bytes) > 255:
-                sock.close()
-                return False
-            req = bytes([0x05, 0x01, 0x00, 0x03, len(host_bytes)]) + host_bytes
-            req += bytes([(port >> 8) & 0xff, port & 0xff])
-            sock.sendall(req)
-            # Read SOCKS5 CONNECT response (at least 10 bytes for IPv4 reply)
-            conn_reply = b""
-            while len(conn_reply) < 10:
-                chunk = sock.recv(10 - len(conn_reply))
-                if not chunk:
-                    break
-                conn_reply += chunk
-            if len(conn_reply) < 4 or conn_reply[0] != 0x05 or conn_reply[1] != 0x00:
-                sock.close()
-                return False
-            # Drain any extra address bytes (IPv6=22 bytes total, domain=variable)
-            atyp = conn_reply[3]
-            if atyp == 0x04:  # IPv6: need 22 bytes total, already read 10
-                extra = b""
-                while len(extra) < 12:
-                    chunk = sock.recv(12 - len(extra))
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+                sock.settimeout(timeout)
+                sock.connect(("127.0.0.1", PROXY_PORT))
+                # SOCKS5 handshake: client hello (no auth)
+                sock.sendall(bytes([0x05, 0x01, 0x00]))
+                reply = sock.recv(2)
+                if len(reply) < 2 or reply[0] != 0x05 or reply[1] != 0x00:
+                    return False
+                # SOCKS5 CONNECT request with DOMAINNAME addressing
+                host_bytes = host.encode("utf-8")
+                if len(host_bytes) > 255:
+                    return False
+                req = bytes([0x05, 0x01, 0x00, 0x03, len(host_bytes)]) + host_bytes
+                req += bytes([(port >> 8) & 0xff, port & 0xff])
+                sock.sendall(req)
+                # Read SOCKS5 CONNECT response (at least 10 bytes for IPv4 reply)
+                conn_reply = b""
+                while len(conn_reply) < 10:
+                    chunk = sock.recv(10 - len(conn_reply))
                     if not chunk:
                         break
-                    extra += chunk
-            elif atyp == 0x03:  # domain name: byte 4 is length, then domain + 2-byte port
-                dom_len = conn_reply[4] if len(conn_reply) > 4 else 0
-                remaining = dom_len + 2 - 5  # already consumed bytes 4..9 (5 bytes after atyp)
-                if remaining > 0:
+                    conn_reply += chunk
+                if len(conn_reply) < 4 or conn_reply[0] != 0x05 or conn_reply[1] != 0x00:
+                    return False
+                # Drain any extra address bytes (IPv6=22 bytes total, domain=variable)
+                atyp = conn_reply[3]
+                if atyp == 0x04:  # IPv6: need 22 bytes total, already read 10
                     extra = b""
-                    while len(extra) < remaining:
-                        chunk = sock.recv(remaining - len(extra))
+                    while len(extra) < 12:
+                        chunk = sock.recv(12 - len(extra))
                         if not chunk:
                             break
                         extra += chunk
-            sock.close()
-            return True
+                elif atyp == 0x03:  # domain name: byte 4 is length, then domain + 2-byte port
+                    dom_len = conn_reply[4] if len(conn_reply) > 4 else 0
+                    remaining = dom_len + 2 - 5  # already consumed bytes 4..9 (5 bytes after atyp)
+                    if remaining > 0:
+                        extra = b""
+                        while len(extra) < remaining:
+                            chunk = sock.recv(remaining - len(extra))
+                            if not chunk:
+                                break
+                            extra += chunk
+                return True
         except Exception:
             return False
 
