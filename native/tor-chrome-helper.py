@@ -493,34 +493,37 @@ class Helper:
                 req = bytes([0x05, 0x01, 0x00, 0x03, len(host_bytes)]) + host_bytes
                 req += bytes([(port >> 8) & 0xff, port & 0xff])
                 sock.sendall(req)
-                # Read SOCKS5 CONNECT response (at least 10 bytes for IPv4 reply)
+                # Read the first 4 bytes of the SOCKS5 CONNECT response to get atyp.
                 conn_reply = b""
-                while len(conn_reply) < 10:
-                    chunk = sock.recv(10 - len(conn_reply))
+                while len(conn_reply) < 4:
+                    chunk = sock.recv(4 - len(conn_reply))
                     if not chunk:
-                        break
+                        return False
                     conn_reply += chunk
-                if len(conn_reply) < 4 or conn_reply[0] != 0x05 or conn_reply[1] != 0x00:
+                if conn_reply[0] != 0x05 or conn_reply[1] != 0x00:
                     return False
-                # Drain any extra address bytes (IPv6=22 bytes total, domain=variable)
+                # Determine total expected reply length from the address type.
                 atyp = conn_reply[3]
-                if atyp == 0x04:  # IPv6: need 22 bytes total, already read 10
-                    extra = b""
-                    while len(extra) < 12:
-                        chunk = sock.recv(12 - len(extra))
+                if atyp == 0x01:    # IPv4: 4 header + 4 addr + 2 port = 10
+                    expected = 10
+                elif atyp == 0x04:  # IPv6: 4 header + 16 addr + 2 port = 22
+                    expected = 22
+                elif atyp == 0x03:  # domain: 4 header + 1 len + domain + 2 port
+                    # need byte 4 (the length field) before we know expected
+                    while len(conn_reply) < 5:
+                        chunk = sock.recv(5 - len(conn_reply))
                         if not chunk:
-                            break
-                        extra += chunk
-                elif atyp == 0x03:  # domain name: byte 4 is length, then domain + 2-byte port
-                    dom_len = conn_reply[4] if len(conn_reply) > 4 else 0
-                    remaining = dom_len + 2 - 5  # already consumed bytes 4..9 (5 bytes after atyp)
-                    if remaining > 0:
-                        extra = b""
-                        while len(extra) < remaining:
-                            chunk = sock.recv(remaining - len(extra))
-                            if not chunk:
-                                break
-                            extra += chunk
+                            return False
+                        conn_reply += chunk
+                    expected = 7 + conn_reply[4]
+                else:
+                    return False
+                # Read remaining bytes to complete the full reply.
+                while len(conn_reply) < expected:
+                    chunk = sock.recv(expected - len(conn_reply))
+                    if not chunk:
+                        return False
+                    conn_reply += chunk
                 return True
         except Exception:
             return False
