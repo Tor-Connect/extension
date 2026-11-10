@@ -478,7 +478,12 @@ class Helper:
                 sock.connect(("127.0.0.1", PROXY_PORT))
                 # SOCKS5 handshake: client hello (no auth)
                 sock.sendall(bytes([0x05, 0x01, 0x00]))
-                reply = sock.recv(2)
+                reply = b""
+                while len(reply) < 2:
+                    chunk = sock.recv(2 - len(reply))
+                    if not chunk:
+                        break
+                    reply += chunk
                 if len(reply) < 2 or reply[0] != 0x05 or reply[1] != 0x00:
                     return False
                 # SOCKS5 CONNECT request with DOMAINNAME addressing
