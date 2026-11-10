@@ -819,10 +819,14 @@ def read_exact(stream, count: int) -> bytes | None:
     return bytes(chunks)
 
 
+_write_lock = threading.Lock()
+
+
 def write_message(obj: dict) -> None:
     encoded = json.dumps(obj, separators=(",", ":")).encode("utf-8")
-    sys.stdout.buffer.write(struct.pack("<I", len(encoded)) + encoded)
-    sys.stdout.buffer.flush()
+    with _write_lock:
+        sys.stdout.buffer.write(struct.pack("<I", len(encoded)) + encoded)
+        sys.stdout.buffer.flush()
 
 
 def main() -> int:
@@ -844,7 +848,16 @@ def main() -> int:
         try: request = json.loads(data.decode("utf-8"))
         except (UnicodeError, json.JSONDecodeError): break
         if not isinstance(request, dict): break
-        write_message(helper.handle(request))
+        # checkSites makes blocking network calls — dispatch off the read loop
+        # so status/stop requests are not blocked while site checks run.
+        if request.get("command") == "checkSites":
+            threading.Thread(
+                target=lambda r: write_message(helper.handle(r)),
+                args=(request,),
+                daemon=True,
+            ).start()
+        else:
+            write_message(helper.handle(request))
     helper.stop()
     return 0
 
