@@ -65,10 +65,8 @@ function trackConnectivityConnection(result) {
 }
 
 const CONNECTIVITY_SITES = [
-  { site: "youtube.com", url: "https://www.youtube.com/" },
-  { site: "x.com", url: "https://x.com/" },
-  { site: "instagram.com", url: "https://www.instagram.com/" },
-  { site: "wikipedia.org", url: "https://www.wikipedia.org/" }
+  { site: "torproject.org", url: "https://www.torproject.org/" },
+  { site: "tor-connect.github.io", url: "https://tor-connect.github.io/" }
 ];
 
 async function checkSiteReachability({ site, url }) {

@@ -285,7 +285,7 @@ document.querySelector("#retestSites").addEventListener("click", async (event) =
   };
   renderResult(currentResult);
   try {
-    // retestSites runs up to 4 site checks each with an 8-second timeout, so
+    // retestSites runs site checks each with an 8-second timeout, so
     // allow up to 40 seconds before falling back to a plain status poll.
     let result = await send("retestSites", {}, 40000);
     if (!result) result = await send("status");
@@ -454,9 +454,10 @@ function updateLiveStats(result = {}) {
   renderSiteCheck(result);
 }
 
-const SITE_CHECK_NAMES = ["youtube.com", "x.com", "instagram.com", "wikipedia.org"];
+const SITE_CHECK_NAMES = ["torproject.org", "tor-connect.github.io"];
 function renderSiteCheck(result = {}) {
   const sites = Array.isArray(result.siteChecks) ? result.siteChecks : [];
+  const total = SITE_CHECK_NAMES.length;
   const connected = result.state === "connected"
     && !["trying", "failed", "closed"].includes(result.bridgeActivity)
     && ["pending", "passed", "failed"].includes(result.connectivityCheck);
@@ -464,7 +465,7 @@ function renderSiteCheck(result = {}) {
   const pending = result.connectivityCheck === "pending" || sites.some((site) => site.state === "pending");
   siteCheckBadgeNode.hidden = !connected;
   siteCheckSummaryNode.hidden = !connected;
-  const checkLabel = pending ? t("Checking 4 sites") : failures ? t("{n} of {total} sites blocked", { n: failures, total: sites.length || 4 }) : t("All 4 sites reachable");
+  const checkLabel = pending ? t("Checking sites…") : failures ? t("{n} of {total} sites blocked", { n: failures, total: sites.length || total }) : t("All sites reachable");
   siteCheckBadgeNode.setAttribute("aria-label", t("Review site check: {summary}", { summary: checkLabel }));
   siteCheckSummaryNode.setAttribute("aria-label", t("Review site check: {summary}", { summary: checkLabel }));
   siteCheckBadgeNode.innerHTML = pending
@@ -481,14 +482,14 @@ function renderSiteCheck(result = {}) {
   if (pending) {
     siteCheckSummaryNode.innerHTML = `<span class="site-check-spinner" aria-hidden="true"></span>${t("Checking sites…")}`;
   } else if (failures) {
-    siteCheckSummaryNode.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4 3 20h18L12 4z"/><path d="M12 10v4m0 3.2v.1"/></svg>${t("{n} of 4 sites blocked", { n: failures })}<svg class="site-check-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg>`;
+    siteCheckSummaryNode.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4 3 20h18L12 4z"/><path d="M12 10v4m0 3.2v.1"/></svg>${t("{n} of {total} sites blocked", { n: failures, total })}<svg class="site-check-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg>`;
   } else if (result.connectivityCheck === "passed") {
     siteCheckSummaryNode.textContent = t("all sites reachable");
   } else {
     siteCheckSummaryNode.textContent = t("Checking sites…");
   }
-  const blockedSummary = failures ? t("{n} of 4 sites blocked", { n: failures }) : t("All sites reachable");
-  siteCheckCountNode.textContent = pending ? t("Checking 4 sites…") : failures ? blockedSummary : t("All 4 sites reachable");
+  const blockedSummary = failures ? t("{n} of {total} sites blocked", { n: failures, total }) : t("All sites reachable");
+  siteCheckCountNode.textContent = pending ? t("Checking sites…") : failures ? blockedSummary : t("All sites reachable");
   siteCheckCountNode.classList.toggle("has-failures", failures > 0 && !pending);
   siteCheckSheetNode.classList.toggle("is-pending", pending);
   siteCheckSheetNode.classList.toggle("is-failed", failures > 0 && !pending);
