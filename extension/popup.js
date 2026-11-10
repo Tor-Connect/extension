@@ -934,8 +934,8 @@ function summarizeConnectionError(error) {
   if (/no such file|does not exist|doesn’t exist|not found/i.test(message)) {
     return t("Tor files are missing");
   }
-  if (/native helper (?:unavailable|disconnected)|native messaging host not found|native host.*not registered/i.test(message)) {
-    return t("Tor helper isn’t available");
+  if (/no such native application|native helper (?:unavailable|disconnected)|native messaging host not found|native host.*not registered/i.test(message)) {
+    return t("Tor helper isn't available");
   }
   return t("Tor couldn’t connect. Try again.");
 }
@@ -963,7 +963,7 @@ function connectionErrorHint(error) {
   if (/no such file|does not exist|doesn’t exist|not found/i.test(message)) {
     return t("Run setup again to install the Tor files.");
   }
-  if (/native helper (?:unavailable|disconnected)|native messaging host not found|native host.*not registered/i.test(message)) {
+  if (/no such native application|native helper (?:unavailable|disconnected)|native messaging host not found|native host.*not registered/i.test(message)) {
     return t("Set up Tor Connect on this device, then restart your browser.");
   }
   return t("Try again. Open the details if it keeps happening.");
@@ -1125,7 +1125,13 @@ function renderResult(result) {
     return;
   }
   hideFirefoxPermission();
-  const helperNotInstalled = /native messaging host not found|native host.*not registered|failed to start native messaging host|access to the specified native messaging host is forbidden/i.test(currentResult?.error || "");
+  // Errors that definitively mean the helper is not installed or not registered.
+  // "No such native application" is Firefox's message for a missing host.
+  // Chrome uses "not found" or "not registered". Transient disconnect errors
+  // ("Native helper unavailable: Error: Could not establish connection" and
+  // "Native helper disconnected") are intentionally excluded so the startup
+  // retry loop fires on first popup open before the host process is ready.
+  const helperNotInstalled = /no such native application|native messaging host not found|native host.*not registered|failed to start native messaging host|access to the specified native messaging host is forbidden/i.test(currentResult?.error || "");
   const transientStartupFailure = initialStatusPending && (!currentResult.ok || currentResult.state === "failed") && currentResult.state !== "missing_runtime" && !helperNotInstalled && initialStatusRetries < 6;
   if (transientStartupFailure) {
     initialStatusRetries++;
