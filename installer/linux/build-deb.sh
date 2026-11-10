@@ -9,6 +9,7 @@ fi
 extension_id="$1"
 bundle_archive="$(realpath "$2")"
 output_dir="${3:-$(cd "$(dirname "$0")/../../dist" && pwd -P)}"
+root_dir="$(cd "$(dirname "$0")/../.." && pwd -P)"
 version="$(curl --fail --location --silent --show-error --retry 3 \
   'https://aus1.torproject.org/torbrowser/update_3/release/downloads.json' \
   | python3 -c 'import sys,json; print(json.load(sys.stdin)["version"])')"
