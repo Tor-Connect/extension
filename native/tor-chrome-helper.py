@@ -121,6 +121,7 @@ class Helper:
         if command == "status": result = self.status()
         elif command == "ping": result = self.ping(request.get("bridges", ""))
         elif command == "countries": result = self.countries(request.get("bridges", ""))
+        elif command == "checkSites": result = self.check_sites(request.get("sites", []))
         elif command == "start":
             result = self.start(request.get("mode", ""), request.get("bridges", ""), request.get("selectedBridgeIndex"), exit_country=request.get("exitCountry", ""))
         elif command == "stop": self.stop(); result = self.status()
@@ -468,6 +469,90 @@ class Helper:
             results.append(result)
         return {"ok": True, "results": results}
 
+    def check_via_socks5(self, host: str, port: int, timeout: float = 8.0) -> bool:
+        """Open a SOCKS5 TCP connection through the local Tor proxy to host:port.
+        Returns True if the SOCKS5 CONNECT succeeds, proving the site is reachable."""
+        try:
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+                sock.settimeout(timeout)
+                sock.connect(("127.0.0.1", PROXY_PORT))
+                # SOCKS5 handshake: client hello (no auth)
+                sock.sendall(bytes([0x05, 0x01, 0x00]))
+                reply = b""
+                while len(reply) < 2:
+                    chunk = sock.recv(2 - len(reply))
+                    if not chunk:
+                        break
+                    reply += chunk
+                if len(reply) < 2 or reply[0] != 0x05 or reply[1] != 0x00:
+                    return False
+                # SOCKS5 CONNECT request with DOMAINNAME addressing
+                host_bytes = host.encode("utf-8")
+                if len(host_bytes) > 255:
+                    return False
+                req = bytes([0x05, 0x01, 0x00, 0x03, len(host_bytes)]) + host_bytes
+                req += bytes([(port >> 8) & 0xff, port & 0xff])
+                sock.sendall(req)
+                # Read the first 4 bytes of the SOCKS5 CONNECT response to get atyp.
+                conn_reply = b""
+                while len(conn_reply) < 4:
+                    chunk = sock.recv(4 - len(conn_reply))
+                    if not chunk:
+                        return False
+                    conn_reply += chunk
+                if conn_reply[0] != 0x05 or conn_reply[1] != 0x00:
+                    return False
+                # Determine total expected reply length from the address type.
+                atyp = conn_reply[3]
+                if atyp == 0x01:    # IPv4: 4 header + 4 addr + 2 port = 10
+                    expected = 10
+                elif atyp == 0x04:  # IPv6: 4 header + 16 addr + 2 port = 22
+                    expected = 22
+                elif atyp == 0x03:  # domain: 4 header + 1 len + domain + 2 port
+                    # need byte 4 (the length field) before we know expected
+                    while len(conn_reply) < 5:
+                        chunk = sock.recv(5 - len(conn_reply))
+                        if not chunk:
+                            return False
+                        conn_reply += chunk
+                    expected = 7 + conn_reply[4]
+                else:
+                    return False
+                # Read remaining bytes to complete the full reply.
+                while len(conn_reply) < expected:
+                    chunk = sock.recv(expected - len(conn_reply))
+                    if not chunk:
+                        return False
+                    conn_reply += chunk
+                return True
+        except Exception:
+            return False
+
+    def check_sites(self, sites: list) -> dict:
+        """Check reachability of sites through the Tor SOCKS5 proxy."""
+        if not isinstance(sites, list):
+            return {"ok": False, "error": "Invalid sites."}
+        results = []
+        for entry in sites:
+            site = entry.get("site", "") if isinstance(entry, dict) else ""
+            url = entry.get("url", "") if isinstance(entry, dict) else ""
+            if not site or not url:
+                continue
+            try:
+                from urllib.parse import urlparse
+                parsed = urlparse(url)
+                host = parsed.hostname or ""
+                port = parsed.port or (443 if parsed.scheme == "https" else 80)
+            except Exception:
+                host, port = "", 80
+            if not host:
+                continue
+            started_at = time.monotonic()
+            reachable = self.check_via_socks5(host, port)
+            latency_ms = round((time.monotonic() - started_at) * 1000) if reachable else None
+            results.append({"site": site, "state": "passed" if reachable else "failed", "latencyMs": latency_ms})
+        return {"ok": True, "results": results}
+
     def load_geo(self, version: int) -> list[tuple[int, int, str]]:
         attr = "geo4" if version == 4 else "geo6"
         cached = getattr(self, attr)
@@ -789,10 +874,14 @@ def read_exact(stream, count: int) -> bytes | None:
     return bytes(chunks)
 
 
+_write_lock = threading.Lock()
+
+
 def write_message(obj: dict) -> None:
     encoded = json.dumps(obj, separators=(",", ":")).encode("utf-8")
-    sys.stdout.buffer.write(struct.pack("<I", len(encoded)) + encoded)
-    sys.stdout.buffer.flush()
+    with _write_lock:
+        sys.stdout.buffer.write(struct.pack("<I", len(encoded)) + encoded)
+        sys.stdout.buffer.flush()
 
 
 def main() -> int:
@@ -814,7 +903,16 @@ def main() -> int:
         try: request = json.loads(data.decode("utf-8"))
         except (UnicodeError, json.JSONDecodeError): break
         if not isinstance(request, dict): break
-        write_message(helper.handle(request))
+        # checkSites makes blocking network calls — dispatch off the read loop
+        # so status/stop requests are not blocked while site checks run.
+        if request.get("command") == "checkSites":
+            threading.Thread(
+                target=lambda r: write_message(helper.handle(r)),
+                args=(request,),
+                daemon=True,
+            ).start()
+        else:
+            write_message(helper.handle(request))
     helper.stop()
     return 0
 

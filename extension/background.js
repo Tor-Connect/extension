@@ -71,29 +71,11 @@ const CONNECTIVITY_SITES = [
   { site: "wikipedia.org", url: "https://www.wikipedia.org/" }
 ];
 
-async function checkSiteReachability({ site, url }) {
-  const controller = new AbortController();
-  const startedAt = Date.now();
-  const timeout = setTimeout(() => controller.abort(), 8000);
-  try {
-    const response = await fetch(url, {
-      method: "GET",
-      cache: "no-store",
-      credentials: "omit",
-      referrerPolicy: "no-referrer",
-      signal: controller.signal
-    });
-    try { await response.body?.cancel(); } catch { /* The response headers already establish reachability. */ }
-    return { site, state: response.ok ? "passed" : "failed", latencyMs: Date.now() - startedAt };
-  } catch {
-    return { site, state: "failed", latencyMs: null };
-  } finally {
-    clearTimeout(timeout);
-  }
-}
-
 async function checkSitesReachability() {
-  return Promise.all(CONNECTIVITY_SITES.map(checkSiteReachability));
+  const result = await request("checkSites", { sites: CONNECTIVITY_SITES }, 40000);
+  if (result?.ok && Array.isArray(result.results)) return result.results;
+  // If the helper doesn't support checkSites yet, fall back so nothing breaks.
+  return CONNECTIVITY_SITES.map(({ site }) => ({ site, state: "failed", latencyMs: null }));
 }
 
 function checkConnectivityAfterConnect(result, generation, { force = false } = {}) {
