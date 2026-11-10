@@ -186,6 +186,7 @@ html[data-theme="dark"] .setup-link { color: #6bdc9d; }
 @media (prefers-reduced-motion: reduce) {
   .power-button[data-progress-mode="indeterminate"]::after { animation: none; }
   .site-check-spinner { animation: none !important; }
+  .checking-dots::after { animation: none; content: "···"; }
 }
 @media (max-width: 480px) {
   html[data-layout="tab"] main { padding: 24px 20px 40px; }
@@ -227,6 +228,9 @@ body.popup-page .site-check-summary svg { width: 14px; height: 14px; flex: none;
 body.popup-page .site-check-summary .site-check-chevron { width: 12px; height: 12px; stroke-width: 3; }
 body.popup-page .site-check-spinner { display: block; width: 12px; height: 12px; flex: none; box-sizing: border-box; border: 2px solid #a9b3ae; border-right-color: transparent; border-radius: 50%; animation: site-check-spin .8s linear infinite; }
 body.popup-page .site-check-summary.is-pending .site-check-spinner { border-color: #2bd576; border-right-color: transparent; }
+body.popup-page .checking-dots { display: inline-block; width: 1.6em; text-align: left; }
+body.popup-page .checking-dots::after { content: "·"; animation: checking-dots-cycle 1.2s steps(1) infinite; }
+@keyframes checking-dots-cycle { 0% { content: "·"; } 33% { content: "··"; } 66% { content: "···"; } }
 body.popup-page .site-check-badge { position: absolute; z-index: 2; top: 95px; left: 181px; display: flex; width: 44px; height: 44px; align-items: center; justify-content: center; padding: 0; border: 0; border-radius: 50%; color: #ffc24d; background: transparent; cursor: pointer; font: 600 13px "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace; }
 body.popup-page .site-check-badge::before { position: absolute; width: 28px; height: 28px; border: 2px solid #ffc24d; border-radius: 50%; background: #2a1f08; box-shadow: 0 0 0 4px #080c0b; content: ""; }
 body.popup-page .site-check-badge > *, body.popup-page .site-check-badge > svg { position: relative; z-index: 1; }

@@ -480,7 +480,7 @@ function renderSiteCheck(result = {}) {
   siteCheckSummaryNode.classList.toggle("is-pending", pending);
   siteCheckSummaryNode.classList.toggle("is-passed", !pending && !failures && result.connectivityCheck === "passed");
   if (pending) {
-    siteCheckSummaryNode.innerHTML = `<span class="site-check-spinner" aria-hidden="true"></span>${t("Checking sites…")}`;
+    siteCheckSummaryNode.innerHTML = `${t("Checking sites…").replace(/…$/, "")}<span class="checking-dots" aria-hidden="true"></span>`;
   } else if (failures) {
     siteCheckSummaryNode.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4 3 20h18L12 4z"/><path d="M12 10v4m0 3.2v.1"/></svg>${t("{n} of {total} sites blocked", { n: failures, total })}<svg class="site-check-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg>`;
   } else if (result.connectivityCheck === "passed") {
