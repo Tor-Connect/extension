@@ -28,7 +28,8 @@ py -3 -m PyInstaller --onefile --clean --noconfirm --name tor-chrome-helper `
 if ($LASTEXITCODE -ne 0) { throw 'Could not build the Windows native helper.' }
 Remove-Item -LiteralPath $unpacked -Recurse -Force
 
-$version = (Get-Content (Join-Path $root 'installer\tor-expert-bundle-version.txt') -Raw).Trim()
+$version = (Invoke-RestMethod 'https://aus1.torproject.org/torbrowser/update_3/release/downloads.json').version
+Write-Host "Latest stable Tor Expert Bundle version: $version"
 $compiler = Get-Command ISCC.exe -ErrorAction SilentlyContinue
 $compilerPath = if ($compiler) { $compiler.Source } else {
     $innoPath = Join-Path ([Environment]::GetEnvironmentVariable('ProgramFiles(x86)')) 'Inno Setup 6\ISCC.exe'
