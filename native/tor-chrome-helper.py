@@ -472,6 +472,8 @@ class Helper:
 
     def check_sites(self, sites: list) -> dict:
         """Check reachability of sites through the Tor SOCKS5 proxy."""
+        if not isinstance(sites, list):
+            return {"ok": False, "error": "Invalid sites."}
         results = []
         for entry in sites:
             site = entry.get("site", "") if isinstance(entry, dict) else ""
