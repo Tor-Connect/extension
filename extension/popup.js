@@ -935,7 +935,7 @@ function summarizeConnectionError(error) {
     return t("Tor files are missing");
   }
   if (/no such native application|native helper (?:unavailable|disconnected)|native messaging host not found|native host.*not registered/i.test(message)) {
-    return t("Tor helper isn't available");
+    return t("Tor helper isn’t available");
   }
   return t("Tor couldn’t connect. Try again.");
 }
