@@ -16,14 +16,9 @@
     "storage"
   ],
   "host_permissions": [
-    "https://youtube.com/*",
-    "https://*.youtube.com/*",
-    "https://x.com/*",
-    "https://*.x.com/*",
-    "https://instagram.com/*",
-    "https://*.instagram.com/*",
-    "https://wikipedia.org/*",
-    "https://*.wikipedia.org/*"
+    "https://torproject.org/*",
+    "https://*.torproject.org/*",
+    "https://tor-connect.github.io/*"
   ],
   "optional_permissions": [
     "clipboardRead",

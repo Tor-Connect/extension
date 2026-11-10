@@ -143,7 +143,7 @@ html[data-theme="light"] .picker-code-badge { background: #edf1ef; color: #14864
 .add-bridges-copy { display: flex; min-width: 220px; flex: 1 1 220px; flex-direction: column; gap: 2px; }
 .add-bridges-copy strong { font-size: 15px; font-weight: 600; }
 .add-bridges-copy span { color: #8a948f; font-size: 13px; }
-.add-bridges-actions { gap: 10px 12px; }
+.add-bridges-actions { width: 100%; gap: 10px 12px; justify-content: space-between; }
 .primary-button { display: inline-flex; min-height: 44px; align-items: center; gap: 8px; padding: 0 22px; border-radius: 12px; }
 .primary-button:hover, .save-button:hover:not(:disabled), .change-banner button:hover { background: #42e58a; }
 .primary-button svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 2.4; }
@@ -159,6 +159,7 @@ html[data-theme="light"] .picker-code-badge { background: #edf1ef; color: #14864
 .import-menu-item span { display: flex; flex-direction: column; gap: 1px; }
 .import-menu-item strong { font-size: 14px; font-weight: 600; }
 .import-menu-item small { color: #8a948f; font-size: 12px; }
+.request-group { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 8px; }
 .request-label { color: #8a948f; font-size: 13px; }
 .request-button { min-height: 44px; padding: 0 14px; border-radius: 22px; }
 .request-button svg { width: 18px; height: 18px; }
@@ -434,7 +435,6 @@ html[data-theme="light"] .connection-details-body pre { color: #344139; backgrou
   .bridge-section-heading { align-items: flex-start; }
   .bridge-list-actions { width: 100%; }
   .bridge-list-actions .quiet-button { flex: 1 1 auto; padding: 0 10px; font-size: 12px; }
-  .add-bridges-actions { width: 100%; }
   .add-bridges-actions > * { flex: 1 1 auto; }
   .request-label { width: 100%; }
   .settings-bridge-item { gap: 10px; padding: 12px; }
