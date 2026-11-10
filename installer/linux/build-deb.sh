@@ -9,8 +9,10 @@ fi
 extension_id="$1"
 bundle_archive="$(realpath "$2")"
 output_dir="${3:-$(cd "$(dirname "$0")/../../dist" && pwd -P)}"
-root_dir="$(cd "$(dirname "$0")/../.." && pwd -P)"
-version="$(tr -d '[:space:]' < "$root_dir/installer/tor-expert-bundle-version.txt")"
+version="$(curl --fail --location --silent --show-error --retry 3 \
+  'https://aus1.torproject.org/torbrowser/update_3/release/downloads.json' \
+  | python3 -c 'import sys,json; print(json.load(sys.stdin)["version"])')"
+echo "Latest stable Tor Expert Bundle version: $version"
 [[ "$extension_id" =~ ^[a-p]{32}$ ]] || { echo "Invalid Chrome extension ID." >&2; exit 2; }
 [[ -f "$bundle_archive" ]] || { echo "Tor Expert Bundle archive does not exist." >&2; exit 2; }
 command -v dpkg-deb >/dev/null || { echo "Install dpkg-deb to build the Linux package." >&2; exit 2; }

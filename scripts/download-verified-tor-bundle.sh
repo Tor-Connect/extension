@@ -7,8 +7,10 @@ if [[ $# -ne 2 ]]; then
 fi
 platform="$1"
 output="$(mkdir -p "$(dirname "$2")" && cd "$(dirname "$2")" && pwd -P)/$(basename "$2")"
-root_dir="$(cd "$(dirname "$0")/.." && pwd -P)"
-version="$(tr -d '[:space:]' < "$root_dir/installer/tor-expert-bundle-version.txt")"
+version="$(curl --fail --location --silent --show-error --retry 3 \
+  'https://aus1.torproject.org/torbrowser/update_3/release/downloads.json' \
+  | python3 -c 'import sys,json; print(json.load(sys.stdin)["version"])')"
+echo "Latest stable Tor Expert Bundle version: $version"
 fingerprint="EF6E286DDA85EA2A4BA7DE684E2C6E8793298290"
 source_name="tor-expert-bundle-$platform-$version.tar.gz"
 source_url="https://dist.torproject.org/torbrowser/$version/$source_name"
