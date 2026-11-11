@@ -288,11 +288,14 @@ function parseBridgeLine(line) {
   // Vanilla bridge: first token is a numeric IP:port, not a transport name
   const vanilla = !KNOWN_TRANSPORTS.has(first.toLowerCase()) && VANILLA_ADDRESS_RE.test(first);
   const iat = line.match(/\biat-mode=(\S+)/i)?.[1];
+  const urlParam = line.match(/\burl=(\S+)/i)?.[1];
+  const webtunnelHost = urlParam ? (() => { try { return new URL(urlParam).hostname; } catch { return null; } })() : null;
   return {
     transport: vanilla ? "none" : (first || "Bridge"),
     address: vanilla ? first : (parts[offset + 1] || ""),
     fingerprint: vanilla ? (parts[offset + 1] || "") : (parts[offset + 2] || ""),
-    iat
+    iat,
+    webtunnelHost
   };
 }
 
@@ -411,7 +414,9 @@ function renderBridgeList() {
     fingerprint.className = "bridge-fingerprint";
     const shortFingerprint = parts.fingerprint.length > 18
       ? `${parts.fingerprint.slice(0, 8)}…${parts.fingerprint.slice(-6)}` : parts.fingerprint;
-    fingerprint.textContent = parts.iat ? `${shortFingerprint} · iat-mode ${parts.iat}` : shortFingerprint || t("Bridge details unavailable");
+    fingerprint.textContent = parts.webtunnelHost
+      ? parts.webtunnelHost
+      : parts.iat ? `${shortFingerprint} · iat-mode ${parts.iat}` : shortFingerprint || t("Bridge details unavailable");
     fingerprint.title = line;
     fingerprintRow.append(fingerprint);
     if (connected) {
