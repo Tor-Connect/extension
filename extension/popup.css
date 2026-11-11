@@ -436,7 +436,7 @@ body.popup-page .summary-route { display: flex; min-width: 0; flex: 1; flex-dire
 body.popup-page .summary-route strong { overflow: hidden; color: #eaf1ee; font-size: 15px; text-overflow: ellipsis; white-space: nowrap; }
 body.popup-page .summary-route small { overflow: hidden; color: #a9b3ae; font: 12px "IBM Plex Mono", monospace; text-overflow: ellipsis; white-space: nowrap; }
 body.popup-page .summary-route small.is-label { font-family: inherit; }
-body.popup-page button.summary-rates { display: flex; width: auto; min-width: 92px; height: 56px; flex: none; flex-direction: column; align-items: flex-start; justify-content: center; gap: 4px; margin: 0; padding: 0 12px; border: 0; border-radius: 12px; color: #2bd576; background: #10291c; font: 12px "IBM Plex Mono", monospace; cursor: pointer; }
+body.popup-page button.summary-rates { display: flex; width: 118px; height: 56px; flex: none; flex-direction: column; align-items: flex-start; justify-content: center; gap: 4px; margin: 0; padding: 0 12px; border: 0; border-radius: 12px; color: #2bd576; background: #10291c; font: 12px "IBM Plex Mono", monospace; cursor: pointer; }
 body.popup-page .summary-rates:hover { background: #143522; }
 body.popup-page .summary-rates:focus-visible { outline: 2px solid #2bd576; outline-offset: 2px; }
 body.popup-page .summary-rates[hidden] { display: none !important; }
@@ -444,7 +444,7 @@ body.popup-page .summary-rates span { display: flex; align-items: center; gap: 4
 body.popup-page .summary-rates .rate-arrow { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
 body.popup-page .summary-rates .rate-arrow-down { animation: stats-bob-down 1.2s ease-in-out infinite; }
 body.popup-page .summary-rates .rate-arrow-up { animation: stats-bob 1.2s ease-in-out infinite; }
-body.popup-page .summary-rates strong { font-weight: 500; }
+body.popup-page .summary-rates strong { min-width: 7ch; font-weight: 500; font-variant-numeric: tabular-nums; }
 body.popup-page .snowflake-info { display: flex; min-height: 76px; flex: 0 0 auto; align-items: flex-start; gap: 8px; margin-top: auto; padding-top: 2px; }
 body.popup-page .snowflake-info[hidden] { display: none !important; }
 body.popup-page .snowflake-info-icon { display: grid; width: 18px; height: 22px; flex: 0 0 18px; place-items: center; color: #66716b; }
