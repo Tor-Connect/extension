@@ -4,7 +4,7 @@ const systemThemeQuery = window.matchMedia("(prefers-color-scheme: dark)");
 let savedThemePreference = "dark";
 
 function applyTheme(theme) {
-  savedThemePreference = ["light", "dark", "system"].includes(theme) ? theme : "dark";
+  savedThemePreference = ["light", "dark", "dim", "system"].includes(theme) ? theme : "dark";
   const resolvedTheme = savedThemePreference === "system"
     ? systemThemeQuery.matches ? "dark" : "light"
     : savedThemePreference;
