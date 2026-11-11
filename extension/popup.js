@@ -989,7 +989,7 @@ function renderRoute(result = {}) {
     return;
   }
   delete routeCardNode.dataset.initialChecking;
-  bridgeAttemptTimerNode.hidden = result.state !== "starting";
+  bridgeAttemptTimerNode.hidden = true;
   connectedDurationNode.hidden = result.state !== "connected";
   copyBridgeButton.hidden = true;
   routeBridgeLine = "";
