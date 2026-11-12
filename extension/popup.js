@@ -77,7 +77,6 @@ let connectedDurationInterval;
 let routeBridgeLine = "";
 let lastShownPosition = -1;
 let copyFeedbackTimer;
-let statsCopyFeedbackTimer;
 let firefoxPermissionPollTimer;
 let firefoxPermissionSuccessTimer;
 const t = (key, params) => (globalThis.torI18n?.t || ((s) => s))(key, params);
@@ -416,7 +415,7 @@ function updateLiveStats(result = {}) {
   const routeIcon = document.querySelector("#statsRouteIcon");
   routeIcon.innerHTML = snowflake
     ? '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v18M4.2 7.5l15.6 9M4.2 16.5l15.6-9M9.5 4.8 12 7l2.5-2.2M9.5 19.2 12 17l2.5 2.2"/></svg>'
-    : (result.bridgeCountryCode || "—");
+    : (result.bridgeCountryCode ? result.bridgeCountryCode.toUpperCase() : "—");
   document.querySelector("#statsRouteName").textContent = snowflake ? t("Snowflake") : (result.bridgeTransport || t("Bridge"));
   const statsAddr = document.querySelector("#statsRouteAddress");
   statsAddr.textContent = snowflake
@@ -436,20 +435,33 @@ function updateLiveStats(result = {}) {
   const summaryIcon = document.querySelector("#summaryRouteIcon");
   summaryIcon.textContent = snowflake ? "" : (result.bridgeCountryCode || "—").toUpperCase();
   summaryIcon.classList.toggle("is-snowflake", snowflake);
-  const copy = document.querySelector("#statsCopyAddress");
-  copy.hidden = !result.bridgeAddress;
-  copy.onclick = () => {
-    navigator.clipboard.writeText(result.bridgeAddress).then(() => {
-      if (statsCopyFeedbackTimer) clearTimeout(statsCopyFeedbackTimer);
-      copy.classList.add("is-copied");
-      copy.setAttribute("aria-label", t("Copied"));
-      statsCopyFeedbackTimer = window.setTimeout(() => {
-        copy.classList.remove("is-copied");
-        copy.setAttribute("aria-label", t("Copy bridge address"));
-        statsCopyFeedbackTimer = undefined;
-      }, 1500);
-    }).catch(() => {});
-  };
+  const showExit = !!result.exitRelayIp;
+  document.querySelector("#statsExitCapCell").hidden = !showExit;
+  document.querySelector("#statsExitLabel").hidden = !showExit;
+  document.querySelector("#copyExitIp").hidden = !showExit;
+  if (showExit) {
+    const countryCode = (result.exitRelayCountryCode || "").toUpperCase();
+    const countryName = countryCode
+      ? (new Intl.DisplayNames([globalThis.torI18n?.language || navigator.language || "en"], { type: "region" }).of(countryCode) || countryCode)
+      : "";
+    document.querySelector("#statsExitBadge").textContent = countryCode || "—";
+    document.querySelector("#statsExitLabel").textContent = countryName || t("Exit");
+    const ip = result.exitRelayIp;
+    const ipNode = document.querySelector("#statsExitIp");
+    ipNode.textContent = ip;
+    ipNode.title = ip;
+    const copyBtn = document.querySelector("#copyExitIp");
+    copyBtn.onclick = () => {
+      navigator.clipboard.writeText(ip).then(() => {
+        copyBtn.classList.add("is-copied");
+        copyBtn.setAttribute("aria-label", t("Copied"));
+        window.setTimeout(() => {
+          copyBtn.classList.remove("is-copied");
+          copyBtn.setAttribute("aria-label", t("Copy exit IP address"));
+        }, 1500);
+      }).catch(() => {});
+    };
+  }
   if (Number.isFinite(down) || Number.isFinite(up)) lastStatsSample = { down, up, time: now };
   renderSiteCheck(result);
 }
