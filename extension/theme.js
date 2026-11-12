@@ -4,7 +4,7 @@ const systemThemeQuery = window.matchMedia("(prefers-color-scheme: dark)");
 let savedThemePreference = "dark";
 
 function applyTheme(theme) {
-  savedThemePreference = ["light", "dark", "system"].includes(theme) ? theme : "dark";
+  savedThemePreference = ["light", "dark", "dim", "system"].includes(theme) ? theme : "dark";
   const resolvedTheme = savedThemePreference === "system"
     ? systemThemeQuery.matches ? "dark" : "light"
     : savedThemePreference;
@@ -13,7 +13,7 @@ function applyTheme(theme) {
     button.setAttribute("aria-pressed", String(button.dataset.themeChoice === savedThemePreference));
   });
   document.querySelectorAll("[data-theme-toggle]").forEach((button) => {
-    const nextTheme = resolvedTheme === "dark" ? "light" : "dark";
+    const nextTheme = resolvedTheme === "dark" ? "dim" : resolvedTheme === "dim" ? "light" : "dark";
     button.setAttribute("aria-label", `Switch to ${nextTheme} theme`);
     button.title = `Switch to ${nextTheme} theme`;
   });
@@ -33,7 +33,8 @@ themeChoices.forEach((button) => {
 
 document.querySelectorAll("[data-theme-toggle]").forEach((button) => {
   button.addEventListener("click", () => {
-    const theme = document.documentElement.dataset.theme === "dark" ? "light" : "dark";
+    const current = document.documentElement.dataset.theme;
+    const theme = current === "dark" ? "dim" : current === "dim" ? "light" : "dark";
     applyTheme(theme);
     chrome.storage.local.set({ [themePreferenceKey]: theme });
   });
