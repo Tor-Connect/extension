@@ -584,7 +584,7 @@ html[data-theme="dim"] body.popup-page .orbit-card[data-mode="snowflake"][data-s
 html[data-theme="dim"] body.popup-page .orbit-card[data-mode="snowflake"][data-state="connected"] .snowflake-info-icon { color: #2bd576; }
 html[data-theme="dim"] body.popup-page .snowflake-info strong { color: #eaf1ee; }
 html[data-theme="dim"] body.popup-page .snowflake-info > div > span { color: #8a948f; }
-html[data-theme="dim"] body.popup-page .orbit-node-label { color: #62716e; }
+html[data-theme="dim"] body.popup-page .orbit-node-label { color: #8a948f; }
 html[data-theme="dim"] body.popup-page .orbit-node.is-active .orbit-country { border-color: #2bd576; color: #2bd576; background: #1f3b33; box-shadow: 0 0 0 5px #2bd57626; }
 html[data-theme="dim"] body.popup-page .orbit-node.is-active .orbit-node-label { color: #eaf1ee; }
 html[data-theme="dim"] body.popup-page .orbit-node.is-selected:not(.is-active) .orbit-country { border-color: #8a78d1; color: #c5b6ff; background: #2e2a3e; }
