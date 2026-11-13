@@ -333,10 +333,14 @@ body.popup-page .stats-rail-copy.is-copied .copied-icon { display: block !import
 body.popup-page .stats-rail-exit-ip-row .stats-rail-addr { min-width: 0; color: #eaf1ee; }
 body.popup-page .stats-rail-exit-ip-row svg { width: 14px; height: 14px; flex: none; fill: none; stroke: #8a948f; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 body.popup-page .stats-rail-exit-ip-row.is-copied svg { stroke: #2bd576; }
+body.popup-page .stats-rail-exit-ip-row.is-error svg { stroke: #f4645c; }
 body.popup-page .stats-rail-exit-ip-row .copy-icon { display: block; }
 body.popup-page .stats-rail-exit-ip-row .copied-icon { display: none; }
+body.popup-page .stats-rail-exit-ip-row .error-icon { display: none; }
 body.popup-page .stats-rail-exit-ip-row.is-copied .copy-icon { display: none !important; }
 body.popup-page .stats-rail-exit-ip-row.is-copied .copied-icon { display: block !important; }
+body.popup-page .stats-rail-exit-ip-row.is-error .copy-icon { display: none !important; }
+body.popup-page .stats-rail-exit-ip-row.is-error .error-icon { display: block !important; }
 @keyframes stats-bob { 50% { transform: translateY(-2px); } }
 @keyframes stats-bob-down { 50% { transform: translateY(2px); } }
 body.popup-page .meta-separator { color: #6b7771; transition: opacity .2s ease; }
@@ -679,6 +683,7 @@ html[data-theme="dim"] body.popup-page .stats-rail-exit-ip-row { color: #eaf1ee;
 html[data-theme="dim"] body.popup-page .stats-rail-exit-ip-row .stats-rail-addr { color: #eaf1ee; }
 html[data-theme="dim"] body.popup-page .stats-rail-exit-ip-row svg { stroke: #8a948f; }
 html[data-theme="dim"] body.popup-page .stats-rail-exit-ip-row.is-copied svg { stroke: #2bd576; }
+html[data-theme="dim"] body.popup-page .stats-rail-exit-ip-row.is-error svg { stroke: #f4645c; }
 html[data-theme="dim"] body.popup-page .site-check-result { color: #2bd576; background: #1f3b33; }
 html[data-theme="dim"] body.popup-page .site-check-row { border-color: #36434b; }
 html[data-theme="dim"] body.popup-page .site-check-row.is-pending .site-check-result { color: #9aa5a1; background: #2a343a; }
@@ -963,6 +968,7 @@ html[data-theme="light"] body.popup-page .stats-rail-exit-ip-row { color: #252d2
 html[data-theme="light"] body.popup-page .stats-rail-exit-ip-row .stats-rail-addr { color: #252d29; }
 html[data-theme="light"] body.popup-page .stats-rail-exit-ip-row svg { stroke: #8a948f; }
 html[data-theme="light"] body.popup-page .stats-rail-exit-ip-row.is-copied svg { stroke: #0f9b50; }
+html[data-theme="light"] body.popup-page .stats-rail-exit-ip-row.is-error svg { stroke: #d93025; }
 @media (prefers-reduced-motion: reduce) {
   body.popup-page .connection-method-thumb { transition: none; }
 }

@@ -461,7 +461,14 @@ function updateLiveStats(result = {}) {
           copyBtn.classList.remove("is-copied");
           copyBtn.setAttribute("aria-label", t("Copy exit IP address"));
         }, 1500);
-      }).catch(() => {});
+      }).catch(() => {
+        copyBtn.classList.add("is-error");
+        copyBtn.setAttribute("aria-label", t("Could not copy text"));
+        window.setTimeout(() => {
+          copyBtn.classList.remove("is-error");
+          copyBtn.setAttribute("aria-label", t("Copy exit IP address"));
+        }, 1500);
+      });
     };
   }
   if (Number.isFinite(down) || Number.isFinite(up)) lastStatsSample = { down, up, time: now };
