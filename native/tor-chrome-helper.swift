@@ -42,6 +42,9 @@ final class Helper {
     private var lastError: String?
     private var stopping = false
     private var exitCountry = ""
+    private var exitRelayIp = ""
+    private var exitRelayCountry = ""
+    private var exitRelayCircuitId = ""
     private let lock = NSLock()
 
     private struct BridgeTarget {
@@ -130,6 +133,10 @@ final class Helper {
             if state == "connected", let country = countryCode(for: target.address) {
                 payload["bridgeCountryCode"] = country
             }
+        }
+        if state == "connected", !exitRelayIp.isEmpty {
+            payload["exitRelayIp"] = exitRelayIp
+            if !exitRelayCountry.isEmpty { payload["exitRelayCountryCode"] = exitRelayCountry }
         }
         payload.merge(liveStatistics()) { _, new in new }
         return payload
@@ -425,6 +432,7 @@ final class Helper {
             currentBridgeIndex = nil
             bridgeActivity = nil
             builtCircuits = [:]
+            exitRelayIp = ""; exitRelayCountry = ""; exitRelayCircuitId = ""
             reconnectSince = nil
             autoRecoveryBridges = recoveryBridges ?? ((mode == "manual" && selectedBridgeIndex == nil) ? autoBridges : [])
             autoRecoveryTried = recoveryTried
@@ -644,6 +652,11 @@ final class Helper {
     }
 
     private func monitorControlPort(portFile: URL, cookieFile: URL, targets: [BridgeTarget]) {
+        // Pre-load GeoIP caches here, single-threaded, before any concurrent lookup
+        // workers are dispatched. After this point the caches are read-only.
+        loadIPv4GeoIPDataIfNeeded()
+        loadIPv6GeoIPDataIfNeeded()
+        lock.lock(); let sessionProcess = tor; lock.unlock()
         let deadline = Date().addingTimeInterval(20)
         var port: UInt16?
         var cookie: Data?
@@ -695,6 +708,20 @@ final class Helper {
         if sendControlCommand("GETINFO circuit-status", to: descriptor),
            let snapshot = readControlReply(from: descriptor) {
             processCircuitSnapshot(snapshot, targets: targets)
+            // Seed exit relay from any already-BUILT circuit (fresh connection, background)
+            for line in snapshot.components(separatedBy: "\r\n") {
+                guard !line.contains("ONEHOP_TUNNEL"), !line.contains("IS_INTERNAL") else { continue }
+                let fields = line.split(whereSeparator: \.isWhitespace)
+                guard fields.count >= 3, fields[1] == "BUILT" else { continue }
+                let hops = String(fields[2]).components(separatedBy: ",")
+                let lastFp = hops.last?.components(separatedBy: "~").first ?? ""
+                let pf = portFile; let cf = cookieFile; let fp = lastFp
+                let cid = String(fields[0]); let sp = sessionProcess
+                DispatchQueue.global(qos: .utility).async { [weak self] in
+                    self?.lookupExitRelayFresh(portFile: pf, cookieFile: cf, fingerprint: fp, circuitId: cid, sessionProcess: sp)
+                }
+                break
+            }
         }
         var buffered = Data()
         var chunk = [UInt8](repeating: 0, count: 8192)
@@ -738,6 +765,18 @@ final class Helper {
                         let fields = line.split(whereSeparator: \.isWhitespace)
                         if fields.count >= 5 {
                             updateCircuitActivity(id: String(fields[2]), status: String(fields[3]), path: String(fields[4]), targets: [])
+                        }
+                    }
+                    if line.contains(" CIRC ") && line.contains(" BUILT ") && !line.contains("ONEHOP_TUNNEL") && !line.contains("IS_INTERNAL") {
+                        let fields = line.split(whereSeparator: \.isWhitespace)
+                        if fields.count >= 5 {
+                            let hops = String(fields[4]).components(separatedBy: ",")
+                            let lastFp = hops.last?.components(separatedBy: "~").first ?? ""
+                            let pf = portFile; let cf = cookieFile; let fp = lastFp
+                            let cid = String(fields[2]); let sp = sessionProcess
+                            DispatchQueue.global(qos: .utility).async { [weak self] in
+                                self?.lookupExitRelayFresh(portFile: pf, cookieFile: cf, fingerprint: fp, circuitId: cid, sessionProcess: sp)
+                            }
                         }
                     }
                     if maybeAutoRecover() { return }
@@ -835,8 +874,60 @@ final class Helper {
             if !autoRecoveryTried.isEmpty && recoveryStableSince == nil { recoveryStableSince = Date() }
             lock.unlock()
         } else if ["CLOSED", "FAILED", "DESTROYED"].contains(status) {
-            lock.lock(); builtCircuits.removeValue(forKey: id); lock.unlock()
+            lock.lock()
+            builtCircuits.removeValue(forKey: id)
+            if builtCircuits.isEmpty || id == exitRelayCircuitId {
+                exitRelayIp = ""; exitRelayCountry = ""; exitRelayCircuitId = ""
+            }
+            lock.unlock()
         }
+    }
+
+    private func lookupExitRelayFresh(portFile: URL, cookieFile: URL, fingerprint: String, circuitId: String, sessionProcess: Process?) {
+        let fp = fingerprint.trimmingCharacters(in: CharacterSet(charactersIn: "$")).uppercased()
+        let hexChars = CharacterSet(charactersIn: "0123456789ABCDEF")
+        guard fp.count == 40, fp.unicodeScalars.allSatisfy({ hexChars.contains($0) }) else { return }
+        guard let portString = try? String(contentsOf: portFile, encoding: .utf8),
+              let port = Int(portString.trimmingCharacters(in: .whitespacesAndNewlines).components(separatedBy: ":").last ?? ""),
+              let cookie = try? Data(contentsOf: cookieFile), cookie.count == 32 else { return }
+        let cookieHex = cookie.map { String(format: "%02x", $0) }.joined()
+        let descriptor = socket(AF_INET, SOCK_STREAM, 0)
+        guard descriptor >= 0 else { return }
+        defer { close(descriptor) }
+        var addr = sockaddr_in()
+        addr.sin_family = sa_family_t(AF_INET)
+        addr.sin_port = in_port_t(port).bigEndian
+        addr.sin_addr.s_addr = inet_addr("127.0.0.1")
+        let connected = withUnsafePointer(to: &addr) { ptr in
+            ptr.withMemoryRebound(to: sockaddr.self, capacity: 1) { Darwin.connect(descriptor, $0, socklen_t(MemoryLayout<sockaddr_in>.size)) }
+        }
+        guard connected == 0 else { return }
+        var timeout = timeval(tv_sec: 5, tv_usec: 0)
+        setsockopt(descriptor, SOL_SOCKET, SO_RCVTIMEO, &timeout, socklen_t(MemoryLayout<timeval>.size))
+        guard sendControlCommand("AUTHENTICATE \(cookieHex)", to: descriptor),
+              readControlReply(from: descriptor)?.contains("250 OK") == true else { return }
+        guard sendControlCommand("GETINFO ns/id/\(fp)", to: descriptor),
+              let reply = readControlReply(from: descriptor) else { return }
+        var ip: String?
+        for line in reply.components(separatedBy: "\r\n") {
+            guard line.hasPrefix("r ") else { continue }
+            // r <name> <b64id> <b64digest> <date> <time> <ip> <orport>
+            let parts = line.split(whereSeparator: \.isWhitespace)
+            if parts.count >= 7 {
+                let candidate = String(parts[6])
+                var addr4 = in_addr(); var addr6 = in6_addr()
+                if inet_pton(AF_INET, candidate, &addr4) == 1 || inet_pton(AF_INET6, candidate, &addr6) == 1 {
+                    ip = candidate
+                }
+            }
+            break
+        }
+        guard let resolvedIp = ip else { return }
+        let country = countryCode(for: resolvedIp) ?? ""
+        lock.lock()
+        guard tor === sessionProcess, builtCircuits[circuitId] != nil else { lock.unlock(); return }
+        exitRelayIp = resolvedIp; exitRelayCountry = country; exitRelayCircuitId = circuitId
+        lock.unlock()
     }
 
     private func updateBridgeActivity(from event: String, targets: [BridgeTarget]) {
@@ -992,7 +1083,7 @@ final class Helper {
         let savedRecoveryStableSince = preserveAutoRecovery ? recoveryStableSince : nil
         lock.unlock()
         if let process, process.isRunning { process.terminate(); process.waitUntilExit() }
-        lock.lock(); tor = nil; state = "disconnected"; message = "Tor stopped."; lastError = nil; bridgeTargets = []; currentBridgeIndex = nil; bridgeActivity = nil; builtCircuits = [:]; reconnectSince = nil; autoRecoveryBridges = savedRecoveryBridges; autoRecoveryTried = savedRecoveryTried; autoRecoveryInProgress = savedRecoveryInProgress; recoveryAttemptSince = savedRecoveryAttemptSince; recoveryStableSince = savedRecoveryStableSince; connectedAt = nil; stopping = false; lock.unlock()
+        lock.lock(); tor = nil; state = "disconnected"; message = "Tor stopped."; lastError = nil; bridgeTargets = []; currentBridgeIndex = nil; bridgeActivity = nil; builtCircuits = [:]; exitRelayIp = ""; exitRelayCountry = ""; exitRelayCircuitId = ""; reconnectSince = nil; autoRecoveryBridges = savedRecoveryBridges; autoRecoveryTried = savedRecoveryTried; autoRecoveryInProgress = savedRecoveryInProgress; recoveryAttemptSince = savedRecoveryAttemptSince; recoveryStableSince = savedRecoveryStableSince; connectedAt = nil; stopping = false; lock.unlock()
     }
 
     private func executable(named name: String) -> URL? {

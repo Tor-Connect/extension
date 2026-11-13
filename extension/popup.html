@@ -235,7 +235,35 @@
           <div><span class="stats-label"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20V5M6 11l6-6 6 6"/></svg><span data-i18n>Upload</span></span><strong id="uploadTotal">—</strong><small id="uploadRate">—</small></div>
         </div>
         <div class="stats-row"><span data-i18n>Memory in use</span><strong id="statsMemory">—</strong></div>
-        <div class="stats-route"><span id="statsRouteIcon" aria-hidden="true">❄</span><span><strong id="statsRouteName">—</strong><small id="statsRouteAddress">—</small></span><button id="statsCopyAddress" type="button" data-i18n-aria-label="Copy bridge address" hidden><svg class="copy-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h8"/></svg><svg class="copied-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></button></div>
+        <div class="stats-rail">
+          <div class="stats-rail-badges" aria-hidden="true">
+            <span id="statsRouteIcon" class="stats-rail-entry-badge">❄</span>
+            <span class="stats-rail-line">
+              <span class="stats-rail-flow" aria-hidden="true"></span>
+              <span class="stats-rail-tor-pill"><svg viewBox="0 0 128 128" aria-hidden="true"><g fill="none" stroke-width="11" stroke-linecap="round"><path d="M20 90H108"/><path d="M20 90A44 44 0 0 1 108 90"/><path d="M35 90A29 29 0 0 1 93 90"/><path d="M50 90A14 14 0 0 1 78 90"/></g></svg><span data-i18n>Tor</span></span>
+            </span>
+            <span id="statsExitBadge" class="stats-rail-exit-badge"></span>
+          </div>
+          <div class="stats-rail-labels">
+            <div class="stats-rail-row">
+              <span class="stats-rail-cap" data-i18n>ENTRY</span>
+              <span id="statsExitCapCell" class="stats-rail-cap stats-rail-cap-exit" data-i18n hidden>EXIT</span>
+            </div>
+            <div class="stats-rail-row">
+              <strong id="statsRouteName" class="stats-rail-name stats-rail-name-entry">—</strong>
+              <strong id="statsExitLabel" class="stats-rail-name stats-rail-name-exit" hidden>—</strong>
+            </div>
+            <div class="stats-rail-row stats-rail-ip-row">
+              <small id="statsRouteAddress" class="stats-rail-addr">—</small>
+              <button id="copyExitIp" type="button" class="stats-rail-exit-ip-row" data-i18n-aria-label="Copy exit IP address" hidden>
+                <span id="statsExitIp" class="stats-rail-addr"></span>
+                <svg class="copy-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h8"/></svg>
+                <svg class="copied-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg>
+                <svg class="error-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
       </section>
       <div id="emptyBridgeInfo" class="empty-bridge-info" hidden>
         <p data-i18n>Bridges are private Tor entry points. Request some from the Tor Project, then add them in Settings.</p>

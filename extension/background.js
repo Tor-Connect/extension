@@ -175,6 +175,7 @@ function logHelperResult(command, result) {
     currentBridgeIndex: result?.currentBridgeIndex,
     bridgeTransport: result?.bridgeTransport,
     bridgeActivity: result?.bridgeActivity,
+    exitRelayDebug: result?.exitRelayDebug,
     diagnostics: Array.isArray(result?.diagnostics) ? result.diagnostics : []
   };
   const signature = JSON.stringify({

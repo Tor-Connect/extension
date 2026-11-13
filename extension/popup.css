@@ -298,21 +298,49 @@ body.popup-page .stat-char { display: inline-block; line-height: inherit; white-
 body.popup-page .stat-char.rolling-in { animation: stat-roll-in .18s ease-out forwards; }
 body.popup-page .stats-row { display: flex; height: 44px; align-items: center; justify-content: space-between; margin-top: 8px; padding: 0 4px; border-top: 1px solid #1d2421; color: #a9b3ae; font-size: 14px; }
 body.popup-page .stats-row strong { color: #eaf1ee; font: 15px "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace; }
-body.popup-page .stats-route { display: flex; height: 56px; align-items: center; gap: 10px; padding-left: 4px; border-top: 1px solid #1d2421; }
-body.popup-page .stats-route > span:first-child { display: flex; width: 36px; height: 36px; flex: none; align-items: center; justify-content: center; box-sizing: border-box; border: 2px solid #2bd576; border-radius: 50%; color: #2bd576; background: #10291c; font: 12px "IBM Plex Mono", monospace; }
-body.popup-page .stats-route > span:first-child svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-body.popup-page .stats-route > span:nth-child(2) { display: flex; min-width: 0; flex: 1; flex-direction: column; gap: 2px; }
-body.popup-page .stats-route strong { font-size: 15px; }
-body.popup-page .stats-route small { overflow: hidden; color: #a9b3ae; font: 12px "IBM Plex Mono", monospace; text-overflow: ellipsis; white-space: nowrap; }
-body.popup-page .stats-route small.is-label { font-family: inherit; }
-body.popup-page .stats-route button { width: 44px; height: 44px; border: 0; border-radius: 12px; color: #a9b3ae; background: transparent; transition: color .15s ease, background .15s ease; }
-body.popup-page .stats-route button:hover { color: #eaf1ee; background: #1a2622; }
-body.popup-page .stats-route button.is-copied { color: #2bd576; background: #10291c; }
-body.popup-page .stats-route button svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-body.popup-page .stats-route button .copy-icon { display: block; }
-body.popup-page .stats-route button .copied-icon { display: none; }
-body.popup-page .stats-route button.is-copied .copy-icon { display: none !important; }
-body.popup-page .stats-route button.is-copied .copied-icon { display: block !important; }
+/* ── Stats rail (entry → Tor → exit) ── */
+body.popup-page .stats-rail { margin-top: 8px; padding-top: 16px; border-top: 1px solid #1d2421; }
+body.popup-page .stats-rail-badges { display: flex; align-items: center; gap: 0; }
+body.popup-page .stats-rail-entry-badge { display: flex; width: 40px; height: 40px; flex: none; align-items: center; justify-content: center; box-sizing: border-box; border: 2px solid #2bd576; border-radius: 50%; color: #2bd576; background: #10291c; font: 12px/1 "IBM Plex Mono", monospace; }
+body.popup-page .stats-rail-entry-badge svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+body.popup-page .stats-rail-line { position: relative; flex: 1; height: 40px; display: flex; align-items: center; margin: 0 6px; }
+body.popup-page .stats-rail-flow { position: absolute; left: 0; right: 0; top: 19px; height: 2px; background: repeating-linear-gradient(90deg, #2bd576 0 6px, transparent 6px 14px); background-size: 14px 2px; animation: stats-rail-flow 0.9s linear infinite; opacity: 0.7; }
+@keyframes stats-rail-flow { to { background-position-x: 14px; } }
+body.popup-page .stats-rail-tor-pill { position: relative; display: flex; align-items: center; gap: 5px; height: 26px; margin: 0 auto; padding: 0 10px; border: 1px solid #1e3a2c; border-radius: 13px; background: #0e1412; color: #a9b3ae; font: 11px "IBM Plex Mono", monospace; white-space: nowrap; }
+body.popup-page .stats-rail-tor-pill svg { width: 14px; height: 14px; fill: none; stroke: #2bd576; stroke-width: 11; stroke-linecap: round; }
+body.popup-page .stats-rail-exit-badge { display: flex; width: 40px; height: 40px; flex: none; align-items: center; justify-content: center; box-sizing: border-box; border: 2px solid #2bd576; border-radius: 50%; color: #06150d; background: #2bd576; font: 600 12px/1 "IBM Plex Mono", monospace; }
+body.popup-page .stats-rail-labels { display: flex; flex-direction: column; gap: 3px; margin-top: 10px; }
+body.popup-page .stats-rail-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+body.popup-page .stats-rail-cap-exit { text-align: right; }
+body.popup-page .stats-rail-name-entry { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+body.popup-page .stats-rail-name-exit { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: right; }
+body.popup-page .stats-rail-ip-row { align-items: center; }
+body.popup-page .stats-rail-ip-row .stats-rail-addr { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+body.popup-page .stats-rail-exit-ip-row { display: flex; align-items: center; justify-content: flex-end; gap: 6px; width: 100%; min-width: 0; margin: 0; padding: 0; border: 0; border-radius: 0; background: transparent; color: #eaf1ee; font: 12px/1 "IBM Plex Mono", monospace; line-height: 1; cursor: pointer; appearance: none; -webkit-appearance: none; }
+body.popup-page .stats-rail-cap { font: 500 10px/1 "IBM Plex Mono", monospace; letter-spacing: 0.1em; color: #8a948f; }
+body.popup-page .stats-rail-name { overflow: hidden; font-size: 15px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+body.popup-page .stats-rail-sub-row { display: flex; align-items: center; gap: 0; min-width: 0; }
+body.popup-page .stats-rail-addr { overflow: hidden; color: #a9b3ae; font: 11px "IBM Plex Mono", monospace; text-overflow: ellipsis; white-space: nowrap; }
+body.popup-page .stats-rail-addr.is-label { font-family: inherit; }
+body.popup-page .stats-rail-copy { display: flex; width: 32px; height: 32px; flex: none; align-items: center; justify-content: center; padding: 0; border: 0; border-radius: 8px; color: #a9b3ae; background: transparent; cursor: pointer; transition: color .15s ease, background .15s ease; }
+body.popup-page .stats-rail-copy:hover { color: #eaf1ee; background: #1a2622; }
+body.popup-page .stats-rail-copy.is-copied { color: #2bd576; background: #10291c; }
+body.popup-page .stats-rail-copy svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+body.popup-page .stats-rail-copy .copy-icon { display: block; }
+body.popup-page .stats-rail-copy .copied-icon { display: none; }
+body.popup-page .stats-rail-copy.is-copied .copy-icon { display: none !important; }
+body.popup-page .stats-rail-copy.is-copied .copied-icon { display: block !important; }
+body.popup-page .stats-rail-exit-ip-row .stats-rail-addr { min-width: 0; color: #eaf1ee; }
+body.popup-page .stats-rail-exit-ip-row svg { width: 14px; height: 14px; flex: none; fill: none; stroke: #8a948f; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+body.popup-page .stats-rail-exit-ip-row.is-copied svg { stroke: #2bd576; }
+body.popup-page .stats-rail-exit-ip-row.is-error svg { stroke: #f4645c; }
+body.popup-page .stats-rail-exit-ip-row .copy-icon { display: block; }
+body.popup-page .stats-rail-exit-ip-row .copied-icon { display: none; }
+body.popup-page .stats-rail-exit-ip-row .error-icon { display: none; }
+body.popup-page .stats-rail-exit-ip-row.is-copied .copy-icon { display: none !important; }
+body.popup-page .stats-rail-exit-ip-row.is-copied .copied-icon { display: block !important; }
+body.popup-page .stats-rail-exit-ip-row.is-error .copy-icon { display: none !important; }
+body.popup-page .stats-rail-exit-ip-row.is-error .error-icon { display: block !important; }
 @keyframes stats-bob { 50% { transform: translateY(-2px); } }
 @keyframes stats-bob-down { 50% { transform: translateY(2px); } }
 body.popup-page .meta-separator { color: #6b7771; transition: opacity .2s ease; }
@@ -634,6 +662,28 @@ html[data-theme="dim"] body.popup-page .stats-route { border-color: #36434b; }
 html[data-theme="dim"] body.popup-page .stats-route > span:first-child { border-color: #2bd576; color: #2bd576; background: #1f3b33; }
 html[data-theme="dim"] body.popup-page .stats-route button:hover { color: #eaf1ee; background: #2e3a40; }
 html[data-theme="dim"] body.popup-page .stats-route button.is-copied { color: #2bd576; background: #1f3b33; }
+html[data-theme="dim"] body.popup-page .stats-exit-connector::before { border-color: #36434b; }
+html[data-theme="dim"] body.popup-page .stats-exit-card { border-color: #2c5446; background: #1f3b33; }
+html[data-theme="dim"] body.popup-page .stats-exit-badge { border-color: #2bd576; color: #2bd576; background: #182e22; }
+html[data-theme="dim"] body.popup-page .stats-exit-label { color: #eaf1ee; }
+html[data-theme="dim"] body.popup-page .stats-exit-ip { color: #eaf1ee; }
+html[data-theme="dim"] body.popup-page .stats-exit-subtitle { color: #8a948f; }
+html[data-theme="dim"] body.popup-page .stats-exit-copy { color: #8a948f; }
+html[data-theme="dim"] body.popup-page .stats-exit-copy:hover { color: #eaf1ee; background: #2a3a32; }
+html[data-theme="dim"] body.popup-page .stats-exit-copy.is-copied { color: #2bd576; background: #1f3b33; }
+html[data-theme="dim"] body.popup-page .stats-rail { border-color: #36434b; }
+html[data-theme="dim"] body.popup-page .stats-rail-entry-badge { border-color: #2bd576; color: #2bd576; background: #1f3b33; }
+html[data-theme="dim"] body.popup-page .stats-rail-flow { opacity: 0.6; }
+html[data-theme="dim"] body.popup-page .stats-rail-tor-pill { border-color: #2c5446; background: #1e2c30; color: #9aa5a1; }
+html[data-theme="dim"] body.popup-page .stats-rail-exit-badge { border-color: #2bd576; background: #2bd576; color: #06150d; }
+html[data-theme="dim"] body.popup-page .stats-rail-cap { color: #8a948f; }
+html[data-theme="dim"] body.popup-page .stats-rail-name { color: #eaf1ee; }
+html[data-theme="dim"] body.popup-page .stats-rail-addr { color: #9aa5a1; }
+html[data-theme="dim"] body.popup-page .stats-rail-exit-ip-row { color: #eaf1ee; }
+html[data-theme="dim"] body.popup-page .stats-rail-exit-ip-row .stats-rail-addr { color: #eaf1ee; }
+html[data-theme="dim"] body.popup-page .stats-rail-exit-ip-row svg { stroke: #8a948f; }
+html[data-theme="dim"] body.popup-page .stats-rail-exit-ip-row.is-copied svg { stroke: #2bd576; }
+html[data-theme="dim"] body.popup-page .stats-rail-exit-ip-row.is-error svg { stroke: #f4645c; }
 html[data-theme="dim"] body.popup-page .site-check-result { color: #2bd576; background: #1f3b33; }
 html[data-theme="dim"] body.popup-page .site-check-row { border-color: #36434b; }
 html[data-theme="dim"] body.popup-page .site-check-row.is-pending .site-check-result { color: #9aa5a1; background: #2a343a; }
@@ -892,9 +942,33 @@ html[data-theme="light"] body.popup-page .stats-row strong { color: #252d29; }
 html[data-theme="light"] body.popup-page .stats-route { border-color: #dce4df; }
 html[data-theme="light"] body.popup-page .stats-route > span:first-child { color: #14864c; background: #e8f6ee; }
 html[data-theme="light"] body.popup-page .stats-route small { color: #66716b; }
+html[data-theme="light"] body.popup-page .stats-exit-connector::before { border-color: #c5d5cc; }
+html[data-theme="light"] body.popup-page .stats-exit-card { border-color: #b8d8c4; background: #edf7f2; }
+html[data-theme="light"] body.popup-page .stats-exit-badge { border-color: #14864c; color: #14864c; background: #e4f4ec; }
+html[data-theme="light"] body.popup-page .stats-exit-label { color: #252d29; }
+html[data-theme="light"] body.popup-page .stats-exit-ip { color: #252d29; }
+html[data-theme="light"] body.popup-page .stats-exit-subtitle { color: #66716b; }
+html[data-theme="light"] body.popup-page .stats-exit-copy { color: #66716b; }
+html[data-theme="light"] body.popup-page .stats-exit-copy:hover { color: #252d29; background: #dff0e8; }
+html[data-theme="light"] body.popup-page .stats-exit-copy.is-copied { color: #14864c; background: #e4f4ec; }
 html[data-theme="light"] body.popup-page .stats-route button { color: #66716b; }
 html[data-theme="light"] body.popup-page .stats-route button:hover { color: #252d29; background: #e9efeb; }
 html[data-theme="light"] body.popup-page .stats-route button.is-copied { color: #14864c; background: #e8f6ee; }
+html[data-theme="light"] body.popup-page .stats-rail { border-color: #dce4df; }
+html[data-theme="light"] body.popup-page .stats-rail-entry-badge { border-color: #0f9b50; color: #0f9b50; background: #e2f5ea; }
+html[data-theme="light"] body.popup-page .stats-rail-entry-badge svg { stroke: #0f9b50; }
+html[data-theme="light"] body.popup-page .stats-rail-flow { background: repeating-linear-gradient(90deg, #0f9b50 0 6px, transparent 6px 14px); opacity: 0.5; }
+html[data-theme="light"] body.popup-page .stats-rail-tor-pill { border-color: #b8d8c4; background: #f0faf4; color: #66716b; }
+html[data-theme="light"] body.popup-page .stats-rail-tor-pill svg { stroke: #0f9b50; }
+html[data-theme="light"] body.popup-page .stats-rail-exit-badge { border-color: #0f9b50; background: #0f9b50; color: #fff; }
+html[data-theme="light"] body.popup-page .stats-rail-cap { color: #8a948f; }
+html[data-theme="light"] body.popup-page .stats-rail-name { color: #252d29; }
+html[data-theme="light"] body.popup-page .stats-rail-addr { color: #66716b; }
+html[data-theme="light"] body.popup-page .stats-rail-exit-ip-row { color: #252d29; }
+html[data-theme="light"] body.popup-page .stats-rail-exit-ip-row .stats-rail-addr { color: #252d29; }
+html[data-theme="light"] body.popup-page .stats-rail-exit-ip-row svg { stroke: #8a948f; }
+html[data-theme="light"] body.popup-page .stats-rail-exit-ip-row.is-copied svg { stroke: #0f9b50; }
+html[data-theme="light"] body.popup-page .stats-rail-exit-ip-row.is-error svg { stroke: #d93025; }
 @media (prefers-reduced-motion: reduce) {
   body.popup-page .connection-method-thumb { transition: none; }
 }
