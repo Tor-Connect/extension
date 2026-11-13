@@ -76,13 +76,19 @@ async function checkSiteReachability({ site, url }) {
   try {
     const response = await fetch(url, {
       method: "GET",
+      mode: "no-cors",
       cache: "no-store",
       credentials: "omit",
       referrerPolicy: "no-referrer",
       signal: controller.signal
     });
-    try { await response.body?.cancel(); } catch { /* The response headers already establish reachability. */ }
-    return { site, state: response.ok ? "passed" : "failed", latencyMs: Date.now() - startedAt };
+    // With no-cors the response is opaque (status is always 0, ok is always false).
+    // A resolved fetch — without throwing — means the server responded, which is
+    // sufficient to confirm reachability. Firefox does not relax CORS for service
+    // workers even with host_permissions, so no-cors is required to avoid a CORS
+    // error being thrown for sites like torproject.org that omit CORS headers.
+    try { await response.body?.cancel(); } catch { /* ignore */ }
+    return { site, state: "passed", latencyMs: Date.now() - startedAt };
   } catch {
     return { site, state: "failed", latencyMs: null };
   } finally {
