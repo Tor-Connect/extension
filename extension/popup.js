@@ -439,7 +439,9 @@ function updateLiveStats(result = {}) {
   document.querySelector("#statsExitCapCell").hidden = !showExit;
   document.querySelector("#statsExitLabel").hidden = !showExit;
   document.querySelector("#copyExitIp").hidden = !showExit;
-  if (showExit) {
+  if (!showExit) {
+    document.querySelector("#statsExitBadge").textContent = "";
+  } else {
     const countryCode = (result.exitRelayCountryCode || "").toUpperCase();
     const countryName = countryCode
       ? (new Intl.DisplayNames([globalThis.torI18n?.language || navigator.language || "en"], { type: "region" }).of(countryCode) || countryCode)
