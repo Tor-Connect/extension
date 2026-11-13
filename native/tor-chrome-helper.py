@@ -602,7 +602,7 @@ class Helper:
                             fields = event.split()
                             if len(fields) >= 5:
                                 self.update_circuit_activity(fields[2], fields[3], fields[4], [])
-                        if " CIRC " in event and " BUILT " in event:
+                        if " CIRC " in event and " BUILT " in event and "ONEHOP_TUNNEL" not in event and "IS_INTERNAL" not in event:
                             fields = event.split()
                             if len(fields) >= 5:
                                 hops = fields[4].split(",")
@@ -672,6 +672,8 @@ class Helper:
     def lookup_exit_relay_from_snapshot_fresh(self, port: int, cookie: bytes, text: str) -> None:
         """Seed exit relay info from an already-built circuit in the snapshot (fresh connection)."""
         for line in text.split("\r\n"):
+            if "ONEHOP_TUNNEL" in line or "IS_INTERNAL" in line:
+                continue
             fields = line.split()
             if len(fields) >= 3 and fields[1] == "BUILT":
                 hops = fields[2].split(",")

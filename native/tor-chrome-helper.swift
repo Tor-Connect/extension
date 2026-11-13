@@ -705,6 +705,7 @@ final class Helper {
             processCircuitSnapshot(snapshot, targets: targets)
             // Seed exit relay from any already-BUILT circuit (fresh connection, background)
             for line in snapshot.components(separatedBy: "\r\n") {
+                guard !line.contains("ONEHOP_TUNNEL"), !line.contains("IS_INTERNAL") else { continue }
                 let fields = line.split(whereSeparator: \.isWhitespace)
                 guard fields.count >= 3, fields[1] == "BUILT" else { continue }
                 let hops = String(fields[2]).components(separatedBy: ",")
@@ -760,7 +761,7 @@ final class Helper {
                             updateCircuitActivity(id: String(fields[2]), status: String(fields[3]), path: String(fields[4]), targets: [])
                         }
                     }
-                    if line.contains(" CIRC ") && line.contains(" BUILT ") {
+                    if line.contains(" CIRC ") && line.contains(" BUILT ") && !line.contains("ONEHOP_TUNNEL") && !line.contains("IS_INTERNAL") {
                         let fields = line.split(whereSeparator: \.isWhitespace)
                         if fields.count >= 5 {
                             let hops = String(fields[4]).components(separatedBy: ",")
