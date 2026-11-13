@@ -316,7 +316,7 @@ body.popup-page .stats-rail-name-entry { overflow: hidden; text-overflow: ellips
 body.popup-page .stats-rail-name-exit { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: right; }
 body.popup-page .stats-rail-ip-row { align-items: center; }
 body.popup-page .stats-rail-ip-row .stats-rail-addr { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-body.popup-page .stats-rail-exit-ip-row { display: flex; align-items: center; justify-content: flex-end; gap: 6px; width: 100%; min-width: 0; margin: 0; padding: 0; border: 0; border-radius: 0; outline: none; background: transparent; color: #eaf1ee; font: 12px/1 "IBM Plex Mono", monospace; line-height: 1; cursor: pointer; appearance: none; -webkit-appearance: none; }
+body.popup-page .stats-rail-exit-ip-row { display: flex; align-items: center; justify-content: flex-end; gap: 6px; width: 100%; min-width: 0; margin: 0; padding: 0; border: 0; border-radius: 0; background: transparent; color: #eaf1ee; font: 12px/1 "IBM Plex Mono", monospace; line-height: 1; cursor: pointer; appearance: none; -webkit-appearance: none; }
 body.popup-page .stats-rail-cap { font: 500 10px/1 "IBM Plex Mono", monospace; letter-spacing: 0.1em; color: #8a948f; }
 body.popup-page .stats-rail-name { overflow: hidden; font-size: 15px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
 body.popup-page .stats-rail-sub-row { display: flex; align-items: center; gap: 0; min-width: 0; }
