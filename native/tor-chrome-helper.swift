@@ -44,6 +44,7 @@ final class Helper {
     private var exitCountry = ""
     private var exitRelayIp = ""
     private var exitRelayCountry = ""
+    private var exitRelayCircuitId = ""
     private let lock = NSLock()
 
     private struct BridgeTarget {
@@ -431,8 +432,7 @@ final class Helper {
             currentBridgeIndex = nil
             bridgeActivity = nil
             builtCircuits = [:]
-            exitRelayIp = ""
-            exitRelayCountry = ""
+            exitRelayIp = ""; exitRelayCountry = ""; exitRelayCircuitId = ""
             reconnectSince = nil
             autoRecoveryBridges = recoveryBridges ?? ((mode == "manual" && selectedBridgeIndex == nil) ? autoBridges : [])
             autoRecoveryTried = recoveryTried
@@ -652,6 +652,11 @@ final class Helper {
     }
 
     private func monitorControlPort(portFile: URL, cookieFile: URL, targets: [BridgeTarget]) {
+        // Pre-load GeoIP caches here, single-threaded, before any concurrent lookup
+        // workers are dispatched. After this point the caches are read-only.
+        loadIPv4GeoIPDataIfNeeded()
+        loadIPv6GeoIPDataIfNeeded()
+        lock.lock(); let sessionProcess = tor; lock.unlock()
         let deadline = Date().addingTimeInterval(20)
         var port: UInt16?
         var cookie: Data?
@@ -711,8 +716,9 @@ final class Helper {
                 let hops = String(fields[2]).components(separatedBy: ",")
                 let lastFp = hops.last?.components(separatedBy: "~").first ?? ""
                 let pf = portFile; let cf = cookieFile; let fp = lastFp
+                let cid = String(fields[0]); let sp = sessionProcess
                 DispatchQueue.global(qos: .utility).async { [weak self] in
-                    self?.lookupExitRelayFresh(portFile: pf, cookieFile: cf, fingerprint: fp)
+                    self?.lookupExitRelayFresh(portFile: pf, cookieFile: cf, fingerprint: fp, circuitId: cid, sessionProcess: sp)
                 }
                 break
             }
@@ -767,8 +773,9 @@ final class Helper {
                             let hops = String(fields[4]).components(separatedBy: ",")
                             let lastFp = hops.last?.components(separatedBy: "~").first ?? ""
                             let pf = portFile; let cf = cookieFile; let fp = lastFp
+                            let cid = String(fields[2]); let sp = sessionProcess
                             DispatchQueue.global(qos: .utility).async { [weak self] in
-                                self?.lookupExitRelayFresh(portFile: pf, cookieFile: cf, fingerprint: fp)
+                                self?.lookupExitRelayFresh(portFile: pf, cookieFile: cf, fingerprint: fp, circuitId: cid, sessionProcess: sp)
                             }
                         }
                     }
@@ -869,12 +876,14 @@ final class Helper {
         } else if ["CLOSED", "FAILED", "DESTROYED"].contains(status) {
             lock.lock()
             builtCircuits.removeValue(forKey: id)
-            if builtCircuits.isEmpty { exitRelayIp = ""; exitRelayCountry = "" }
+            if builtCircuits.isEmpty || id == exitRelayCircuitId {
+                exitRelayIp = ""; exitRelayCountry = ""; exitRelayCircuitId = ""
+            }
             lock.unlock()
         }
     }
 
-    private func lookupExitRelayFresh(portFile: URL, cookieFile: URL, fingerprint: String) {
+    private func lookupExitRelayFresh(portFile: URL, cookieFile: URL, fingerprint: String, circuitId: String, sessionProcess: Process?) {
         let fp = fingerprint.trimmingCharacters(in: CharacterSet(charactersIn: "$")).uppercased()
         let hexChars = CharacterSet(charactersIn: "0123456789ABCDEF")
         guard fp.count == 40, fp.unicodeScalars.allSatisfy({ hexChars.contains($0) }) else { return }
@@ -915,7 +924,10 @@ final class Helper {
         }
         guard let resolvedIp = ip else { return }
         let country = countryCode(for: resolvedIp) ?? ""
-        lock.lock(); exitRelayIp = resolvedIp; exitRelayCountry = country; lock.unlock()
+        lock.lock()
+        guard tor === sessionProcess, builtCircuits[circuitId] != nil else { lock.unlock(); return }
+        exitRelayIp = resolvedIp; exitRelayCountry = country; exitRelayCircuitId = circuitId
+        lock.unlock()
     }
 
     private func updateBridgeActivity(from event: String, targets: [BridgeTarget]) {
@@ -1071,7 +1083,7 @@ final class Helper {
         let savedRecoveryStableSince = preserveAutoRecovery ? recoveryStableSince : nil
         lock.unlock()
         if let process, process.isRunning { process.terminate(); process.waitUntilExit() }
-        lock.lock(); tor = nil; state = "disconnected"; message = "Tor stopped."; lastError = nil; bridgeTargets = []; currentBridgeIndex = nil; bridgeActivity = nil; builtCircuits = [:]; exitRelayIp = ""; exitRelayCountry = ""; reconnectSince = nil; autoRecoveryBridges = savedRecoveryBridges; autoRecoveryTried = savedRecoveryTried; autoRecoveryInProgress = savedRecoveryInProgress; recoveryAttemptSince = savedRecoveryAttemptSince; recoveryStableSince = savedRecoveryStableSince; connectedAt = nil; stopping = false; lock.unlock()
+        lock.lock(); tor = nil; state = "disconnected"; message = "Tor stopped."; lastError = nil; bridgeTargets = []; currentBridgeIndex = nil; bridgeActivity = nil; builtCircuits = [:]; exitRelayIp = ""; exitRelayCountry = ""; exitRelayCircuitId = ""; reconnectSince = nil; autoRecoveryBridges = savedRecoveryBridges; autoRecoveryTried = savedRecoveryTried; autoRecoveryInProgress = savedRecoveryInProgress; recoveryAttemptSince = savedRecoveryAttemptSince; recoveryStableSince = savedRecoveryStableSince; connectedAt = nil; stopping = false; lock.unlock()
     }
 
     private func executable(named name: String) -> URL? {

@@ -112,6 +112,7 @@ class Helper:
         self.exit_country: str = ""
         self.exit_relay_ip: str = ""
         self.exit_relay_country: str = ""
+        self.exit_relay_circuit_id: str = ""
         self.geo4: list[tuple[int, int, str]] | None = None
         self.geo6: list[tuple[int, int, str]] | None = None
 
@@ -344,7 +345,7 @@ class Helper:
                 self.bridge_activity = None; self.connected_at = None; self.state = "starting"; self.message = "Starting Tor…"
                 self.bootstrap_progress = -1
                 self.built_circuits = {}; self.reconnect_since = None
-                self.exit_relay_ip = ""; self.exit_relay_country = ""
+                self.exit_relay_ip = ""; self.exit_relay_country = ""; self.exit_relay_circuit_id = ""
                 self.exit_country = exit_country
                 self.auto_recovery_bridges = list(recovery_bridges) if recovery_bridges is not None else (auto_bridges if mode == "manual" and selected_index is None else [])
                 self.auto_recovery_tried = set(recovery_tried or ())
@@ -568,7 +569,7 @@ class Helper:
                 self.process_circuit_snapshot(circuit_text, targets)
                 threading.Thread(
                     target=self.lookup_exit_relay_from_snapshot_fresh,
-                    args=(port, cookie, circuit_text),
+                    args=(port, cookie, circuit_text, process),
                     daemon=True
                 ).start()
                 buffer = b""
@@ -609,7 +610,7 @@ class Helper:
                                 last_fp = hops[-1].split("~", 1)[0] if hops else ""
                                 threading.Thread(
                                     target=self.lookup_exit_relay_fresh,
-                                    args=(port, cookie, last_fp),
+                                    args=(port, cookie, last_fp, fields[2], process),
                                     daemon=True
                                 ).start()
                         if self.maybe_auto_recover(): return
@@ -669,7 +670,7 @@ class Helper:
                 return bridge["index"]
         return None
 
-    def lookup_exit_relay_from_snapshot_fresh(self, port: int, cookie: bytes, text: str) -> None:
+    def lookup_exit_relay_from_snapshot_fresh(self, port: int, cookie: bytes, text: str, process: subprocess.Popen[str]) -> None:
         """Seed exit relay info from an already-built circuit in the snapshot (fresh connection)."""
         for line in text.split("\r\n"):
             if "ONEHOP_TUNNEL" in line or "IS_INTERNAL" in line:
@@ -678,10 +679,10 @@ class Helper:
             if len(fields) >= 3 and fields[1] == "BUILT":
                 hops = fields[2].split(",")
                 last_fp = hops[-1].split("~", 1)[0] if hops else ""
-                self.lookup_exit_relay_fresh(port, cookie, last_fp)
+                self.lookup_exit_relay_fresh(port, cookie, last_fp, fields[0], process)
                 return  # use first BUILT circuit found
 
-    def lookup_exit_relay_fresh(self, port: int, cookie: bytes, fingerprint: str) -> None:
+    def lookup_exit_relay_fresh(self, port: int, cookie: bytes, fingerprint: str, circuit_id: str, process: subprocess.Popen[str]) -> None:
         """Open a fresh control-port connection and resolve the exit relay IP."""
         fp = fingerprint.strip("$").upper()
         if not re.fullmatch(r"[0-9A-F]{40}", fp):
@@ -706,8 +707,11 @@ class Helper:
                     except ValueError: pass
                 break
         with self.lock:
+            if self.process is not process or circuit_id not in self.built_circuits:
+                return
             self.exit_relay_ip = ip or ""
             self.exit_relay_country = self.country_code(ip) or "" if ip else ""
+            self.exit_relay_circuit_id = circuit_id if ip else ""
 
     def update_circuit_activity(self, circuit_id: str, status: str, path: str, targets: list[dict]) -> None:
         if status == "BUILT":
@@ -731,9 +735,10 @@ class Helper:
         elif status in {"CLOSED", "FAILED", "DESTROYED"}:
             with self.lock:
                 self.built_circuits.pop(circuit_id, None)
-                if not self.built_circuits:
+                if not self.built_circuits or circuit_id == self.exit_relay_circuit_id:
                     self.exit_relay_ip = ""
                     self.exit_relay_country = ""
+                    self.exit_relay_circuit_id = ""
 
     def update_bridge_activity(self, event: str, targets: list[dict]) -> None:
         reported, activity = None, None
@@ -844,7 +849,7 @@ class Helper:
             self.process = None; self.state = "disconnected"; self.message = "Tor stopped."
             self.last_error = None; self.targets = []; self.current_index = None
             self.bridge_activity = None; self.built_circuits = {}; self.reconnect_since = None
-            self.exit_relay_ip = ""; self.exit_relay_country = ""
+            self.exit_relay_ip = ""; self.exit_relay_country = ""; self.exit_relay_circuit_id = ""
             self.auto_recovery_bridges = auto_bridges; self.auto_recovery_tried = auto_tried
             self.auto_recovery_in_progress = recovery_in_progress; self.recovery_attempt_since = recovery_attempt_since
             self.recovery_stable_since = stable_since
