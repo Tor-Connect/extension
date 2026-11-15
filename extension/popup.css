@@ -2708,6 +2708,22 @@ html[data-theme] body.popup-page .orbit-card[data-state="disconnected"] button.p
 html[data-theme="light"] body.popup-page .orbit-card[data-state="disconnected"] button.power-button::after {
   border-color: #a4b3ab;
 }
+html[data-theme="light"] body.popup-page .orbit-card button.power-button,
+html[data-theme="light"] body.popup-page .orbit-card[data-empty="true"] button.power-button,
+html[data-theme="light"] body.popup-page .orbit-card[data-empty="true"] button.power-button:hover,
+html[data-theme="dim"] body.popup-page .orbit-card button.power-button,
+html[data-theme="dim"] body.popup-page .orbit-card[data-empty="true"] button.power-button,
+html[data-theme="dim"] body.popup-page .orbit-card[data-empty="true"] button.power-button:hover {
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+}
+html[data-theme="light"] body.popup-page .orbit-card button.power-button::before,
+html[data-theme="light"] body.popup-page .orbit-card button.power-button[data-state="connected"]::before,
+html[data-theme="dim"] body.popup-page .orbit-card button.power-button::before,
+html[data-theme="dim"] body.popup-page .orbit-card button.power-button[data-state="connected"]::before {
+  background: transparent;
+}
 
 /* A failed site-check badge turns amber; it must not fill the enlarged
    connected power-button, which spans most of the globe. */

@@ -1431,6 +1431,7 @@ function renderRoute(result = {}) {
   const isConnected = result.state === "connected";
   const snowflake = preferences.mode === "snowflake";
   const enabledCount = entries.length;
+  idleCardNode.hidden = hasNoBridgeLines;
 
   // Choose icon SVG and determine title/sub
   let iconSvg, idleTitle, idleSub;
