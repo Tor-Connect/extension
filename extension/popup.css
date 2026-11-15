@@ -193,7 +193,7 @@ html[data-theme="dark"] .setup-link { color: #6bdc9d; }
 }
 
 /* Orbit popup design, scoped so the settings page keeps its own layout. */
-body.popup-page { width: 360px; height: 600px; overflow: auto; color: #252d29; background: #f3f6f4; }
+body.popup-page { width: 360px; height: 600px; overflow: hidden; color: #252d29; background: #f3f6f4; }
 body.popup-page .popup-main { width: 100%; height: 600px; min-height: 600px; padding: 16px 20px 20px; }
 body.popup-page .heading { height: 44px; padding: 0; gap: 8px; border: 0; }
 body.popup-page .app-icon, body.popup-page .app-icon svg { width: 24px; height: 24px; color: #14864c; }
@@ -212,14 +212,14 @@ body.popup-page a.setup-cta:hover { background: #116e4b; transform: translateY(-
 body.popup-page a.setup-cta:focus-visible { outline: 3px solid #7e9bff; outline-offset: 3px; }
 body.popup-page .route-card[hidden] { display: none !important; }
 body.popup-page .route-card.orbit-card { display: flex; min-height: 0; flex: 1 1 auto; flex-direction: column; gap: 0; margin: 0; padding: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; }
-body.popup-page .connection-overview { flex: 0 0 auto; margin-top: 8px; text-align: center; }
+body.popup-page .connection-overview { flex: 0 0 auto; margin-top: 0; text-align: center; }
 body.popup-page .status { display: block; min-height: 34px; color: #252d29; font-size: 26px; font-weight: 600; line-height: 1.3; letter-spacing: -.02em; transition: opacity .15s ease; }
 body.popup-page .status::before { display: none; }
 body.popup-page .status[data-kind="connected"] { color: #14864c; }
 body.popup-page .status[data-kind="connected-check-failed"] { color: #ffb020; }
 body.popup-page .status[data-kind="starting"] { color: #66716b; }
 body.popup-page .status[data-kind="error"] { max-width: 100%; margin: 0 auto; color: #b34740; font-size: 21px; line-height: 1.25; text-wrap: balance; }
-body.popup-page .connection-meta { display: flex; min-height: 20px; align-items: center; justify-content: center; gap: 6px; margin-top: 3px; color: #8a948f; font-size: 12px; line-height: 1.4; }
+body.popup-page .connection-meta { display: flex; height: 20px; min-height: 20px; align-items: center; justify-content: center; gap: 6px; margin-top: 3px; color: #8a948f; font-size: 12px; line-height: 1.4; }
 body.popup-page .status-detail { margin: 0; color: #8a948f; font-size: 12px; line-height: 1.4; text-align: center; transition: opacity .2s ease; }
 body.popup-page .site-check-summary { display: inline-flex; width: auto; min-height: 26px; align-items: center; justify-content: center; gap: 6px; margin: 0; padding: 0 10px; border: 0; border-radius: 13px; color: #ffc24d; background: rgb(255 176 32 / 13%); font-size: 13px; font-weight: 500; line-height: 1; cursor: pointer; }
 body.popup-page .site-check-summary[hidden], body.popup-page .site-check-badge[hidden] { display: none !important; }
@@ -279,7 +279,7 @@ body.popup-page .live-stats { position: fixed; right: 0; bottom: 0; left: 0; z-i
 body.popup-page .live-stats.is-open { transform: translateY(0); }
 body.popup-page .live-stats.site-check-sheet { z-index: 23; padding: 8px 20px 20px; }
 body.popup-page .stats-close { display: flex; width: 100%; height: 44px; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 0; border: 0; color: #eaf1ee; background: transparent; font-size: 14px; font-weight: 600; cursor: pointer; }
-body.popup-page .stats-close span:first-child { width: 36px; height: 4px; border-radius: 2px; background: #3a4642; }
+body.popup-page .stats-close > span:first-child { width: 36px; height: 4px; border-radius: 2px; background: #3a4642; }
 body.popup-page .stats-close.site-check-close { height: 56px; gap: 8px; }
 body.popup-page .stats-close.site-check-close .site-check-title-group { display: flex; width: auto; height: auto; flex-direction: column; align-items: center; gap: 2px; background: transparent; }
 body.popup-page .stats-close.site-check-close .site-check-heading { width: auto; height: auto; background: transparent; }
@@ -451,15 +451,26 @@ body.popup-page button.power-button[data-initial-checking="true"] .connection-ma
 body.popup-page button.power-button[data-initial-checking="true"] .connection-mark .mark-broken { display: block !important; }
 body.popup-page .bridge-summary { display: flex; min-height: 42px; flex: 0 0 auto; align-items: center; justify-content: space-between; gap: 8px; margin-top: auto; padding-top: 4px; }
 body.popup-page .orbit-card[data-mode="snowflake"] .bridge-summary { display: flex; }
-body.popup-page .connected-stats-summary { display: flex; width: 100%; min-width: 0; align-items: center; gap: 10px; box-sizing: border-box; padding: 10px 12px; border: 1px solid #1d2421; border-radius: 16px; background: #0c1210; }
+body.popup-page .connected-stats-summary { position: relative; display: flex; width: 100%; height: 76px; min-width: 0; align-items: center; gap: 10px; box-sizing: border-box; padding: 8px 10px 8px 14px; border: 1.5px solid #262d2b; border-radius: 22px; background: #121816; }
+body.popup-page .bottom-card-drag-handle { position: absolute; top: 5px; left: 50%; width: 28px; height: 3px; margin-left: -14px; border-radius: 2px; background: #3a4642; pointer-events: none; }
 body.popup-page .connected-stats-summary[hidden] { display: none !important; }
 body.popup-page .orbit-card[data-state="connected"] .bridge-summary { min-height: 0; flex-direction: column; align-items: stretch; justify-content: flex-start; gap: 0; }
-body.popup-page .orbit-card[data-state="connected"] .route-identity,
-body.popup-page .orbit-card[data-state="connected"] .copy-bridge-button { display: none !important; }
+body.popup-page .orbit-card[data-state="connected"] .route-identity { display: none !important; }
+/* Legacy bridge-copy control is not part of the redesigned popup layout. */
+body.popup-page .copy-bridge-button { display: none !important; }
 body.popup-page .orbit-card[data-state="connected"] .connected-stats-summary { flex: none; }
 body.popup-page .summary-route-icon { display: flex; width: 40px; height: 40px; flex: none; align-items: center; justify-content: center; border: 2px solid #2bd576; border-radius: 50%; color: #2bd576; font: 12px "IBM Plex Mono", monospace; }
 body.popup-page .summary-route-icon.is-snowflake { font-size: 0; }
 body.popup-page .summary-route-icon.is-snowflake::before { content: "❄"; font: 21px sans-serif; }
+body.popup-page .summary-route-icon.is-globe {
+  width: 36px;
+  height: 36px;
+  border: 0;
+  color: #2bd576;
+  font-size: 0;
+  background: transparent;
+}
+body.popup-page .summary-route-icon.is-globe svg { width: 22px; height: 22px; }
 body.popup-page .summary-route { display: flex; min-width: 0; flex: 1; flex-direction: column; gap: 2px; }
 body.popup-page .summary-route strong { overflow: hidden; color: #eaf1ee; font-size: 15px; text-overflow: ellipsis; white-space: nowrap; }
 body.popup-page .summary-route small { overflow: hidden; color: #a9b3ae; font: 12px "IBM Plex Mono", monospace; text-overflow: ellipsis; white-space: nowrap; }
@@ -691,7 +702,8 @@ html[data-theme="dim"] body.popup-page .stats-transfer strong { color: #eaf1ee; 
 html[data-theme="dim"] body.popup-page .stats-transfer small { color: #9aa5a1; }
 html[data-theme="dim"] body.popup-page .site-check-actions .site-check-retest { border-color: #3e4c54; color: #eaf1ee; background: #2a343a; }
 /* Dim: connected stats summary box */
-html[data-theme="dim"] body.popup-page .connected-stats-summary { border-color: #36434b; background: #222c31; }
+html[data-theme="dim"] body.popup-page .connected-stats-summary { border-color: #3e4c54; background: #2a343a; }
+html[data-theme="dim"] body.popup-page .bottom-card-drag-handle { background: #465158; }
 html[data-theme="dim"] body.popup-page button.summary-rates { color: #2bd576; background: #1f3b33; }
 html[data-theme="dim"] body.popup-page .summary-rates:hover { background: #213b34; }
 html[data-theme="dim"] body.popup-page .summary-route strong { color: #eaf1ee; }
@@ -925,14 +937,16 @@ html[data-theme="light"] body.popup-page button.connection-method-option[aria-ch
 html[data-theme="light"] body.popup-page .empty-bridge-info p { color: #66716b; }
 html[data-theme="light"] body.popup-page button.add-bridges-button { color: #06150d; }
 html[data-theme="light"] body.popup-page .connected-stats-summary { border-color: #dce4df; background: #fff; }
+html[data-theme="light"] body.popup-page .bottom-card-drag-handle { background: #c8d4cf; }
 html[data-theme="light"] body.popup-page .summary-route strong { color: #252d29; }
 html[data-theme="light"] body.popup-page .summary-route small { color: #66716b; }
 html[data-theme="light"] body.popup-page .summary-route-icon { border-color: #2bd576; color: #14864c; background: #e8f6ee; }
+html[data-theme="light"] body.popup-page .summary-route-icon.is-globe { border: 0; color: #0f9b50; background: transparent; }
 html[data-theme="light"] body.popup-page button.summary-rates { color: #14864c; background: #e8f6ee; }
 html[data-theme="light"] body.popup-page button.summary-rates:hover { background: #dff2e6; }
 html[data-theme="light"] body.popup-page .live-stats { border-color: #dce4df; color: #252d29; background: #fff; box-shadow: 0 -16px 40px rgb(25 45 34 / 18%); }
 html[data-theme="light"] body.popup-page .stats-close { color: #252d29; }
-html[data-theme="light"] body.popup-page .stats-close span:first-child { background: #cbd7d0; }
+html[data-theme="light"] body.popup-page .stats-close > span:first-child { background: #cbd7d0; }
 html[data-theme="light"] body.popup-page .stats-transfer > div { border-color: #dce4df; background: #f5f8f6; }
 html[data-theme="light"] body.popup-page .stats-label { color: #66716b; }
 html[data-theme="light"] body.popup-page .stats-transfer strong { color: #252d29; }
@@ -1583,3 +1597,1158 @@ body.popup-page .firefox-permission-panel button:disabled { opacity: .55; cursor
   body.popup-page button.permission-primary-action { transition: none; }
 }
 html[data-theme="light"] body.popup-page .site-check-actions .site-check-retest { border-color: #dce4df; color: #252d29; background: #f5f8f6; }
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Globe-skin popup redesign (PopupC-ToggleSkin)
+   Dark-first; light overrides at end of this section.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Animations ─────────────────────────────────────────────────────────── */
+@keyframes globe-pulse { 0%,100% { opacity: .45 } 50% { opacity: 1 } }
+/* Advance by exactly one complete dash pattern so the loop is seamless. */
+@keyframes globe-route-flow { from { stroke-dashoffset: 0 } to { stroke-dashoffset: -14 } }
+@keyframes globe-route-draw { from { stroke-dashoffset: 100 } to { stroke-dashoffset: 0 } }
+@keyframes globe-route-rise {
+  0% { transform: translate(-50%, calc(-100% + 8px)); opacity: 0 }
+  100% { transform: translate(-50%, -100%); opacity: 1 }
+}
+@keyframes appear { from { opacity: 0 } to { opacity: 1 } }
+@keyframes globe-spin { to { transform: rotate(360deg) } }
+@keyframes globe-method-ripple { 0% { transform: scale(1); opacity: .55 } 100% { transform: scale(1.9); opacity: 0 } }
+@keyframes globe-shake { 0%,100% { transform: translateX(0) } 25% { transform: translateX(-5px) } 75% { transform: translateX(5px) } }
+@keyframes globe-entry-pulse { 0%,100% { opacity: .58 } 50% { opacity: 1 } }
+@keyframes globe-spinin { from { transform: rotate(-50deg) scale(.94); opacity: 0 } to { transform: none; opacity: 1 } }
+@keyframes globe-method-underline { from { opacity: 0 } to { opacity: 1 } }
+
+/* ── Layout: replace orbit-stage with globe-stage ───────────────────────── */
+/* The orbit-card now uses a flex column; globe-stage takes the globe area.  */
+body.popup-page .route-card.orbit-card {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+/* ── Globe stage ─────────────────────────────────────────────────────────── */
+body.popup-page .globe-stage {
+  position: relative;
+  width: min(320px, 100%);
+  height: 320px;
+  flex: 0 0 auto;
+  margin: 0 auto;
+}
+
+body.popup-page .globe-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+/* Globe outer ring — always near-invisible, matches design background */
+body.popup-page .globe-ring {
+  fill: none;
+  stroke: #141b18;
+  stroke-width: 2;
+  stroke-dasharray: 3 9;
+  stroke-linecap: round;
+}
+
+/* Globe dot field — idle pulsing dots */
+body.popup-page .globe-dots circle {
+  fill: #2a3a30;
+  animation: globe-pulse 1.6s ease-in-out infinite;
+  animation-play-state: paused;
+}
+body.popup-page .orbit-card[data-state="starting"] .globe-dots circle,
+body.popup-page .orbit-card[data-initial-checking="true"] .globe-dots circle {
+  animation-play-state: running;
+}
+body.popup-page .orbit-card[data-state="connected"] .globe-dots circle { fill: #55b985; }
+body.popup-page .orbit-card[data-state="connected"] .globe-country-skin circle { fill: #55b985; }
+
+/* Country skins — controlled entirely by JS `hidden` attr; no CSS opacity tricks */
+/* (opacity rules removed — JS sets hidden=false to show, hidden=true to hide) */
+
+/* ── Power button — globe centre ─────────────────────────────────────────── */
+/* Override old .orbit-stage styles for the new globe layout */
+body.popup-page button.power-button {
+  position: absolute;
+  top: 100px;
+  left: 100px;
+  display: grid;
+  width: 120px;
+  height: 120px;
+  min-width: 120px;
+  flex: 0 0 auto;
+  place-items: center;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  color: #6e7b84;
+  background: transparent;
+  box-shadow: none;
+  cursor: pointer;
+  transition: none;
+}
+/* Ripple halo background (radial gradient) */
+body.popup-page button.power-button::before {
+  position: absolute;
+  left: 14px;
+  top: 14px;
+  width: 92px;
+  height: 92px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(8,12,11,0.9) 0%, rgba(8,12,11,0.75) 45%, rgba(8,12,11,0) 72%);
+  content: "";
+  pointer-events: none;
+}
+/* Ripple ring */
+body.popup-page button.power-button::after {
+  position: absolute;
+  left: 20px;
+  top: 20px;
+  width: 80px;
+  height: 80px;
+  border: 1.5px solid #3a4642;
+  border-radius: 50%;
+  content: "";
+  pointer-events: none;
+  animation: globe-method-ripple 2.6s ease-out infinite;
+}
+body.popup-page button.power-button:hover::after { border-color: #5a6e66; }
+body.popup-page .connection-mark { width: 60px; height: 60px; position: relative; z-index: 1; }
+
+/* Connected state — expand to full globe centre, hide icon (design shows no center mark) */
+body.popup-page button.power-button[data-state="connected"] {
+  top: 40px;
+  left: 40px;
+  width: 240px;
+  height: 240px;
+  min-width: 240px;
+  color: transparent;
+}
+body.popup-page button.power-button[data-state="connected"]::before,
+body.popup-page button.power-button[data-state="connected"]::after {
+  display: none;
+}
+body.popup-page button.power-button[data-state="connected"] .connection-mark {
+  display: none;
+}
+
+/* Starting state */
+body.popup-page button.power-button[data-state="starting"] { color: #2bd576; }
+body.popup-page button.power-button[data-state="starting"]::after {
+  border-color: #2bd576;
+  animation: globe-method-ripple 2s ease-out infinite;
+}
+body.popup-page button.power-button[data-state="reconnecting"] { color: #e2a333; }
+body.popup-page button.power-button[data-state="bridge-interrupted"],
+body.popup-page button.power-button[data-state="failed"] { color: #ef7770; }
+
+/* Initial-checking state: use sonar breathing (no ripple override) */
+body.popup-page button.power-button[data-initial-checking="true"] {
+  color: #7d868f;
+  animation: sonar-breathe 2.7s ease-in-out infinite;
+}
+/* Mark visibility — same logic as before */
+body.popup-page .connection-mark .mark-connected { display: none; }
+body.popup-page .connection-mark .mark-connecting { display: none; }
+body.popup-page .connection-mark .mark-broken { display: block; }
+body.popup-page button.power-button[data-state="connected"] .connection-mark .mark-connected,
+body.popup-page button.power-button[data-state="starting"] .connection-mark .mark-connected,
+body.popup-page button.power-button[data-state="reconnecting"] .connection-mark .mark-connected,
+body.popup-page button.power-button[data-state="bridge-interrupted"] .connection-mark .mark-connected { display: block; }
+body.popup-page button.power-button[data-state="connected"] .connection-mark .mark-broken,
+body.popup-page button.power-button[data-state="starting"] .connection-mark .mark-broken,
+body.popup-page button.power-button[data-state="reconnecting"] .connection-mark .mark-broken,
+body.popup-page button.power-button[data-state="bridge-interrupted"] .connection-mark .mark-broken { display: none; }
+body.popup-page button.power-button[data-state="starting"] .connection-mark .mark-connected { display: none; }
+body.popup-page button.power-button[data-state="starting"] .connection-mark .mark-connecting { display: block; }
+body.popup-page button.power-button[data-state="reconnecting"] .connection-mark .mark-connected { display: none; }
+body.popup-page button.power-button[data-state="reconnecting"] .connection-mark .mark-connecting { display: block; }
+body.popup-page button.power-button[data-initial-checking="true"] .connection-mark .mark-connected,
+body.popup-page button.power-button[data-initial-checking="true"] .connection-mark .mark-connecting { display: none !important; }
+body.popup-page button.power-button[data-initial-checking="true"] .connection-mark .mark-broken { display: block !important; }
+/* Progress arc (connecting) */
+body.popup-page .power-button::after { z-index: 2; }
+body.popup-page button.power-button[data-state="starting"] .power-arc { display: block; }
+
+/* ── Method pager (Snowflake / Bridge) ───────────────────────────────────── */
+body.popup-page .connection-method-switch {
+  position: relative;
+  top: auto;
+  left: auto;
+  transform: none;
+  margin: 6px auto 6px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  width: 136px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  opacity: 1;
+  transition: opacity .35s ease;
+}
+body.popup-page .orbit-card:not([data-state="disconnected"]):not([data-state=""]) .connection-method-switch {
+  opacity: 0;
+  pointer-events: none;
+}
+
+body.popup-page button.connection-method-option {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  width: 64px;
+  height: 44px;
+  flex: 0 0 64px;
+  place-items: center;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  color: #6b7771;
+  background: transparent;
+  cursor: pointer;
+}
+body.popup-page button.connection-method-option[aria-checked="true"] { color: #2bd576; }
+body.popup-page .connection-method-option svg {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+body.popup-page .connection-method-option:hover { color: #a9b3ae; }
+body.popup-page .connection-method-option[aria-checked="true"]:hover { color: #2bd576; }
+body.popup-page .connection-method-option:focus-visible { outline: 2px solid #7e9bff; outline-offset: 2px; border-radius: 4px; }
+body.popup-page .connection-method-option:disabled { opacity: .6; cursor: wait; }
+
+/* Animated green underline */
+body.popup-page .connection-method-indicator {
+  position: absolute;
+  bottom: 2px;
+  left: 18px; /* snowflake: 18, bridge: 90 — set via JS */
+  width: 28px;
+  height: 3px;
+  border-radius: 2px;
+  background: #2bd576;
+  pointer-events: none;
+  transition: left .3s cubic-bezier(.3,.9,.3,1);
+}
+body.popup-page .connection-method-switch[data-mode="manual"] .connection-method-indicator { left: 90px; }
+
+/* ── Site-check badge ────────────────────────────────────────────────────── */
+/* Position matches design: left:222px, top:54px within globe-stage */
+body.popup-page .site-check-badge {
+  position: absolute;
+  z-index: 2;
+  top: 54px;
+  left: 222px;
+  display: flex;
+  width: 44px;
+  height: 44px;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  color: #ffc24d;
+  background: transparent;
+  cursor: pointer;
+  font: 600 13px "IBM Plex Mono", ui-monospace, monospace;
+}
+body.popup-page .site-check-badge::before {
+  position: absolute;
+  width: 28px;
+  height: 28px;
+  border: 2px solid #ffc24d;
+  border-radius: 50%;
+  background: #2a1f08;
+  box-shadow: 0 0 0 4px #080c0b;
+  content: "";
+}
+body.popup-page .site-check-badge > *, body.popup-page .site-check-badge > svg { position: relative; z-index: 1; }
+body.popup-page .site-check-badge svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+body.popup-page .site-check-badge.is-pending { color: #a9b3ae; }
+body.popup-page .site-check-badge.is-pending::before { border-color: #3a4642; background: #121816; }
+body.popup-page .site-check-badge.is-failed { color: #1a1100; }
+body.popup-page .site-check-badge.is-failed::before { border-color: #ffb020; background: #ffb020; }
+body.popup-page .site-check-badge.is-passed { color: #06150d; }
+body.popup-page .site-check-badge.is-passed::before { border-color: #2bd576; background: #2bd576; }
+
+/* ── Bottom card area ────────────────────────────────────────────────────── */
+/* Globe bottom: method pager + bottom card — pushed to foot of flex column */
+body.popup-page .globe-bottom {
+  margin-top: auto;
+  flex: 0 0 auto;
+  padding-bottom: 10px;
+}
+
+body.popup-page .bottom-card-area {
+  flex: 0 0 auto;
+  padding-top: 0;
+}
+
+/* Idle / connecting card */
+body.popup-page .bottom-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 76px;
+  box-sizing: border-box;
+  padding: 0 10px 0 14px;
+  border-radius: 22px;
+  border: 1.5px solid #262d2b;
+  background: #121816;
+  transition: border-color .2s ease;
+}
+body.popup-page .bottom-card[hidden] { display: none !important; }
+body.popup-page .orbit-card[data-state="connected"] .bottom-card { display: none; }
+
+body.popup-page .bottom-card-icon {
+  flex: none;
+  display: flex;
+  width: 36px;
+  height: 36px;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  border: 2px solid #262d2b;
+  border-radius: 50%;
+  color: #6b7771;
+  background: #0e1412;
+  transition: border-color .2s ease, color .2s ease, background .2s ease;
+}
+body.popup-page .bottom-card-icon svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+/* Icon states */
+body.popup-page .orbit-card[data-state="starting"] .bottom-card-icon {
+  border-color: #1e3a2c;
+  color: #2bd576;
+  background: #0e1412;
+}
+body.popup-page .orbit-card[data-state="starting"] .bottom-card-icon svg {
+  animation: globe-spin 1s linear infinite;
+}
+
+body.popup-page .bottom-card-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+body.popup-page .bottom-card-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #eaf1ee;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+body.popup-page .bottom-card-sub {
+  font-size: 12px;
+  color: #8a948f;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Action chevron button (opens bridges sheet) */
+body.popup-page .bottom-card-action {
+  flex: none;
+  display: flex;
+  width: 44px;
+  height: 44px;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 22px;
+  color: #6b7771;
+  background: transparent;
+  cursor: pointer;
+}
+body.popup-page .bottom-card-action[hidden] { display: none !important; }
+body.popup-page .bottom-card-action:hover { color: #a9b3ae; background: #1a2622; }
+body.popup-page .bottom-card-action svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* ── Bridges sheet ───────────────────────────────────────────────────────── */
+body.popup-page .bridges-sheet {
+  z-index: 10;
+  display: flex;
+  max-height: calc(100vh - 16px);
+  flex-direction: column;
+  overflow: hidden;
+}
+body.popup-page .bridges-backdrop {
+  z-index: 9;
+}
+
+body.popup-page .bridges-close {
+  flex: none;
+  min-height: 64px;
+  height: auto;
+  padding: 6px 0 4px;
+  gap: 8px;
+  flex-direction: column;
+}
+body.popup-page .bridges-grip {
+  width: 36px;
+  height: 4px;
+  border-radius: 2px;
+  background: #3a4642;
+}
+body.popup-page .bridges-title-group {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+body.popup-page .bridges-heading {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.2;
+  color: #eaf1ee;
+}
+body.popup-page .bridges-subtitle {
+  display: block;
+  max-width: 280px;
+  text-align: center;
+  font-size: 12px;
+  line-height: 1.35;
+  color: #8a948f;
+}
+
+/* Bridge toggle rows */
+body.popup-page .bridge-rows {
+  min-height: 0;
+  flex: 0 1 auto;
+  margin-top: 8px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
+}
+body.popup-page .bridge-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 60px;
+  padding: 0 0 0 4px;
+  border: 0;
+  border-top: 1px solid #1d2421;
+  background: transparent;
+  color: #eaf1ee;
+  text-align: left;
+  width: 100%;
+  cursor: pointer;
+}
+body.popup-page .bridge-row-badge {
+  flex: none;
+  display: flex;
+  width: 36px;
+  height: 36px;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  border: 2px solid #262d2b;
+  border-radius: 50%;
+  color: #6b7771;
+  background: transparent;
+  font: 500 12px/1 "IBM Plex Mono", monospace;
+  transition: border-color .2s, background .2s, color .2s;
+}
+body.popup-page .bridge-row[aria-checked="true"] .bridge-row-badge {
+  border-color: #2bd576;
+  color: #2bd576;
+  background: #10291c;
+}
+body.popup-page .bridge-row-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+body.popup-page .bridge-row-name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #eaf1ee;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+body.popup-page .bridge-row[aria-checked="false"] .bridge-row-name { color: #a9b3ae; }
+body.popup-page .bridge-in-use-badge {
+  display: inline-flex;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: #10291c;
+  font: 500 10px/1.2 "IBM Plex Mono", monospace;
+  letter-spacing: 1px;
+  color: #2bd576;
+}
+body.popup-page .bridge-row-addr {
+  font: 12px "IBM Plex Mono", monospace;
+  color: #8a948f;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* Toggle switch */
+body.popup-page .bridge-row-switch {
+  position: relative;
+  flex: none;
+  width: 44px;
+  height: 26px;
+  margin-right: 2px;
+  border-radius: 13px;
+  background: #2a3230;
+  transition: background .2s;
+  pointer-events: none;
+}
+body.popup-page .bridge-row[aria-checked="true"] .bridge-row-switch { background: #2bd576; }
+body.popup-page .bridge-row-knob {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #6b7771;
+  transition: left .2s, background .2s;
+}
+body.popup-page .bridge-row[aria-checked="true"] .bridge-row-knob {
+  left: 21px;
+  background: #fff;
+}
+
+/* Bridges sheet footer */
+body.popup-page .bridges-footer {
+  flex: none;
+  margin-top: 8px;
+  border-top: 1px solid #1d2421;
+  padding-top: 12px;
+}
+body.popup-page .bridges-add-button {
+  display: flex;
+  width: 100%;
+  height: 52px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  border: 1.5px solid #262d2b;
+  border-radius: 26px;
+  color: #eaf1ee;
+  background: #121816;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+body.popup-page .bridges-add-button:hover { background: #18211d; }
+body.popup-page .bridges-add-button svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* ── Snowflake particles — globe redesign placement ─────────────────────── */
+/* Reset old placement; keep same particle class names */
+body.popup-page .snowflake-field { position: absolute; z-index: 1; inset: 0; display: none; pointer-events: none; }
+body.popup-page .orbit-card[data-mode="snowflake"] .snowflake-field { display: block; }
+body.popup-page .orbit-card[data-initial-checking="true"][data-mode="snowflake"] .snowflake-field { display: none; }
+body.popup-page .snowflake-particle {
+  position: absolute;
+  display: grid;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  border: 2px solid #1d2522;
+  border-radius: 50%;
+  color: #4a5753;
+  background: #0e1412;
+}
+body.popup-page .snowflake-particle svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 2; }
+/* Positions: same as before, unchanged */
+body.popup-page .snowflake-particle.particle-1 { top: 20px; left: 142px; }
+body.popup-page .snowflake-particle.particle-2 { top: 104px; left: 258px; }
+body.popup-page .snowflake-particle.particle-3 { top: 203px; left: 248px; }
+body.popup-page .snowflake-particle.particle-4 { display: none; }
+body.popup-page .snowflake-particle.particle-5 { top: 230px; left: 57px; }
+body.popup-page .snowflake-particle.particle-6 { top: 104px; left: 26px; }
+body.popup-page .orbit-card[data-state="starting"] .snowflake-particle { border-color: #1e3a2c; color: #2bd576; animation: snowflake-twinkle 1.5s ease-in-out infinite; }
+body.popup-page .orbit-card[data-state="starting"] .particle-2 { animation-delay: .25s; }
+body.popup-page .orbit-card[data-state="starting"] .particle-3 { animation-delay: .5s; }
+body.popup-page .orbit-card[data-state="starting"] .particle-5 { animation-delay: 1s; }
+body.popup-page .orbit-card[data-state="starting"] .particle-6 { animation-delay: 1.25s; }
+body.popup-page .orbit-card[data-state="connected"] .snowflake-particle { border-color: #1d2522; color: #3f6b55; background: #0e1412; }
+body.popup-page .orbit-card[data-state="connected"] .particle-3 { border-color: #2bd576; color: #2bd576; background: #10291c; box-shadow: 0 0 0 5px #2bd57626; }
+
+/* ── Sonar (initial-checking) — reuse existing rules ─────────────────────── */
+/* Already defined above; just keep initial-checking visible in globe-stage  */
+body.popup-page .orbit-card[data-initial-checking="true"] .sonar-ghost-nodes { display: block; }
+body.popup-page .orbit-card[data-initial-checking="true"] .sonar-pulses { display: block; }
+
+/* ── Empty bridges state in globe mode ───────────────────────────────────── */
+body.popup-page .orbit-card[data-empty="true"] .bottom-card-icon {
+  border-color: #2a3230;
+  color: #4a5753;
+}
+
+/* ── Light theme overrides for globe redesign ────────────────────────────── */
+html[data-theme="light"] body.popup-page .globe-dots circle { fill: #c8d8d0; }
+html[data-theme="light"] body.popup-page .orbit-card[data-state="connected"] .globe-dots circle,
+html[data-theme="light"] body.popup-page .orbit-card[data-state="connected"] .globe-country-skin circle { fill: #238b58; }
+html[data-theme="light"] body.popup-page .globe-ring { stroke: #d8e4de; }
+html[data-theme="light"] body.popup-page .globe-route {
+  stroke: #0f9b50;
+}
+html[data-theme="light"] body.popup-page .orbit-card[data-state="connected"][data-check="failed"]:not([data-activity="trying"]):not([data-activity="failed"]):not([data-activity="closed"]) .globe-route {
+  stroke: #a66a00;
+}
+html[data-theme="light"] body.popup-page button.power-button { color: #6e7b84; }
+html[data-theme="light"] body.popup-page button.power-button::before {
+  background: radial-gradient(circle, rgba(243,247,244,0.9) 0%, rgba(243,247,244,0.75) 45%, rgba(243,247,244,0) 72%);
+}
+html[data-theme="light"] body.popup-page button.power-button::after { border-color: #a4b3ab; }
+html[data-theme="light"] body.popup-page button.power-button[data-state="connected"] { color: #0f9b50; }
+html[data-theme="light"] body.popup-page button.power-button[data-state="connected"]::before {
+  background: radial-gradient(circle, rgba(243,247,244,0.9) 0%, rgba(226,245,234,0.75) 45%, rgba(243,247,244,0) 72%);
+}
+html[data-theme="light"] body.popup-page button.power-button[data-state="connected"]::after { border-color: #0f9b50; }
+html[data-theme="light"] body.popup-page button.power-button[data-state="connected"][data-check="failed"]:not([data-activity="trying"]):not([data-activity="failed"]):not([data-activity="closed"]) { color: #a66a00; }
+html[data-theme="light"] body.popup-page button.power-button[data-state="connected"][data-check="failed"]:not([data-activity="trying"]):not([data-activity="failed"]):not([data-activity="closed"])::after { border-color: #bd8425; }
+html[data-theme="light"] body.popup-page button.power-button[data-state="starting"] { color: #0f9b50; }
+html[data-theme="light"] body.popup-page button.power-button[data-state="starting"]::after { border-color: #0f9b50; }
+html[data-theme="light"] body.popup-page button.connection-method-option { color: #66716b; }
+html[data-theme="light"] body.popup-page button.connection-method-option[aria-checked="true"] { color: #0f9b50; }
+html[data-theme="light"] body.popup-page button.connection-method-option:hover { color: #252d29; }
+html[data-theme="light"] body.popup-page button.connection-method-option[aria-checked="true"]:hover { color: #0f9b50; }
+html[data-theme="light"] body.popup-page .connection-method-indicator { background: #0f9b50; }
+html[data-theme="light"] body.popup-page .site-check-badge::before { box-shadow: 0 0 0 4px #f3f7f4; }
+html[data-theme="light"] body.popup-page .bottom-card {
+  border-color: #d3dfd8;
+  background: #ffffff;
+}
+html[data-theme="light"] body.popup-page .bottom-card-icon {
+  border-color: #c5d2cb;
+  color: #6e7b84;
+  background: #ffffff;
+}
+html[data-theme="light"] body.popup-page .orbit-card[data-state="starting"] .bottom-card-icon {
+  border-color: #bde3cc;
+  color: #0f9b50;
+  background: #e5f5eb;
+}
+html[data-theme="light"] body.popup-page .bottom-card-title { color: #0f1a14; }
+html[data-theme="light"] body.popup-page .bottom-card-sub { color: #5f6e65; }
+html[data-theme="light"] body.popup-page .bottom-card-action { color: #6e7b84; }
+html[data-theme="light"] body.popup-page .bottom-card-action:hover { color: #0f1a14; background: #e9f0eb; }
+html[data-theme="light"] body.popup-page .bridges-sheet { border-color: #d3dfd8; background: #ffffff; box-shadow: 0 -20px 50px rgba(15,26,20,.14); }
+html[data-theme="light"] body.popup-page .bridges-backdrop { background: rgba(243,247,244,.72); }
+html[data-theme="light"] body.popup-page .bridges-grip { background: #b9c7c0; }
+html[data-theme="light"] body.popup-page .bridges-heading { color: #0f1a14; }
+html[data-theme="light"] body.popup-page .bridges-subtitle { color: #5f6e65; }
+html[data-theme="light"] body.popup-page .bridge-rows .bridge-row { border-color: #dae5de; color: #0f1a14; }
+html[data-theme="light"] body.popup-page .bridge-row-badge { border-color: #c5d2cb; color: #6e7b84; background: #ffffff; }
+html[data-theme="light"] body.popup-page .bridge-row[aria-checked="true"] .bridge-row-badge { border-color: #0f9b50; color: #0f9b50; background: #e2f5ea; }
+html[data-theme="light"] body.popup-page .bridge-row-name { color: #0f1a14; }
+html[data-theme="light"] body.popup-page .bridge-row[aria-checked="false"] .bridge-row-name { color: #4b5a52; }
+html[data-theme="light"] body.popup-page .bridge-in-use-badge { background: #e2f5ea; color: #0f9b50; }
+html[data-theme="light"] body.popup-page .bridge-row-addr { color: #5f6e65; }
+html[data-theme="light"] body.popup-page .bridge-row-switch { background: #c5d2cb; }
+html[data-theme="light"] body.popup-page .bridge-row[aria-checked="true"] .bridge-row-switch { background: #0f9b50; }
+html[data-theme="light"] body.popup-page .bridge-row-knob { background: #5f6e65; }
+html[data-theme="light"] body.popup-page .bridge-row[aria-checked="true"] .bridge-row-knob { background: #ffffff; }
+html[data-theme="light"] body.popup-page .bridges-footer { border-color: #dae5de; }
+html[data-theme="light"] body.popup-page .bridges-add-button { border-color: #d3dfd8; color: #0f1a14; background: #ffffff; }
+html[data-theme="light"] body.popup-page .bridges-add-button:hover { background: #f0f5f2; }
+html[data-theme="light"] body.popup-page .snowflake-particle { border-color: #d6dfda; color: #66716b; background: #edf2ef; }
+html[data-theme="light"] body.popup-page .orbit-card[data-state="starting"] .snowflake-particle { border-color: #b8d9c4; color: #0f9b50; background: #edf8f1; }
+html[data-theme="light"] body.popup-page .orbit-card[data-state="connected"] .particle-3 { border-color: #0f9b50; color: #0f9b50; background: #e2f5ea; box-shadow: 0 0 0 5px rgba(15,155,80,.14); }
+
+/* ── Dim theme overrides for globe redesign ──────────────────────────────── */
+html[data-theme="dim"] body.popup-page .globe-dots circle { fill: #354550; }
+html[data-theme="dim"] body.popup-page .orbit-card[data-state="connected"] .globe-dots circle,
+html[data-theme="dim"] body.popup-page .orbit-card[data-state="connected"] .globe-country-skin circle { fill: #55b985; }
+html[data-theme="dim"] body.popup-page .globe-ring { stroke: #242e34; }
+html[data-theme="dim"] body.popup-page .bottom-card { border-color: #3e4c54; background: #2a343a; }
+html[data-theme="dim"] body.popup-page .bottom-card-icon { border-color: #46555d; color: #909aa2; background: #242e34; }
+html[data-theme="dim"] body.popup-page .orbit-card[data-state="starting"] .bottom-card-icon { border-color: #2c5446; color: #2bd576; background: #242e34; }
+html[data-theme="dim"] body.popup-page .bottom-card-title { color: #eaf1ee; }
+html[data-theme="dim"] body.popup-page .bottom-card-sub { color: #9aa5a1; }
+html[data-theme="dim"] body.popup-page .bottom-card-action { color: #909aa2; }
+html[data-theme="dim"] body.popup-page .bottom-card-action:hover { color: #eaf1ee; background: #2e3a40; }
+html[data-theme="dim"] body.popup-page .bridges-sheet { border-color: #3e4c54; background: #242e34; box-shadow: 0 -20px 50px rgba(0,0,0,.4); }
+html[data-theme="dim"] body.popup-page .bridges-backdrop { background: rgba(27,35,39,.72); }
+html[data-theme="dim"] body.popup-page .bridges-grip { background: #46555d; }
+html[data-theme="dim"] body.popup-page .bridges-heading { color: #eaf1ee; }
+html[data-theme="dim"] body.popup-page .bridges-subtitle { color: #8a948f; }
+html[data-theme="dim"] body.popup-page .bridge-rows .bridge-row { border-color: #36434b; color: #eaf1ee; }
+html[data-theme="dim"] body.popup-page .bridge-row-badge { border-color: #46555d; color: #9aa5a1; background: transparent; }
+html[data-theme="dim"] body.popup-page .bridge-row[aria-checked="true"] .bridge-row-badge { border-color: #2bd576; color: #2bd576; background: #1f3b33; }
+html[data-theme="dim"] body.popup-page .bridge-row-name { color: #eaf1ee; }
+html[data-theme="dim"] body.popup-page .bridge-row[aria-checked="false"] .bridge-row-name { color: #9aa5a1; }
+html[data-theme="dim"] body.popup-page .bridge-in-use-badge { background: #1f3b33; color: #2bd576; }
+html[data-theme="dim"] body.popup-page .bridge-row-addr { color: #9aa5a1; }
+html[data-theme="dim"] body.popup-page .bridge-row-switch { background: #3e4c54; }
+html[data-theme="dim"] body.popup-page .bridge-row[aria-checked="true"] .bridge-row-switch { background: #2bd576; }
+html[data-theme="dim"] body.popup-page .bridge-row-knob { background: #62716e; }
+html[data-theme="dim"] body.popup-page .bridge-row[aria-checked="true"] .bridge-row-knob { background: #fff; }
+html[data-theme="dim"] body.popup-page .bridges-footer { border-color: #36434b; }
+html[data-theme="dim"] body.popup-page .bridges-add-button { border-color: #3e4c54; color: #eaf1ee; background: #2a343a; }
+html[data-theme="dim"] body.popup-page .bridges-add-button:hover { background: #2e3a40; }
+html[data-theme="dim"] body.popup-page .snowflake-particle { border-color: #36434b; color: #55645f; background: #242e34; }
+html[data-theme="dim"] body.popup-page .orbit-card[data-state="starting"] .snowflake-particle { border-color: #2c5446; color: #2bd576; background: #242e34; }
+html[data-theme="dim"] body.popup-page .orbit-card[data-state="connected"] .particle-3 { border-color: #2bd576; color: #2bd576; background: #1f3b33; }
+html[data-theme="dim"] body.popup-page .site-check-badge::before { box-shadow: 0 0 0 4px #1b2327; }
+html[data-theme="dim"] body.popup-page button.power-button::before {
+  background: radial-gradient(circle, rgba(27,35,39,0.9) 0%, rgba(27,35,39,0.75) 45%, rgba(27,35,39,0) 72%);
+}
+html[data-theme="dim"] body.popup-page button.power-button::after { border-color: #55645f; }
+html[data-theme="dim"] body.popup-page button.power-button[data-state="connected"]::after { border-color: #2bd576; }
+html[data-theme="dim"] body.popup-page button.connection-method-option { color: #8a948f; }
+html[data-theme="dim"] body.popup-page button.connection-method-option[aria-checked="true"] { color: #2bd576; }
+html[data-theme="dim"] body.popup-page .connection-method-switch[data-mode="manual"] .connection-method-indicator { left: 90px; }
+
+/* ── Globe exit-country label ────────────────────────────────────────────── */
+body.popup-page .globe-exit-label {
+  position: absolute;
+  top: 44px;
+  left: 50%;
+  z-index: 3;
+  padding: 4px 12px;
+  border-radius: 14px;
+  background: #2bd576;
+  color: #06150d;
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.3;
+  white-space: nowrap;
+  pointer-events: none;
+  transform: translate(-50%, -100%);
+  animation: globe-route-rise .35s cubic-bezier(.2,.8,.2,1) both;
+}
+html[data-theme="light"] body.popup-page .globe-exit-label {
+  background: #1a7a4a;
+  color: #fff;
+}
+html[data-theme="dim"] body.popup-page .globe-exit-label {
+  background: #2bd576;
+  color: #06150d;
+}
+
+/* ── Globe entry label (below globe: country code + bridge name) ─────────── */
+/* Entry label sits directly below the globe: country code ring at left:140 / top:274. */
+body.popup-page .globe-entry-label {
+  position: absolute;
+  left: 0;
+  top: 274px;
+  width: 100%;
+  height: 40px;
+  pointer-events: none;
+  animation: appear .4s ease both;
+}
+body.popup-page .globe-entry-label[hidden] { display: none !important; }
+body.popup-page .globe-entry-cc {
+  position: absolute;
+  top: 0;
+  left: 140px;
+  display: grid;
+  width: 40px;
+  height: 40px;
+  box-sizing: border-box;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 13px;
+  font-weight: 600;
+  color: #2bd576;
+  animation: globe-entry-pop .5s cubic-bezier(.2,.8,.2,1) both;
+}
+body.popup-page .globe-entry-name {
+  position: absolute;
+  left: 186px;
+  width: 110px;
+  line-height: 16px;
+  top: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #a9b3ae;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+html[data-theme="light"] body.popup-page .globe-entry-cc { color: #0f9b50; }
+html[data-theme="light"] body.popup-page .globe-entry-name { color: #5f6e65; }
+html[data-theme="dim"] body.popup-page .globe-entry-cc { color: #2bd576; }
+@keyframes globe-entry-pop { from { transform: scale(.72); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+/* ── Globe SVG inline-animation keyframe aliases ─────────────────────────── */
+/* The SVG elements use plain names (draw, flow, pop, spinin, fall, pulse).   */
+/* These @keyframes match the named animations in the HTML markup.            */
+@keyframes draw { from { stroke-dashoffset: 100 } to { stroke-dashoffset: 0 } }
+@keyframes flow { to { stroke-dashoffset: -28 } }
+@keyframes pop {
+  0%   { transform: scale(.55); opacity: 0 }
+  60%  { transform: scale(1.12); opacity: 1 }
+  100% { transform: scale(1); opacity: 1 }
+}
+@keyframes spinin {
+  from { transform: rotate(-50deg) scale(.94); opacity: 0 }
+  to   { transform: none; opacity: 1 }
+}
+@keyframes fall {
+  0%   { transform: translateY(0); opacity: 0 }
+  12%  { opacity: .9 }
+  88%  { opacity: .9 }
+  100% { transform: translateY(226px); opacity: 0 }
+}
+@keyframes pulse {
+  0%, 100% { transform: scale(1); opacity: .45 }
+  50%       { transform: scale(1.08); opacity: 1 }
+}
+/* Exit-node ripple ring */
+body.popup-page .globe-svg .rip {
+  animation: ripple 2s ease-out infinite;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+@keyframes ripple {
+  0%   { transform: scale(1); opacity: .6 }
+  100% { transform: scale(1.9); opacity: 0 }
+}
+
+/* Entry-fail shake */
+body.popup-page .globe-svg .shk {
+  animation: globe-shake .35s ease-in-out 1 both;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+body.popup-page #globeEntryTry .pl {
+  animation: globe-entry-pulse .65s ease-in-out infinite;
+}
+
+/* Entry-node pop (ok/exit) */
+body.popup-page .globe-svg .pop {
+  animation: pop .45s cubic-bezier(.3,1.4,.5,1) both;
+}
+
+/* ── Reduced motion ──────────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  body.popup-page .globe-route { animation: none !important; }
+  body.popup-page #globeRouteDraw .draw { animation: none !important; stroke-dashoffset: 0 !important; }
+  body.popup-page .globe-dots circle { animation: none !important; }
+  body.popup-page button.power-button::after { animation: none !important; }
+  body.popup-page .connection-method-indicator { transition: none !important; }
+  body.popup-page .bottom-card, body.popup-page .bottom-card-icon { transition: none !important; }
+  body.popup-page .globe-svg .rip,
+  body.popup-page .globe-svg .shk,
+  body.popup-page .globe-svg .pop,
+  body.popup-page .globe-svg .pl,
+  body.popup-page .globe-entry-label,
+  body.popup-page .globe-entry-cc { animation: none !important; }
+}
+
+/* Tab-layout adjustments for globe stage */
+html[data-layout="tab"] body.popup-page .globe-stage { width: 320px; }
+html[data-layout="tab"] body.popup-page .bridges-sheet,
+html[data-layout="tab"] body.popup-page .bridges-backdrop {
+  /* inherit from live-stats tab overrides */
+}
+html[data-layout="tab"] body.popup-page .bridges-sheet {
+  right: unset;
+  left: 50%;
+  width: min(100vw, 520px);
+  transform: translateX(-50%) translateY(100%);
+}
+html[data-layout="tab"] body.popup-page .bridges-sheet.is-open {
+  transform: translateX(-50%) translateY(0);
+}
+
+/* The connected power button spans the globe; keep the SVG globe visible beneath it. */
+html[data-theme] body.popup-page button.power-button[data-state="connected"] {
+  border-color: transparent;
+  background: transparent;
+  box-shadow: none;
+}
+html[data-theme] body.popup-page button.power-button:not([data-state="connected"]) {
+  border-color: transparent;
+  background: transparent;
+  box-shadow: none;
+}
+html[data-theme] body.popup-page button.power-button::before { display: none; }
+html[data-theme] body.popup-page button.power-button::after { display: none; }
+body.popup-page .connection-progress-ring {
+  position: absolute;
+  z-index: 2;
+  top: 20px;
+  left: 20px;
+  display: none;
+  width: 80px;
+  height: 80px;
+  overflow: visible;
+  color: #2bd576;
+  pointer-events: none;
+}
+body.popup-page .connection-progress-ring circle {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2px;
+  stroke-linecap: round;
+  stroke-dasharray: 46 198;
+}
+body.popup-page button.power-button[data-state="starting"] .connection-progress-ring {
+  display: block;
+  animation: connection-progress-spin 1.6s linear infinite;
+}
+@keyframes connection-progress-spin { to { transform: rotate(360deg); } }
+html[data-theme="light"] body.popup-page .connection-progress-ring { color: #0f9b50; }
+@media (prefers-reduced-motion: reduce) {
+  body.popup-page button.power-button[data-state="starting"] .connection-progress-ring {
+    animation: none;
+  }
+}
+body.popup-page .globe-stage .globe-snowfall {
+  position: absolute;
+  z-index: 1;
+  top: 44px;
+  left: 44px;
+  width: 232px;
+  height: 232px;
+  overflow: hidden;
+  border-radius: 50%;
+  pointer-events: none;
+}
+body.popup-page .globe-snowfall .snowfall-particle {
+  position: absolute;
+  top: -4px;
+  left: var(--flake-x);
+  display: block;
+  width: var(--flake-size);
+  height: var(--flake-size);
+  border-radius: 50%;
+  background: #f4fbff;
+  box-shadow: 0 0 3px rgb(221 238 255 / 95%);
+  opacity: 0;
+  animation: globe-snow-fall var(--flake-duration) linear var(--flake-delay) infinite;
+  will-change: transform, opacity;
+}
+@keyframes globe-snow-fall {
+  0% { transform: translate3d(0, 0, 0); opacity: 0; }
+  12%, 88% { opacity: .95; }
+  100% { transform: translate3d(0, 240px, 0); opacity: 0; }
+}
+html[data-theme="light"] body.popup-page .globe-snowfall .snowfall-particle {
+  background: #6d91a5;
+  box-shadow: 0 0 3px rgb(109 145 165 / 55%);
+}
+html[data-theme="dark"] body.popup-page #globeDotsBridge circle { fill: #34453e !important; }
+html[data-theme="dark"] body.popup-page #globeDotsSnow circle { fill: #4f7088 !important; }
+html[data-theme="light"] body.popup-page #globeDotsBridge circle { fill: #98b0a1 !important; }
+html[data-theme="light"] body.popup-page #globeDotsSnow circle { fill: #7fa6c6 !important; }
+html[data-theme="dim"] body.popup-page #globeDotsBridge circle { fill: #354550 !important; }
+html[data-theme="dim"] body.popup-page #globeDotsSnow circle { fill: #5b788d !important; }
+html[data-theme="light"] body.popup-page .connection-method-switch {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+html[data-theme="dim"] body.popup-page .connection-method-switch {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+body.popup-page #globeEntryIdle { color: #7d868f; }
+body.popup-page #globeEntryTry,
+body.popup-page #globeEntryOk { color: #2bd576; }
+body.popup-page .orbit-card[data-mode="snowflake"] .entry-snowflake-mark { display: inline; }
+body.popup-page #globeEntryFail { color: #ffb020; }
+body.popup-page #globeEntryIdle .entry-node-circle { fill: none; stroke: #2a3230; }
+body.popup-page #globeEntryTry .entry-node-circle {
+  fill: #10291c;
+  stroke: #2bd576;
+}
+body.popup-page #globeEntryFail .entry-node-circle {
+  fill: #2a1f08;
+  stroke: #ffb020;
+}
+body.popup-page #globeEntryFail text { fill: #ffb020; }
+body.popup-page #globeEntryOk .entry-node-circle {
+  fill: #10291c;
+  stroke: #2bd576;
+}
+body.popup-page #globeEntryTryCC {
+  display: none;
+  fill: currentColor;
+}
+body.popup-page .orbit-card[data-mode="manual"] #globeEntryTryCC { display: block; }
+body.popup-page .orbit-card[data-mode="manual"] .entry-snowflake-mark { display: none; }
+html[data-theme="light"] body.popup-page #globeEntryIdle { color: #66716b; }
+html[data-theme="light"] body.popup-page #globeEntryIdle .entry-node-circle { stroke: #c5d2cb; }
+html[data-theme="light"] body.popup-page #globeEntryTry,
+html[data-theme="light"] body.popup-page #globeEntryOk { color: #0f9b50; }
+html[data-theme="light"] body.popup-page #globeEntryTry .entry-node-circle,
+html[data-theme="light"] body.popup-page #globeEntryOk .entry-node-circle {
+  fill: #e2f5ea;
+  stroke: #0f9b50;
+}
+html[data-theme="light"] body.popup-page #globeEntryFail { color: #d98a00; }
+html[data-theme="light"] body.popup-page #globeEntryFail .entry-node-circle {
+  fill: #fff1d6;
+  stroke: #d98a00;
+}
+html[data-theme="light"] body.popup-page #globeEntryFail text { fill: #d98a00; }
+html[data-theme="light"] body.popup-page .globe-entry-cc { color: #0f9b50; }
+html[data-theme="light"] body.popup-page .globe-entry-name { color: #4b5a52; }
+html[data-theme="dim"] body.popup-page #globeEntryIdle .entry-node-circle { stroke: #46555d; }
+html[data-theme="dim"] body.popup-page #globeEntryTry .entry-node-circle,
+html[data-theme="dim"] body.popup-page #globeEntryOk .entry-node-circle { fill: #242e34; }
+html[data-theme="dim"] body.popup-page #globeEntryTry,
+html[data-theme="dim"] body.popup-page #globeEntryOk,
+html[data-theme="dim"] body.popup-page .globe-entry-cc { color: #2bd576; }
+html[data-theme="dim"] body.popup-page .globe-entry-name { color: #9aa5a1; }
+html[data-theme] body.popup-page .orbit-card[data-state="disconnected"] .globe-dots circle,
+html[data-theme] body.popup-page .orbit-card[data-state="failed"] .globe-dots circle {
+  animation: none !important;
+  opacity: 1 !important;
+}
+html[data-theme="light"] body.popup-page .orbit-card[data-state="disconnected"] .globe-dots circle,
+html[data-theme="light"] body.popup-page .orbit-card[data-state="failed"] .globe-dots circle {
+  opacity: .45 !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  body.popup-page .globe-snowfall .snowfall-particle {
+    opacity: .65 !important;
+    animation: none !important;
+    transform: translateY(var(--flake-rest));
+  }
+}
+body.popup-page .site-check-badge {
+  transition: opacity .26s ease, transform .26s ease;
+}
+body.popup-page .site-check-badge.is-expiring {
+  opacity: 0;
+  transform: scale(.72);
+  pointer-events: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  body.popup-page .site-check-badge { transition: none; }
+}
+
+/* Match the popup design's disconnected logo ripple. The globe redesign's
+   broad pseudo-element reset above also hid this ring, so restore it here. */
+html[data-theme] body.popup-page .orbit-card[data-state="disconnected"] button.power-button::before,
+html[data-theme] body.popup-page .orbit-card[data-state="disconnected"] button.power-button::after {
+  display: block !important;
+}
+html[data-theme] body.popup-page .orbit-card[data-state="disconnected"] button.power-button::after {
+  border: 1.5px solid #4a5753;
+  background: transparent;
+  animation: ripple 2.6s ease-out infinite;
+}
+html[data-theme="light"] body.popup-page .orbit-card[data-state="disconnected"] button.power-button::after {
+  border-color: #a4b3ab;
+}
+
+/* A failed site-check badge turns amber; it must not fill the enlarged
+   connected power-button, which spans most of the globe. */
+html[data-theme] body.popup-page .orbit-card[data-state="connected"][data-check="failed"]:not([data-activity="trying"]):not([data-activity="failed"]):not([data-activity="closed"]) button.power-button {
+  border-color: transparent !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+/* Keep the dots bright after a connection finishes, even if the connecting
+   pulse was paused at its dimmest frame. */
+html[data-theme] body.popup-page .orbit-card[data-state="connected"] .globe-dots circle,
+html[data-theme] body.popup-page .orbit-card[data-state="connected"] .globe-country-skin circle {
+  animation: none !important;
+  animation-play-state: paused !important;
+  opacity: 1 !important;
+}
+html[data-theme="dark"] body.popup-page .orbit-card[data-state="connected"] #globeDotsBridge circle,
+html[data-theme="dark"] body.popup-page .orbit-card[data-state="connected"] #globeDotsSnow circle,
+html[data-theme="dark"] body.popup-page .orbit-card[data-state="connected"] .globe-country-skin circle,
+html[data-theme="dim"] body.popup-page .orbit-card[data-state="connected"] #globeDotsBridge circle,
+html[data-theme="dim"] body.popup-page .orbit-card[data-state="connected"] #globeDotsSnow circle,
+html[data-theme="dim"] body.popup-page .orbit-card[data-state="connected"] .globe-country-skin circle {
+  fill: #55b985 !important;
+}
+html[data-theme="light"] body.popup-page .orbit-card[data-state="connected"] #globeDotsBridge circle,
+html[data-theme="light"] body.popup-page .orbit-card[data-state="connected"] #globeDotsSnow circle,
+html[data-theme="light"] body.popup-page .orbit-card[data-state="connected"] .globe-country-skin circle {
+  fill: #238b58 !important;
+}
+
+/* Keep the exit point at the design's 5px core / 9px halo size. */
+body.popup-page .globe-exit-core {
+  r: 5px;
+}
+body.popup-page #globeExitNode circle.rip { r: 9px; stroke-width: 2; }
+body.popup-page #globeExitNode circle:not(.rip):not(.globe-exit-core) { r: 9px; }
+html[data-theme="light"] body.popup-page .globe-exit-core {
+  fill: #0f9b50 !important;
+}
+
+/* Preserve the design's solid route reveal while connecting and animated
+   dashed route once connected, with a readable accent in both themes. */
+body.popup-page #globeRouteDraw path { stroke: #2bd576; stroke-width: 3; }
+body.popup-page #globeRouteFlow path:first-child { stroke: #2bd576; stroke-opacity: .3; stroke-width: 3; }
+body.popup-page #globeRouteFlow path:nth-child(2) { stroke: #2bd576; stroke-opacity: .9; stroke-width: 2.5; stroke-dasharray: 2 12; animation: globe-route-flow 1.2s linear infinite; }
+body.popup-page #globeRouteFlow circle { fill: #eaf1ee; filter: drop-shadow(0 0 3px rgb(234 241 238 / 75%)); }
+html[data-theme="light"] body.popup-page #globeRouteDraw path { stroke: #0f9b50; stroke-width: 3; }
+html[data-theme="light"] body.popup-page #globeRouteFlow path { stroke: #0f9b50; }
