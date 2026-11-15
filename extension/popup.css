@@ -375,7 +375,7 @@ body.popup-page .sonar-ghost-nodes span:nth-child(1) { top: 14px; left: 136px; }
 body.popup-page .sonar-ghost-nodes span:nth-child(2) { top: 197px; left: 242px; }
 body.popup-page .sonar-ghost-nodes span:nth-child(3) { top: 197px; left: 30px; }
 body.popup-page .orbit-card[data-initial-checking="true"] .sonar-ghost-nodes { display: block; }
-body.popup-page .sonar-pulses { position: absolute; z-index: 1; top: 104px; left: 104px; display: none; width: 112px; height: 112px; pointer-events: none; }
+body.popup-page .sonar-pulses { position: absolute; z-index: 1; inset: 0; display: none; width: 112px; height: 112px; margin: auto; pointer-events: none; }
 body.popup-page .sonar-pulses span { position: absolute; inset: 0; box-sizing: border-box; border: 2px solid #2bd576; border-radius: 50%; opacity: 0; animation: sonar-ping 2.7s cubic-bezier(.2,.6,.3,1) infinite; }
 body.popup-page .sonar-pulses span:nth-child(2) { animation-delay: .9s; }
 body.popup-page .sonar-pulses span:nth-child(3) { animation-delay: 1.8s; }
@@ -1683,15 +1683,14 @@ body.popup-page .orbit-card[data-state="connected"] .globe-country-skin circle {
 /* Override old .orbit-stage styles for the new globe layout */
 body.popup-page button.power-button {
   position: absolute;
-  top: 100px;
-  left: 100px;
+  inset: 0;
   display: grid;
   width: 120px;
   height: 120px;
   min-width: 120px;
   flex: 0 0 auto;
   place-items: center;
-  margin: 0;
+  margin: auto;
   padding: 0;
   border: 0;
   border-radius: 50%;
@@ -1704,10 +1703,10 @@ body.popup-page button.power-button {
 /* Ripple halo background (radial gradient) */
 body.popup-page button.power-button::before {
   position: absolute;
-  left: 14px;
-  top: 14px;
+  inset: 0;
   width: 92px;
   height: 92px;
+  margin: auto;
   border-radius: 50%;
   background: radial-gradient(circle, rgba(8,12,11,0.9) 0%, rgba(8,12,11,0.75) 45%, rgba(8,12,11,0) 72%);
   content: "";
@@ -1716,10 +1715,10 @@ body.popup-page button.power-button::before {
 /* Ripple ring */
 body.popup-page button.power-button::after {
   position: absolute;
-  left: 20px;
-  top: 20px;
+  inset: 0;
   width: 80px;
   height: 80px;
+  margin: auto;
   border: 1.5px solid #3a4642;
   border-radius: 50%;
   content: "";
@@ -1731,11 +1730,10 @@ body.popup-page .connection-mark { width: 60px; height: 60px; position: relative
 
 /* Connected state — expand to full globe centre, hide icon (design shows no center mark) */
 body.popup-page button.power-button[data-state="connected"] {
-  top: 40px;
-  left: 40px;
   width: 240px;
   height: 240px;
   min-width: 240px;
+  margin: auto;
   color: transparent;
 }
 body.popup-page button.power-button[data-state="connected"]::before,
@@ -1845,15 +1843,15 @@ body.popup-page .connection-method-option:disabled { opacity: .6; cursor: wait; 
 body.popup-page .connection-method-indicator {
   position: absolute;
   bottom: 2px;
-  left: 18px; /* snowflake: 18, bridge: 90 — set via JS */
+  inset-inline-start: 18px; /* snowflake: 18, bridge: 90 — set via mode */
   width: 28px;
   height: 3px;
   border-radius: 2px;
   background: #2bd576;
   pointer-events: none;
-  transition: left .3s cubic-bezier(.3,.9,.3,1);
+  transition: inset-inline-start .3s cubic-bezier(.3,.9,.3,1);
 }
-body.popup-page .connection-method-switch[data-mode="manual"] .connection-method-indicator { left: 90px; }
+body.popup-page .connection-method-switch[data-mode="manual"] .connection-method-indicator { inset-inline-start: 90px; }
 
 /* ── Site-check badge ────────────────────────────────────────────────────── */
 /* Position matches design: left:222px, top:54px within globe-stage */
@@ -2006,6 +2004,7 @@ body.popup-page .bottom-card-action svg {
   stroke-linecap: round;
   stroke-linejoin: round;
 }
+html[dir="rtl"] body.popup-page .bottom-card-action svg { transform: scaleX(-1); }
 
 /* ── Bridges sheet ───────────────────────────────────────────────────────── */
 body.popup-page .bridges-sheet {
@@ -2357,7 +2356,7 @@ html[data-theme="dim"] body.popup-page button.power-button::after { border-color
 html[data-theme="dim"] body.popup-page button.power-button[data-state="connected"]::after { border-color: #2bd576; }
 html[data-theme="dim"] body.popup-page button.connection-method-option { color: #8a948f; }
 html[data-theme="dim"] body.popup-page button.connection-method-option[aria-checked="true"] { color: #2bd576; }
-html[data-theme="dim"] body.popup-page .connection-method-switch[data-mode="manual"] .connection-method-indicator { left: 90px; }
+html[data-theme="dim"] body.popup-page .connection-method-switch[data-mode="manual"] .connection-method-indicator { inset-inline-start: 90px; }
 
 /* ── Globe exit-country label ────────────────────────────────────────────── */
 body.popup-page .globe-exit-label {
@@ -2430,6 +2429,12 @@ body.popup-page .globe-entry-name {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+html[dir="rtl"] body.popup-page .globe-entry-name {
+  left: auto;
+  right: 186px;
+  text-align: right;
+}
+html[dir="rtl"] body.popup-page .globe-exit-label { font-family: inherit; }
 html[data-theme="light"] body.popup-page .globe-entry-cc { color: #0f9b50; }
 html[data-theme="light"] body.popup-page .globe-entry-name { color: #5f6e65; }
 html[data-theme="dim"] body.popup-page .globe-entry-cc { color: #2bd576; }

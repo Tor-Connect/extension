@@ -778,7 +778,7 @@ function updateLiveStats(result = {}) {
   const summaryAddr = document.querySelector("#summaryRouteAddress");
   if (hasExitIp) {
     summaryName.textContent = result.exitRelayIp;
-    summaryAddr.textContent = t("Address websites see");
+    summaryAddr.textContent = t("The address websites see");
     summaryAddr.classList.remove("is-label");
   } else {
     summaryName.textContent = snowflake ? t("Snowflake") : (result.currentBridgeIndex ? t("Bridge {n}", { n: result.currentBridgeIndex }) : t("Bridge"));
