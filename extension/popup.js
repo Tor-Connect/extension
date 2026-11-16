@@ -115,6 +115,10 @@ let globeEntryWasFailing = false;
 let lastGlobeEntryAttemptIndex = 0;
 let globeRouteDrawWasVisible = false;
 let globeRouteDrawComplete = false;
+let connectionRevealPending = false;
+let connectionRevealTimer;
+let globeOrientationExitCode = "";
+let globeRotationPlayed = false;
 let siteCheckBadgeHideTimer;
 let siteCheckBadgeState = "";
 const t = (key, params) => (globalThis.torI18n?.t || ((s) => s))(key, params);
@@ -144,6 +148,9 @@ const GLOBE_SKINS = [
 ];
 
 function radians(degrees) { return degrees * Math.PI / 180; }
+const GLOBE_RADIUS = 116;
+const GLOBE_PITCH = radians(11);
+const GLOBE_GRID_STEP = 3.5;
 let globeLandMask;
 let globeLandMaskPromise;
 
@@ -181,36 +188,57 @@ function renderGeographicDotMap(node, centerLongitude) {
   const dotField = node.firstElementChild;
   if (!dotField) return;
   const { width, height, pixels } = globeLandMask;
-  const radius = 116;
-  const spacing = 6.5;
   const circles = [];
-  for (let row = 0, y = 48; y <= 272; row += 1, y += spacing) {
-    const stagger = row % 2 ? spacing / 2 : 0;
-    for (let x = 48 + stagger; x <= 272; x += spacing) {
-      const sphereX = (x - 160) / radius;
-      const sphereY = (160 - y) / radius;
-      const depthSquared = 1 - sphereX * sphereX - sphereY * sphereY;
-      if (depthSquared < 0) continue;
+  const sinPitch = Math.sin(GLOBE_PITCH);
+  const cosPitch = Math.cos(GLOBE_PITCH);
+  const longitudeStep = GLOBE_GRID_STEP;
+  for (let row = 0, latitudeDegrees = -62; latitudeDegrees <= 82; row += 1, latitudeDegrees += GLOBE_GRID_STEP) {
+    const latitude = radians(latitudeDegrees);
+    const cosLatitude = Math.cos(latitude);
+    const sinLatitude = Math.sin(latitude);
+    const stagger = row % 2 ? longitudeStep / 2 : 0;
+    for (let longitudeDegrees = -180 + stagger; longitudeDegrees < 180; longitudeDegrees += longitudeStep) {
+      const longitude = radians(longitudeDegrees);
+      const relativeLongitude = longitude - centerLongitude;
+      const sphereX = cosLatitude * Math.sin(relativeLongitude);
+      const sphereY = sinLatitude;
+      const sphereDepth = cosLatitude * Math.cos(relativeLongitude);
 
-      const depth = Math.sqrt(depthSquared);
-      const latitude = Math.asin(sphereY);
-      const latitudeDegrees = latitude * 180 / Math.PI;
-      if (latitudeDegrees < -62) continue; // Keep Antarctica out of the route globe.
-      const longitude = centerLongitude + Math.atan2(sphereX, depth);
-      const longitudeDegrees = ((longitude * 180 / Math.PI + 180) % 360 + 360) % 360;
-      const mapX = Math.min(width - 1, Math.floor(longitudeDegrees / 360 * width));
+      // Pitch the globe toward the viewer while keeping its north pole upright.
+      const projectedY = sphereY * cosPitch - sphereDepth * sinPitch;
+      const depth = sphereY * sinPitch + sphereDepth * cosPitch;
+      if (depth <= 0) continue;
+
+      const mapLongitudeDegrees = ((longitudeDegrees + 180) % 360 + 360) % 360;
+      const mapX = Math.min(width - 1, Math.floor(mapLongitudeDegrees / 360 * width));
       const mapY = Math.max(0, Math.min(height - 1, Math.floor((90 - latitudeDegrees) / 180 * height)));
       if (!pixels[(mapY * width + mapX) * 4 + 3]) continue;
 
       const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-      circle.setAttribute("cx", x.toFixed(1));
-      circle.setAttribute("cy", y.toFixed(1));
-      circle.setAttribute("r", (1.45 + ((row * 7 + Math.round(x)) % 5) * 0.12).toFixed(2));
+      circle.setAttribute("cx", (160 + sphereX * GLOBE_RADIUS).toFixed(1));
+      circle.setAttribute("cy", (160 - projectedY * GLOBE_RADIUS).toFixed(1));
+      circle.setAttribute("r", (0.95 + depth * 0.65).toFixed(2));
       circles.push(circle);
     }
   }
   dotField.replaceChildren(...circles);
   node.dataset.globeCenterLongitude = centerKey;
+}
+
+function projectGlobePoint(latitudeDegrees, longitudeDegrees, centerLongitude) {
+  const latitude = radians(latitudeDegrees);
+  const relativeLongitude = radians(longitudeDegrees) - centerLongitude;
+  const cosLatitude = Math.cos(latitude);
+  const sphereX = cosLatitude * Math.sin(relativeLongitude);
+  const sphereY = Math.sin(latitude);
+  const sphereDepth = cosLatitude * Math.cos(relativeLongitude);
+  const projectedY = sphereY * Math.cos(GLOBE_PITCH) - sphereDepth * Math.sin(GLOBE_PITCH);
+  const depth = sphereY * Math.sin(GLOBE_PITCH) + sphereDepth * Math.cos(GLOBE_PITCH);
+  return {
+    x: 160 + sphereX * GLOBE_RADIUS,
+    y: 160 - projectedY * GLOBE_RADIUS,
+    depth
+  };
 }
 
 function setGlobeGroupVisible(node, visible) {
@@ -221,6 +249,23 @@ function setGlobeGroupVisible(node, visible) {
   } else {
     node.setAttribute("hidden", "");
   }
+}
+
+function setGlobeRotationBrightness(enabled) {
+  const fill = document.documentElement.dataset.theme === "light" ? "#238b58" : "#55b985";
+  [globeDotsBridgeNode, globeDotsSnowNode, ...GLOBE_SKINS].forEach((node) => {
+    node?.querySelectorAll("circle").forEach((circle) => {
+      if (enabled) {
+        circle.style.setProperty("fill", fill, "important");
+        circle.style.setProperty("animation", "none", "important");
+        circle.style.setProperty("opacity", "1", "important");
+      } else {
+        circle.style.removeProperty("fill");
+        circle.style.removeProperty("animation");
+        circle.style.removeProperty("opacity");
+      }
+    });
+  });
 }
 
 // Populate the globe dot field with a projected lat/lon grid.
@@ -254,12 +299,19 @@ function renderGlobe(result = {}) {
 
   const exitCC = (result.exitRelayCountryCode || "").toUpperCase();
   const exitCenter = EXIT_COUNTRY_CENTERS[exitCC];
+  if (!isOn) {
+    globeOrientationExitCode = "";
+    globeRotationPlayed = false;
+  } else if (exitCenter && (!globeOrientationExitCode || connectionRevealPending)) {
+    globeOrientationExitCode = exitCC;
+  }
   const globeMapNode = snow ? globeDotsSnowNode : globeDotsBridgeNode;
   setGlobeGroupVisible(globeDotsBridgeNode, !snow);
   setGlobeGroupVisible(globeDotsSnowNode, snow);
   GLOBE_SKINS.forEach((skin) => setGlobeGroupVisible(skin, false));
-  const centerLongitude = isOn && exitCenter
-    ? radians(exitCenter[1])
+  const orientationCenter = EXIT_COUNTRY_CENTERS[globeOrientationExitCode];
+  const centerLongitude = isOn && orientationCenter
+    ? radians(orientationCenter[1])
     : radians(20);
   renderGeographicDotMap(globeMapNode, centerLongitude);
   if (!globeLandMask) {
@@ -269,10 +321,9 @@ function renderGlobe(result = {}) {
   }
 
   if (isOn && exitCenter) {
-    const exitLat = radians(exitCenter[0]);
-    const exitLon = radians(exitCenter[1]);
-    const exitX = 160 + Math.cos(exitLat) * Math.sin(exitLon - centerLongitude) * 116;
-    const exitY = 160 - Math.sin(exitLat) * 116;
+    const projectedExit = projectGlobePoint(exitCenter[0], exitCenter[1], centerLongitude);
+    const exitX = projectedExit.x;
+    const exitY = projectedExit.y;
     globeExitNodeEl?.querySelectorAll("circle").forEach((circle) => {
       circle.setAttribute("cx", String(exitX));
       circle.setAttribute("cy", String(exitY));
@@ -295,11 +346,30 @@ function renderGlobe(result = {}) {
     globeExitLabelNode?.style.removeProperty("top");
   }
 
-  // Draw the solid route only after connection succeeds, then switch to its flow state.
+  // Draw the route only after connection succeeds and the exit location is known.
+  // Until then the line would point to the SVG's placeholder endpoint.
   if (!isOn || isRetrying) globeRouteDrawComplete = false;
+  const routeReady = isOn && !isRetrying && !!exitCenter;
   const reduceRouteMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
-  if (isOn && !isRetrying && reduceRouteMotion) globeRouteDrawComplete = true;
-  const showRouteDraw = isOn && !isRetrying && !globeRouteDrawComplete;
+  if (routeReady && !globeRotationPlayed) {
+    globeRotationPlayed = true;
+    routeCardNode.dataset.globeRotating = "true";
+    setGlobeRotationBrightness(true);
+    if (!reduceRouteMotion && typeof globeMapNode?.animate === "function") {
+      globeMapNode.style.transformBox = "view-box";
+      globeMapNode.style.transformOrigin = "160px 160px";
+      globeMapNode.animate([
+        { transform: "rotate(-50deg) scale(.94)" },
+        { transform: "none" }
+      ], { duration: 900, easing: "cubic-bezier(.2,.8,.2,1)" });
+    }
+  }
+  if (isOn && connectionRevealPending && globeRotationPlayed) {
+    routeCardNode.dataset.globeRotating = "true";
+    setGlobeRotationBrightness(true);
+  }
+  if (routeReady && reduceRouteMotion) globeRouteDrawComplete = true;
+  const showRouteDraw = routeReady && !globeRouteDrawComplete;
   setGlobeGroupVisible(globeRouteDrawNode, showRouteDraw);
   if (showRouteDraw && !globeRouteDrawWasVisible) {
     const drawPath = globeRouteDrawNode?.querySelector(".draw");
@@ -312,14 +382,25 @@ function renderGlobe(result = {}) {
       drawPath.addEventListener("animationend", () => {
         globeRouteDrawComplete = true;
         renderGlobe(currentResult);
+        if (connectionRevealPending && globeExitLabelNode && !globeExitLabelNode.hidden) {
+          clearTimeout(connectionRevealTimer);
+          connectionRevealTimer = setTimeout(() => {
+            connectionRevealTimer = undefined;
+            const stillConnected = currentResult?.state === "connected"
+              && !["trying", "failed", "closed"].includes(currentResult.bridgeActivity);
+            if (!stillConnected || globeExitLabelNode.hidden) return;
+            connectionRevealPending = false;
+            renderResult(currentResult);
+          }, 450);
+        }
       }, { once: true });
     }
   }
   globeRouteDrawWasVisible = showRouteDraw;
-  setGlobeGroupVisible(globeRouteFlowNode, isOn && !isRetrying && globeRouteDrawComplete);
+  setGlobeGroupVisible(globeRouteFlowNode, routeReady && globeRouteDrawComplete);
 
-  // Match the design sequence: finish the solid route before popping in the exit.
-  const showExitMarker = isOn && !isRetrying && !!exitCC && globeRouteDrawComplete;
+  // Let the route reach its known endpoint before revealing the exit marker and label.
+  const showExitMarker = routeReady && !!exitCC && globeRouteDrawComplete;
   setGlobeGroupVisible(globeExitNodeEl, showExitMarker);
   if (globeExitLabelNode) {
     const country = exitCC
@@ -1388,18 +1469,25 @@ const ICON_LOOP = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" st
 const ICON_SNOWFLAKE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v18M4.2 7.5l15.6 9M4.2 16.5l15.6-9"/><path d="M9.5 4.8 12 7l2.5-2.2M9.5 19.2 12 17l2.5 2.2"/></svg>';
 const ICON_SPINNER = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-dasharray="28 60"/></svg>';
 
-function renderRoute(result = {}) {
+function renderRoute(result = {}, visualState = connectionRevealPending && result?.state === "connected" ? "starting" : result.state) {
   renderGlobe(result);
   if (initialStatusPending && routeCardNode.dataset.initialChecking === "true") {
     return;
   }
   delete routeCardNode.dataset.initialChecking;
   bridgeAttemptTimerNode.hidden = true;
-  connectedDurationNode.hidden = result.state !== "connected";
+  connectedDurationNode.hidden = visualState !== "connected";
   copyBridgeButton.hidden = true;
   routeBridgeLine = "";
   const prevDetail = routeDetailNode.textContent;
-  routeCardNode.dataset.state = result.state || "disconnected";
+  routeCardNode.dataset.state = visualState || "disconnected";
+  if (visualState === "connected" || result.state !== "connected") {
+    delete routeCardNode.dataset.globeRotating;
+    setGlobeRotationBrightness(false);
+  } else if (globeRotationPlayed) {
+    routeCardNode.dataset.globeRotating = "true";
+    setGlobeRotationBrightness(true);
+  }
   routeCardNode.dataset.activity = result.bridgeActivity || "";
   routeCardNode.dataset.check = result.connectivityCheck || "";
   connectionToggle.dataset.check = result.connectivityCheck || "";
@@ -1411,7 +1499,7 @@ function renderRoute(result = {}) {
   routeCardNode.dataset.empty = String(hasNoBridgeLines);
   emptyBridgeInfoNode.hidden = !hasNoBridgeLines;
   renderConnectionMethodSwitch();
-  const activePosition = (result.state === "connected" || result.state === "starting")
+  const activePosition = (visualState === "connected" || visualState === "starting")
     ? activeBridgePosition(result, entries) : -1;
   const selectedPosition = entries.length ? selectedBridgePosition(entries) : -1;
 
@@ -1419,16 +1507,16 @@ function renderRoute(result = {}) {
   if (entries.length) {
     if (activePosition >= 0) shownPosition = activePosition;
     else if (!preferences.autoBridgeSelection) shownPosition = selectedPosition;
-    else if (result.state === "starting" && lastShownPosition >= 0) shownPosition = lastShownPosition;
+    else if (visualState === "starting" && lastShownPosition >= 0) shownPosition = lastShownPosition;
   }
   if (shownPosition >= 0) lastShownPosition = shownPosition;
-  if (result.state !== "starting" && result.state !== "connected") lastShownPosition = -1;
+  if (visualState !== "starting" && visualState !== "connected") lastShownPosition = -1;
   renderBridgeCountry(result, shownPosition);
-  if (result.state === "starting") routeCardNode.dataset.route = "trying-bridge";
+  if (visualState === "starting") routeCardNode.dataset.route = "trying-bridge";
 
   // --- Idle card (bottom card) ---
-  const isStarting = result.state === "starting";
-  const isConnected = result.state === "connected";
+  const isStarting = visualState === "starting";
+  const isConnected = visualState === "connected";
   const snowflake = preferences.mode === "snowflake";
   const enabledCount = entries.length;
   idleCardNode.hidden = hasNoBridgeLines;
@@ -1532,6 +1620,23 @@ function pollOutdatedStatus() {
 function renderResult(result) {
   connectionToggle.classList.remove("is-pressing");
   currentResult = result || {};
+  const stableConnected = currentResult.state === "connected"
+    && !["trying", "failed", "closed"].includes(currentResult.bridgeActivity);
+  if (!stableConnected) {
+    connectionRevealPending = false;
+    clearTimeout(connectionRevealTimer);
+    connectionRevealTimer = undefined;
+  } else {
+    const exitCode = (currentResult.exitRelayCountryCode || "").toUpperCase();
+    const hasExitPoint = Boolean(EXIT_COUNTRY_CENTERS[exitCode]);
+    const reduceRouteMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    if (!connectionRevealPending) {
+      connectionRevealPending = !hasExitPoint || (!reduceRouteMotion && !globeRouteDrawComplete);
+    }
+  }
+  const visualResult = connectionRevealPending
+    ? { ...currentResult, state: "starting" }
+    : currentResult;
   const currentError = currentResult.error || currentResult.message || "";
   if (isFirefoxExtension && /proxy\.settings requires private browsing permission|private browsing permission/i.test(currentError)) {
     initialStatusPending = false;
@@ -1569,8 +1674,8 @@ function renderResult(result) {
   initialStatusPending = false;
   renderErrorDetails(currentResult);
   syncBridgeAttemptTimer(currentResult.state);
-  syncConnectedDuration(currentResult);
-  updateLiveStats(result);
+  syncConnectedDuration(visualResult);
+  updateLiveStats(visualResult);
   if (result?.helperOutdated) {
     popupMainNode.dataset.view = "helper-outdated";
     outdatedPanelNode.hidden = false;
@@ -1612,53 +1717,55 @@ function renderResult(result) {
   setupPanelNode.hidden = true;
   routeCardNode.hidden = false;
   openSettingsButton.hidden = false;
-  renderGlobe(result || {});
-  renderRoute(result || {});
-  renderProgress(result);
-  const statusKind = result?.state === "connected" && result?.bridgeActivity === "trying" ? "starting"
-    : result?.state === "connected" && ["failed", "closed"].includes(result?.bridgeActivity) ? "error"
-      : result?.state === "connected" && result?.connectivityCheck === "failed" ? "connected-check-failed"
-      : result?.state === "connected" ? "connected"
-    : result?.state === "starting" ? "starting"
-      : result?.state === "failed" || !result?.ok ? "error" : "";
-  const failureMessage = result?.error || result?.message;
-  const detail = result?.state === "failed" || !result?.ok
+  renderGlobe(currentResult);
+  renderRoute(currentResult, visualResult.state);
+  renderProgress(currentResult, visualResult.state);
+  const statusKind = visualResult.state === "connected" && currentResult.bridgeActivity === "trying" ? "starting"
+    : visualResult.state === "connected" && ["failed", "closed"].includes(currentResult.bridgeActivity) ? "error"
+      : visualResult.state === "connected" && currentResult.connectivityCheck === "failed" ? "connected-check-failed"
+      : visualResult.state === "connected" ? "connected"
+    : visualResult.state === "starting" ? "starting"
+      : visualResult.state === "failed" || !visualResult.ok ? "error" : "";
+  const failureMessage = visualResult.error || visualResult.message;
+  const detail = visualResult.state === "failed" || !visualResult.ok
     ? connectionErrorHint(failureMessage)
-    : result?.state === "connected" && ["failed", "closed"].includes(result?.bridgeActivity)
+    : visualResult.state === "connected" && ["failed", "closed"].includes(currentResult.bridgeActivity)
     ? preferences.mode === "snowflake" ? t("Tor may retry the Snowflake route") : t("Tor may retry the bridge")
-    : result?.state === "connected" && result?.bridgeActivity === "trying"
+    : visualResult.state === "connected" && currentResult.bridgeActivity === "trying"
       ? preferences.mode === "snowflake" ? t("Trying another volunteer proxy") : t("Trying another bridge")
-      : result?.state === "connected" && ["pending", "passed", "failed"].includes(result?.connectivityCheck) ? ""
-      : result?.state === "connected" ? t("Tap the center to disconnect")
-    : result?.state === "starting"
-      ? Number(result.currentBridgeIndex) > 0 ? t("Crossing through Bridge {n}", { n: Number(result.currentBridgeIndex) })
+      : visualResult.state === "connected" && ["pending", "passed", "failed"].includes(currentResult.connectivityCheck) ? ""
+      : visualResult.state === "connected" ? t("Tap the center to disconnect")
+    : visualResult.state === "starting"
+      ? Number(currentResult.currentBridgeIndex) > 0 ? t("Crossing through Bridge {n}", { n: Number(currentResult.currentBridgeIndex) })
         : preferences.mode === "manual" ? t("Trying saved bridges") : t("Finding a volunteer proxy · tap to cancel")
-      : result?.state === "disconnected"
+      : visualResult.state === "disconnected"
         ? preferences.mode === "manual" && !bridgeEntries().length
           ? t("Add bridge lines in Settings to connect this way")
           : preferences.mode === "manual" && !preferences.autoBridgeSelection
           ? t("Pick a bridge, then tap the center")
           : preferences.mode === "manual" ? t("Tap the center to try saved bridges") : t("Tap the center to connect")
         : "";
-  setStatus(preferences.mode === "manual" && !bridgeEntries().length && result?.state === "disconnected"
-    ? t("No bridges yet") : explain(result), statusKind, detail);
-  setToggleState(result?.state || "disconnected", result?.bridgeActivity);
-  if (result?.state === "starting" || result?.state === "connected") pollForProgress();
+  setStatus(preferences.mode === "manual" && !bridgeEntries().length && visualResult.state === "disconnected"
+    ? t("No bridges yet") : explain(visualResult), statusKind, detail);
+  setToggleState(currentResult.state || "disconnected", currentResult.bridgeActivity, visualResult.state);
+  if (currentResult.state === "starting" || currentResult.state === "connected") pollForProgress();
   else if (pollTimer) { clearTimeout(pollTimer); pollTimer = undefined; }
 }
 
-function setToggleState(state, bridgeActivity) {
+function setToggleState(state, bridgeActivity, requestedVisualState = state) {
   currentState = state;
   delete connectionToggle.dataset.initialChecking;
   renderBridgeSelector();
   connectionToggle.disabled = false;
-  const visualState = state === "connected" && bridgeActivity === "trying" ? "reconnecting"
+  const connectionState = state === "connected" && bridgeActivity === "trying" ? "reconnecting"
     : state === "connected" && ["failed", "closed"].includes(bridgeActivity) ? "bridge-interrupted"
       : state;
+  const visualState = connectionState === "connected" && requestedVisualState === "starting"
+    ? "starting" : connectionState;
   connectionToggle.dataset.state = visualState;
   connectionToggle.dataset.mode = preferences.mode;
   connectionToggle.dataset.empty = String(preferences.mode === "manual" && !bridgeEntries().length);
-  connectionProgress.hidden = state !== "starting";
+  connectionProgress.hidden = visualState !== "starting";
   const label = state === "connected" ? t("Disconnect") : state === "starting" ? t("Cancel connection") : t("Connect");
   const accessibleLabel = state === "connected" && bridgeActivity === "trying"
     ? t("Disconnect from Tor; the bridge is reconnecting")
@@ -1670,8 +1777,8 @@ function setToggleState(state, bridgeActivity) {
   connectionToggle.title = accessibleLabel;
 }
 
-function renderProgress(result) {
-  if (result?.state !== "starting") {
+function renderProgress(result, visualState = result?.state) {
+  if (visualState !== "starting") {
     connectionProgress.hidden = true;
     connectionProgress.removeAttribute("aria-valuenow");
     delete connectionToggle.dataset.progressMode;
@@ -1696,7 +1803,9 @@ function pollForProgress() {
   if (pollTimer) clearTimeout(pollTimer);
   pollTimer = setTimeout(async () => {
     renderResult(await send("status"));
-  }, currentResult.state === "connected" ? 2000 : 1200);
+  }, currentResult.state === "connected"
+    ? (currentResult.exitRelayCountryCode ? 2000 : 500)
+    : 1200);
 }
 
 async function connectWithSavedPreferences() {

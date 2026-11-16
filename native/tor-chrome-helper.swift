@@ -26,6 +26,7 @@ final class Helper {
     private var currentBridgeIndex: Int?
     private var bridgeActivity: String?
     private var builtCircuits: [String: Int] = [:]
+    private var exitRelayCandidates: Set<String> = []
     private var reconnectSince: Date?
     private var autoRecoveryBridges: [String] = []
     private var autoRecoveryTried: Set<Int> = []
@@ -432,6 +433,7 @@ final class Helper {
             currentBridgeIndex = nil
             bridgeActivity = nil
             builtCircuits = [:]
+            exitRelayCandidates = []
             exitRelayIp = ""; exitRelayCountry = ""; exitRelayCircuitId = ""
             reconnectSince = nil
             autoRecoveryBridges = recoveryBridges ?? ((mode == "manual" && selectedBridgeIndex == nil) ? autoBridges : [])
@@ -767,15 +769,20 @@ final class Helper {
                             updateCircuitActivity(id: String(fields[2]), status: String(fields[3]), path: String(fields[4]), targets: [])
                         }
                     }
-                    if line.contains(" CIRC ") && line.contains(" BUILT ") && !line.contains("ONEHOP_TUNNEL") && !line.contains("IS_INTERNAL") {
+                    if line.contains(" CIRC ") && !line.contains("ONEHOP_TUNNEL") && !line.contains("IS_INTERNAL") {
                         let fields = line.split(whereSeparator: \.isWhitespace)
-                        if fields.count >= 5 {
+                        if fields.count >= 5 && (fields[3] == "LAUNCHED" || fields[3] == "EXTENDED" || fields[3] == "BUILT") {
                             let hops = String(fields[4]).components(separatedBy: ",")
-                            let lastFp = hops.last?.components(separatedBy: "~").first ?? ""
-                            let pf = portFile; let cf = cookieFile; let fp = lastFp
-                            let cid = String(fields[2]); let sp = sessionProcess
-                            DispatchQueue.global(qos: .utility).async { [weak self] in
-                                self?.lookupExitRelayFresh(portFile: pf, cookieFile: cf, fingerprint: fp, circuitId: cid, sessionProcess: sp)
+                            if hops.count >= 3 {
+                                let lastFp = hops.last?.components(separatedBy: "~").first ?? ""
+                                let cid = String(fields[2])
+                                if fields[3] == "LAUNCHED" || fields[3] == "EXTENDED" {
+                                    lock.lock(); exitRelayCandidates.insert(cid); lock.unlock()
+                                }
+                                let pf = portFile; let cf = cookieFile; let fp = lastFp; let sp = sessionProcess
+                                DispatchQueue.global(qos: .utility).async { [weak self] in
+                                    self?.lookupExitRelayFresh(portFile: pf, cookieFile: cf, fingerprint: fp, circuitId: cid, sessionProcess: sp)
+                                }
                             }
                         }
                     }
@@ -855,13 +862,16 @@ final class Helper {
     }
 
     private func updateCircuitActivity(id: String, status: String, path: String, targets: [BridgeTarget]) {
-        if status == "BUILT" {
+        if status == "EXTENDED", path.split(separator: ",").count >= 3 {
+            lock.lock(); exitRelayCandidates.insert(id); lock.unlock()
+        } else if status == "BUILT" {
             let firstHop = String(path.split(separator: ",", maxSplits: 1).first ?? "")
             let index = bridgeIndex(for: firstHop, targets: targets)
             lock.lock()
             // A built circuit proves the tunnel works even when a bridge line
             // omitted its fingerprint and cannot be mapped back to a list row.
             builtCircuits[id] = index ?? 0
+            exitRelayCandidates.remove(id)
             if let index { currentBridgeIndex = index }
             bridgeActivity = "connected"
             reconnectSince = nil
@@ -876,6 +886,7 @@ final class Helper {
         } else if ["CLOSED", "FAILED", "DESTROYED"].contains(status) {
             lock.lock()
             builtCircuits.removeValue(forKey: id)
+            exitRelayCandidates.remove(id)
             if builtCircuits.isEmpty || id == exitRelayCircuitId {
                 exitRelayIp = ""; exitRelayCountry = ""; exitRelayCircuitId = ""
             }
@@ -887,12 +898,37 @@ final class Helper {
         let fp = fingerprint.trimmingCharacters(in: CharacterSet(charactersIn: "$")).uppercased()
         let hexChars = CharacterSet(charactersIn: "0123456789ABCDEF")
         guard fp.count == 40, fp.unicodeScalars.allSatisfy({ hexChars.contains($0) }) else { return }
+        var resolvedIp: String?
+        var torCountry: String?
+        for attempt in 0..<4 {
+            lock.lock()
+            let circuitIsCurrent = tor === sessionProcess && (builtCircuits[circuitId] != nil || exitRelayCandidates.contains(circuitId))
+            lock.unlock()
+            guard circuitIsCurrent else { return }
+
+            let lookup = queryExitRelay(portFile: portFile, cookieFile: cookieFile, fingerprint: fp)
+            if let lookup {
+                resolvedIp = lookup.ip
+                torCountry = lookup.country
+                break
+            }
+            if attempt < 3 { Thread.sleep(forTimeInterval: 0.5 * pow(2.0, Double(attempt))) }
+        }
+        guard let resolvedIp else { return }
+        let country = torCountry ?? countryCode(for: resolvedIp) ?? ""
+        lock.lock()
+        guard tor === sessionProcess, builtCircuits[circuitId] != nil || exitRelayCandidates.contains(circuitId) else { lock.unlock(); return }
+        exitRelayIp = resolvedIp; exitRelayCountry = country; exitRelayCircuitId = circuitId
+        lock.unlock()
+    }
+
+    private func queryExitRelay(portFile: URL, cookieFile: URL, fingerprint: String) -> (ip: String, country: String?)? {
         guard let portString = try? String(contentsOf: portFile, encoding: .utf8),
               let port = Int(portString.trimmingCharacters(in: .whitespacesAndNewlines).components(separatedBy: ":").last ?? ""),
-              let cookie = try? Data(contentsOf: cookieFile), cookie.count == 32 else { return }
+              let cookie = try? Data(contentsOf: cookieFile), cookie.count == 32 else { return nil }
         let cookieHex = cookie.map { String(format: "%02x", $0) }.joined()
         let descriptor = socket(AF_INET, SOCK_STREAM, 0)
-        guard descriptor >= 0 else { return }
+        guard descriptor >= 0 else { return nil }
         defer { close(descriptor) }
         var addr = sockaddr_in()
         addr.sin_family = sa_family_t(AF_INET)
@@ -901,33 +937,37 @@ final class Helper {
         let connected = withUnsafePointer(to: &addr) { ptr in
             ptr.withMemoryRebound(to: sockaddr.self, capacity: 1) { Darwin.connect(descriptor, $0, socklen_t(MemoryLayout<sockaddr_in>.size)) }
         }
-        guard connected == 0 else { return }
+        guard connected == 0 else { return nil }
         var timeout = timeval(tv_sec: 5, tv_usec: 0)
         setsockopt(descriptor, SOL_SOCKET, SO_RCVTIMEO, &timeout, socklen_t(MemoryLayout<timeval>.size))
         guard sendControlCommand("AUTHENTICATE \(cookieHex)", to: descriptor),
-              readControlReply(from: descriptor)?.contains("250 OK") == true else { return }
-        guard sendControlCommand("GETINFO ns/id/\(fp)", to: descriptor),
-              let reply = readControlReply(from: descriptor) else { return }
-        var ip: String?
+              readControlReply(from: descriptor)?.contains("250 OK") == true,
+              sendControlCommand("GETINFO ns/id/\(fingerprint)", to: descriptor),
+              let reply = readControlReply(from: descriptor) else { return nil }
         for line in reply.components(separatedBy: "\r\n") {
             guard line.hasPrefix("r ") else { continue }
             // r <name> <b64id> <b64digest> <date> <time> <ip> <orport>
             let parts = line.split(whereSeparator: \.isWhitespace)
-            if parts.count >= 7 {
-                let candidate = String(parts[6])
-                var addr4 = in_addr(); var addr6 = in6_addr()
-                if inet_pton(AF_INET, candidate, &addr4) == 1 || inet_pton(AF_INET6, candidate, &addr6) == 1 {
-                    ip = candidate
+            guard parts.count >= 7 else { return nil }
+            let candidate = String(parts[6])
+            var addr4 = in_addr(); var addr6 = in6_addr()
+            guard inet_pton(AF_INET, candidate, &addr4) == 1 || inet_pton(AF_INET6, candidate, &addr6) == 1 else { return nil }
+            var country: String?
+            if sendControlCommand("GETINFO ip-to-country/\(candidate)", to: descriptor),
+               let countryReply = readControlReply(from: descriptor) {
+                let key = "250-ip-to-country/\(candidate)="
+                for countryLine in countryReply.components(separatedBy: "\r\n") where countryLine.hasPrefix(key) {
+                    let value = countryLine.dropFirst(key.count).trimmingCharacters(in: CharacterSet(charactersIn: "\" \t\r\n"))
+                    let countryBytes = Array(value.utf8)
+                    if countryBytes.count == 2, countryBytes.allSatisfy({ (65...90).contains($0) }) {
+                        country = value.uppercased()
+                    }
+                    break
                 }
             }
-            break
+            return (candidate, country)
         }
-        guard let resolvedIp = ip else { return }
-        let country = countryCode(for: resolvedIp) ?? ""
-        lock.lock()
-        guard tor === sessionProcess, builtCircuits[circuitId] != nil else { lock.unlock(); return }
-        exitRelayIp = resolvedIp; exitRelayCountry = country; exitRelayCircuitId = circuitId
-        lock.unlock()
+        return nil
     }
 
     private func updateBridgeActivity(from event: String, targets: [BridgeTarget]) {
@@ -1083,7 +1123,7 @@ final class Helper {
         let savedRecoveryStableSince = preserveAutoRecovery ? recoveryStableSince : nil
         lock.unlock()
         if let process, process.isRunning { process.terminate(); process.waitUntilExit() }
-        lock.lock(); tor = nil; state = "disconnected"; message = "Tor stopped."; lastError = nil; bridgeTargets = []; currentBridgeIndex = nil; bridgeActivity = nil; builtCircuits = [:]; exitRelayIp = ""; exitRelayCountry = ""; exitRelayCircuitId = ""; reconnectSince = nil; autoRecoveryBridges = savedRecoveryBridges; autoRecoveryTried = savedRecoveryTried; autoRecoveryInProgress = savedRecoveryInProgress; recoveryAttemptSince = savedRecoveryAttemptSince; recoveryStableSince = savedRecoveryStableSince; connectedAt = nil; stopping = false; lock.unlock()
+        lock.lock(); tor = nil; state = "disconnected"; message = "Tor stopped."; lastError = nil; bridgeTargets = []; currentBridgeIndex = nil; bridgeActivity = nil; builtCircuits = [:]; exitRelayCandidates = []; exitRelayIp = ""; exitRelayCountry = ""; exitRelayCircuitId = ""; reconnectSince = nil; autoRecoveryBridges = savedRecoveryBridges; autoRecoveryTried = savedRecoveryTried; autoRecoveryInProgress = savedRecoveryInProgress; recoveryAttemptSince = savedRecoveryAttemptSince; recoveryStableSince = savedRecoveryStableSince; connectedAt = nil; stopping = false; lock.unlock()
     }
 
     private func executable(named name: String) -> URL? {
