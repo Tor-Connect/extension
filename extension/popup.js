@@ -1564,7 +1564,7 @@ function renderRoute(result = {}, visualState = connectionRevealPending && resul
       idleSub = t("Responded");
     } else {
       const attempt = Math.min(Math.max(shownPosition >= 0
-        ? bridgeNumberForLine(entries[shownPosition])
+        ? shownPosition + 1
         : Number(result.currentBridgeIndex) || 1, 1), Math.max(enabledCount, 1));
       idleSub = snowflake ? t("Volunteer proxies") : (enabledCount > 0
         ? t("Trying {k} of {m}", { k: attempt, m: enabledCount })
