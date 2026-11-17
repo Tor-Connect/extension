@@ -537,6 +537,11 @@ class Helper:
         return targets
 
     def monitor_control(self, targets: list[dict]) -> None:
+        with self.lock:
+            process = self.process
+        if process is None:
+            return
+
         port_file, cookie_file = DATA / "control-port", DATA / "control_auth_cookie"
         deadline = time.monotonic() + 20
         port = cookie = None
