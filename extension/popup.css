@@ -2491,6 +2491,8 @@ body.popup-page .globe-svg .pop {
 /* ── Reduced motion ──────────────────────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
   body.popup-page .globe-route { animation: none !important; }
+  body.popup-page #globeRouteFlow path { animation: none !important; }
+  body.popup-page #globeRouteFlow circle { display: none !important; }
   body.popup-page #globeRouteDraw .draw { animation: none !important; stroke-dashoffset: 0 !important; }
   body.popup-page .globe-dots circle { animation: none !important; }
   body.popup-page button.power-button::after { animation: none !important; }
