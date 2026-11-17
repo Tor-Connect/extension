@@ -87,6 +87,7 @@ const bridgesBackdropNode = document.querySelector("#bridgesBackdrop");
 const closeBridgesNode = document.querySelector("#closeBridges");
 const bridgeRowsNode = document.querySelector("#bridgeRows");
 const addBridgesFromSheetButton = document.querySelector("#addBridgesFromSheet");
+let bridgesSheetOpen = false;
 let statsPollTimer;
 let lastStatsSample;
 let pollTimer;
@@ -768,22 +769,26 @@ liveStatsNode.addEventListener("keydown", (event) => {
 document.addEventListener("focusin", (event) => {
   if (!liveStatsNode.hidden && !liveStatsNode.contains(event.target)) closeStatsNode.focus();
   if (!siteCheckSheetNode.hidden && !siteCheckSheetNode.contains(event.target)) closeSiteCheckNode.focus();
-  if (!bridgesSheetNode.hidden && !bridgesSheetNode.contains(event.target)) closeBridgesNode.focus();
+  if (bridgesSheetOpen && !bridgesSheetNode.contains(event.target)) closeBridgesNode.focus();
 });
 
 function closeBridgesSheet() {
-  const wasOpen = bridgesSheetNode.classList.contains("is-open");
+  const wasOpen = bridgesSheetOpen;
+  bridgesSheetOpen = false;
   bridgesSheetNode.classList.remove("is-open");
   bridgesBackdropNode.classList.remove("is-open");
   if (bridgesSheetToggleNode) bridgesSheetToggleNode.setAttribute("aria-expanded", "false");
   window.setTimeout(() => {
-    if (!bridgesSheetNode.classList.contains("is-open")) bridgesSheetNode.hidden = true;
-    if (!bridgesBackdropNode.classList.contains("is-open")) bridgesBackdropNode.hidden = true;
+    if (!bridgesSheetOpen) {
+      bridgesSheetNode.hidden = true;
+      bridgesBackdropNode.hidden = true;
+    }
   }, 300);
   if (wasOpen) (bridgesSheetToggleNode?.hidden === false ? bridgesSheetToggleNode : connectionToggle).focus();
 }
 
 function openBridgesSheet() {
+  bridgesSheetOpen = true;
   bridgesSheetNode.hidden = false;
   bridgesBackdropNode.hidden = false;
   requestAnimationFrame(() => requestAnimationFrame(() => {
