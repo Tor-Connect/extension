@@ -958,9 +958,10 @@ final class Helper {
                 let key = "250-ip-to-country/\(candidate)="
                 for countryLine in countryReply.components(separatedBy: "\r\n") where countryLine.hasPrefix(key) {
                     let value = countryLine.dropFirst(key.count).trimmingCharacters(in: CharacterSet(charactersIn: "\" \t\r\n"))
-                    let countryBytes = Array(value.utf8)
+                    let normalizedCountry = value.uppercased()
+                    let countryBytes = Array(normalizedCountry.utf8)
                     if countryBytes.count == 2, countryBytes.allSatisfy({ (65...90).contains($0) }) {
-                        country = value.uppercased()
+                        country = normalizedCountry
                     }
                     break
                 }
