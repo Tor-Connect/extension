@@ -42,7 +42,7 @@ const exitCountryOptionButtons = [...document.querySelectorAll("[data-exit-count
 const exitCountryCardNode = document.querySelector("#exitCountryCard");
 const exitCountryNoticeNode = document.querySelector("#exitCountryNotice");
 const exitCountryNavBadge = document.querySelector("#exitCountryNavBadge");
-let preferences = { mode: "snowflake", bridges: "", autoBridgeSelection: true, selectedBridge: "", disabledBridges: [], killSwitch: false, exitCountry: "" };
+let preferences = { mode: "snowflake", bridges: "", selectedBridge: "", disabledBridges: [], killSwitch: false, exitCountry: "" };
 let selectedMode = "snowflake";
 let bridgeLines = [];
 let disabledBridgeLines = new Set();
@@ -82,7 +82,8 @@ function markSaveState(message, kind = "") {
 function readPreferences() {
   return new Promise((resolve) => {
     chrome.storage.local.get("torConnectionPreferences", (stored) => {
-      const saved = stored?.torConnectionPreferences || {};
+      const saved = { ...(stored?.torConnectionPreferences || {}) };
+      delete saved.autoBridgeSelection;
       bridgeLines = typeof saved.bridges === "string"
         ? saved.bridges.split(/\r?\n/).map((line) => line.trim()).filter(Boolean) : [];
       disabledBridgeLines = new Set(Array.isArray(saved.disabledBridges)
@@ -93,7 +94,6 @@ function readPreferences() {
         mode: saved.mode === "manual" ? "manual" : "snowflake",
         bridges: bridgeLines.join("\n"),
         disabledBridges: [...disabledBridgeLines],
-        autoBridgeSelection: saved.autoBridgeSelection !== false,
         selectedBridge: enabled.includes(saved.selectedBridge) ? saved.selectedBridge : enabled[0] || "",
         killSwitch: saved.killSwitch === true,
         exitCountry: typeof saved.exitCountry === "string" ? saved.exitCountry : ""
@@ -836,7 +836,7 @@ function sendStatus() {
     connectedBridgeFingerprint = active && typeof result.bridgeFingerprint === "string" ? result.bridgeFingerprint.toLowerCase() : "";
     if (active) {
       const reportedIndex = Number(result.currentBridgeIndex) || 0;
-      if (selectedMode === "manual" && preferences.autoBridgeSelection && reportedIndex > 0) {
+      if (selectedMode === "manual" && reportedIndex > 0) {
         const activeLine = allEnabledLines()[reportedIndex - 1];
         connectedBridgeIndex = activeLine ? bridgeLines.indexOf(activeLine) + 1 : null;
       } else {
@@ -907,15 +907,12 @@ useBridgeLinesButton.addEventListener("click", () => {
 saveButton.addEventListener("click", saveSettings);
 
 async function reconnectUsingSavedSettings() {
-  const allLines = bridgeLines;
   const enabled = allEnabledLines();
   if (selectedMode === "manual" && !enabled.length) {
     showClipboardStatus(t("Enable at least one bridge before reconnecting."), "error");
     return;
   }
-  const selectedBridgeIndex = selectedMode === "manual" && !preferences.autoBridgeSelection
-    ? allLines.indexOf(preferences.selectedBridge) + 1 : null;
-  const bridges = selectedBridgeIndex ? preferences.selectedBridge : enabled.join("\n");
+  const bridges = enabled.join("\n");
   reconnectNowButton.disabled = true;
   hideChangeBanner();
   setConnectionBadge(t("Reconnecting…"), "starting", t("Restarting Tor with the saved settings."));
@@ -925,7 +922,7 @@ async function reconnectUsingSavedSettings() {
     reconnectNowButton.disabled = false;
     return;
   }
-  const result = await send("connect", { mode: selectedMode, bridges, selectedBridgeIndex, exitCountry: preferences.exitCountry || "" });
+  const result = await send("connect", { mode: selectedMode, bridges, selectedBridgeIndex: null, exitCountry: preferences.exitCountry || "" });
   if (!result?.ok) setConnectionBadge(t("Connection needs attention"), "error", result?.error || "Could not reconnect.");
   else setConnectionBadge(t("Connecting…"), "starting", result.message || "Tor is reconnecting.");
   reconnectNowButton.disabled = false;
@@ -956,7 +953,8 @@ document.addEventListener("tor-language-changed", () => { renderBridgeList(); re
 
 chrome.storage.onChanged.addListener((changes, areaName) => {
   if (areaName !== "local" || !changes.torConnectionPreferences || isDirty) return;
-  const saved = changes.torConnectionPreferences.newValue || {};
+  const saved = { ...(changes.torConnectionPreferences.newValue || {}) };
+  delete saved.autoBridgeSelection;
   bridgeLines = typeof saved.bridges === "string" ? saved.bridges.split(/\r?\n/).map((line) => line.trim()).filter(Boolean) : [];
   disabledBridgeLines = new Set(Array.isArray(saved.disabledBridges)
     ? saved.disabledBridges.filter((line) => bridgeLines.includes(line)) : []);
@@ -965,7 +963,6 @@ chrome.storage.onChanged.addListener((changes, areaName) => {
     mode: saved.mode === "manual" ? "manual" : "snowflake",
     bridges: bridgeLines.join("\n"),
     disabledBridges: [...disabledBridgeLines],
-    autoBridgeSelection: saved.autoBridgeSelection !== false,
     selectedBridge: typeof saved.selectedBridge === "string" ? saved.selectedBridge : allEnabledLines()[0] || "",
     killSwitch: saved.killSwitch === true,
     exitCountry: typeof saved.exitCountry === "string" ? saved.exitCountry : ""

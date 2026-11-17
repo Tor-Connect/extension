@@ -94,7 +94,7 @@ let pollTimer;
 let outdatedPollGeneration = 0;
 let initialStatusPending = true;
 let initialStatusRetries = 0;
-let preferences = { mode: "snowflake", bridges: "", autoBridgeSelection: true, selectedBridge: "", disabledBridges: [], exitCountry: "" };
+let preferences = { mode: "snowflake", bridges: "", selectedBridge: "", disabledBridges: [], exitCountry: "" };
 let currentState = "disconnected";
 let currentResult = {};
 let bridgeCountries = new Map();
@@ -1101,7 +1101,6 @@ function readPreferences() {
       preferences = {
         mode: saved?.mode === "manual" ? "manual" : "snowflake",
         bridges: typeof saved?.bridges === "string" ? saved.bridges : "",
-        autoBridgeSelection: saved?.autoBridgeSelection !== false,
         selectedBridge: typeof saved?.selectedBridge === "string" ? saved.selectedBridge : "",
         disabledBridges: Array.isArray(saved?.disabledBridges) ? saved.disabledBridges : [],
         exitCountry: typeof saved?.exitCountry === "string" ? saved.exitCountry : ""
@@ -1146,9 +1145,7 @@ function activeBridgePosition(result, entries = bridgeEntries()) {
   }
   const originalIndex = Number(result?.currentBridgeIndex) - 1;
   if (originalIndex < 0) return -1;
-  if (preferences.autoBridgeSelection) return originalIndex < entries.length ? originalIndex : -1;
-  const originalLine = allBridgeEntries()[originalIndex];
-  return originalLine ? entries.indexOf(originalLine) : -1;
+  return originalIndex < entries.length ? originalIndex : -1;
 }
 
 function countryFlag(countryCode) {
@@ -1281,13 +1278,6 @@ function renderBridgeSelector() {
   if (bridgesSheetToggleNode) {
     bridgesSheetToggleNode.hidden = preferences.mode !== "manual" || allEntries.length === 0;
   }
-}
-
-function saveBridgeSelection(autoBridgeSelection, selectedBridge) {
-  preferences.autoBridgeSelection = autoBridgeSelection;
-  preferences.selectedBridge = selectedBridge;
-  renderBridgeSelector();
-  chrome.storage.local.set({ torConnectionPreferences: preferences });
 }
 
 function renderConnectionMethodSwitch() {
@@ -1534,12 +1524,9 @@ function renderRoute(result = {}, visualState = connectionRevealPending && resul
   renderConnectionMethodSwitch();
   const activePosition = (visualState === "connected" || visualState === "starting")
     ? activeBridgePosition(result, entries) : -1;
-  const selectedPosition = entries.length ? selectedBridgePosition(entries) : -1;
-
   let shownPosition = -1;
   if (entries.length) {
     if (activePosition >= 0) shownPosition = activePosition;
-    else if (!preferences.autoBridgeSelection) shownPosition = selectedPosition;
     else if (visualState === "starting" && lastShownPosition >= 0) shownPosition = lastShownPosition;
   }
   if (shownPosition >= 0) lastShownPosition = shownPosition;
@@ -1794,8 +1781,6 @@ function renderResult(result) {
       : visualResult.state === "disconnected"
         ? preferences.mode === "manual" && !bridgeEntries().length
           ? t("Add bridge lines in Settings to connect this way")
-          : preferences.mode === "manual" && !preferences.autoBridgeSelection
-          ? t("Pick a bridge, then tap the center")
           : preferences.mode === "manual" ? t("Tap the center to try saved bridges") : t("Tap the center to connect")
         : "";
   setStatus(preferences.mode === "manual" && !bridgeEntries().length && visualResult.state === "disconnected"
@@ -1867,11 +1852,8 @@ async function connectWithSavedPreferences() {
   if (saved.mode === "manual" && !entries.length) {
     return { ok: false, state: "failed", error: "Enable at least one bridge in Settings before connecting." };
   }
-  const selectedBridgeIndex = saved.mode === "manual" && !saved.autoBridgeSelection
-    ? allBridgeEntries().indexOf(saved.selectedBridge) + 1
-    : null;
-  const bridges = selectedBridgeIndex ? saved.selectedBridge : entries.join("\n");
-  return send("connect", { mode: saved.mode, bridges, selectedBridgeIndex, exitCountry: saved.exitCountry || "" });
+  const bridges = entries.join("\n");
+  return send("connect", { mode: saved.mode, bridges, selectedBridgeIndex: null, exitCountry: saved.exitCountry || "" });
 }
 
 connectionToggle.addEventListener("click", async () => {
@@ -1935,7 +1917,6 @@ chrome.storage.onChanged.addListener((changes, areaName) => {
   preferences = {
     mode: saved.mode === "manual" ? "manual" : "snowflake",
     bridges: typeof saved.bridges === "string" ? saved.bridges : "",
-    autoBridgeSelection: saved.autoBridgeSelection !== false,
     selectedBridge: typeof saved.selectedBridge === "string" ? saved.selectedBridge : "",
     disabledBridges: Array.isArray(saved.disabledBridges) ? saved.disabledBridges : [],
     exitCountry: typeof saved.exitCountry === "string" ? saved.exitCountry : ""
