@@ -1201,6 +1201,9 @@ function renderBridgeSelector() {
   const allEntries = allBridgeEntries();
   const disabled = new Set(preferences.disabledBridges);
   if (!bridgeRowsNode) return;
+  const focusedBridgeLine = bridgeRowsNode.contains(document.activeElement)
+    ? document.activeElement.closest(".bridge-row")?.dataset.bridgeLine
+    : undefined;
 
   bridgeRowsNode.replaceChildren(...allEntries.map((line, i) => {
     const on = !disabled.has(line);
@@ -1218,6 +1221,7 @@ function renderBridgeSelector() {
     btn.setAttribute("role", "switch");
     btn.setAttribute("aria-checked", String(on));
     btn.className = "bridge-row";
+    btn.dataset.bridgeLine = line;
     const countryName = /^[A-Z]{2}$/.test(countryCode)
       ? new Intl.DisplayNames([globalThis.torI18n?.language || navigator.language || "en"], { type: "region" }).of(countryCode) || countryCode
       : "";
@@ -1267,6 +1271,11 @@ function renderBridgeSelector() {
     });
     return btn;
   }));
+  if (focusedBridgeLine !== undefined) {
+    const replacement = [...bridgeRowsNode.querySelectorAll(".bridge-row")]
+      .find((button) => button.dataset.bridgeLine === focusedBridgeLine);
+    replacement?.focus();
+  }
 
   // Show/hide the chevron action button on the bottom card
   if (bridgesSheetToggleNode) {
