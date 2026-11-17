@@ -117,6 +117,8 @@ let globeRouteDrawWasVisible = false;
 let globeRouteDrawComplete = false;
 let connectionRevealPending = false;
 let connectionRevealTimer;
+let connectionRevealFallbackTimer;
+let connectionRevealReleased = false;
 let globeOrientationExitCode = "";
 let globeRotationPlayed = false;
 let siteCheckBadgeHideTimer;
@@ -151,6 +153,7 @@ function radians(degrees) { return degrees * Math.PI / 180; }
 const GLOBE_RADIUS = 116;
 const GLOBE_PITCH = radians(11);
 const GLOBE_GRID_STEP = 3.5;
+const CONNECTION_REVEAL_FALLBACK_MS = 4000;
 let globeLandMask;
 let globeLandMaskPromise;
 
@@ -268,6 +271,14 @@ function setGlobeRotationBrightness(enabled) {
   });
 }
 
+function releaseConnectionReveal() {
+  connectionRevealPending = false;
+  connectionRevealReleased = true;
+  clearTimeout(connectionRevealFallbackTimer);
+  connectionRevealFallbackTimer = undefined;
+  renderResult(currentResult);
+}
+
 // Populate the globe dot field with a projected lat/lon grid.
 // The SVG viewBox is 320×320; globe centre cx=160, cy=160, r=116.
 // Drive all state-conditional globe SVG groups from the connection result.
@@ -302,7 +313,7 @@ function renderGlobe(result = {}) {
   if (!isOn) {
     globeOrientationExitCode = "";
     globeRotationPlayed = false;
-  } else if (exitCenter && (!globeOrientationExitCode || connectionRevealPending)) {
+  } else if (exitCenter && exitCC !== globeOrientationExitCode) {
     globeOrientationExitCode = exitCC;
   }
   const globeMapNode = snow ? globeDotsSnowNode : globeDotsBridgeNode;
@@ -389,8 +400,7 @@ function renderGlobe(result = {}) {
             const stillConnected = currentResult?.state === "connected"
               && !["trying", "failed", "closed"].includes(currentResult.bridgeActivity);
             if (!stillConnected || globeExitLabelNode.hidden) return;
-            connectionRevealPending = false;
-            renderResult(currentResult);
+            releaseConnectionReveal();
           }, 450);
         }
       }, { once: true });
@@ -408,6 +418,15 @@ function renderGlobe(result = {}) {
       : "";
     globeExitLabelNode.textContent = country;
     globeExitLabelNode.hidden = !(showExitMarker && !!country);
+  }
+  if (reduceRouteMotion && connectionRevealPending && globeExitLabelNode && !globeExitLabelNode.hidden && !connectionRevealTimer) {
+    connectionRevealTimer = setTimeout(() => {
+      connectionRevealTimer = undefined;
+      const stillConnected = currentResult?.state === "connected"
+        && !["trying", "failed", "closed"].includes(currentResult.bridgeActivity);
+      if (!stillConnected || globeExitLabelNode.hidden) return;
+      releaseConnectionReveal();
+    }, 0);
   }
 
   // Entry node: exactly one visible at a time
@@ -1624,14 +1643,34 @@ function renderResult(result) {
     && !["trying", "failed", "closed"].includes(currentResult.bridgeActivity);
   if (!stableConnected) {
     connectionRevealPending = false;
+    connectionRevealReleased = false;
     clearTimeout(connectionRevealTimer);
     connectionRevealTimer = undefined;
+    clearTimeout(connectionRevealFallbackTimer);
+    connectionRevealFallbackTimer = undefined;
   } else {
     const exitCode = (currentResult.exitRelayCountryCode || "").toUpperCase();
     const hasExitPoint = Boolean(EXIT_COUNTRY_CENTERS[exitCode]);
     const reduceRouteMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
-    if (!connectionRevealPending) {
-      connectionRevealPending = !hasExitPoint || (!reduceRouteMotion && !globeRouteDrawComplete);
+    if (hasExitPoint) {
+      clearTimeout(connectionRevealFallbackTimer);
+      connectionRevealFallbackTimer = undefined;
+      if (!connectionRevealReleased) {
+        connectionRevealPending = false;
+        connectionRevealReleased = true;
+      }
+    } else if (!connectionRevealReleased) {
+      connectionRevealPending = true;
+    }
+    if (!hasExitPoint && connectionRevealPending && !connectionRevealReleased && !connectionRevealFallbackTimer) {
+      connectionRevealFallbackTimer = setTimeout(() => {
+        connectionRevealFallbackTimer = undefined;
+        const stillConnected = currentResult?.state === "connected"
+          && !["trying", "failed", "closed"].includes(currentResult.bridgeActivity);
+        const latestExitCode = (currentResult?.exitRelayCountryCode || "").toUpperCase();
+        if (!stillConnected || EXIT_COUNTRY_CENTERS[latestExitCode]) return;
+        releaseConnectionReveal();
+      }, CONNECTION_REVEAL_FALLBACK_MS);
     }
   }
   const visualResult = connectionRevealPending
