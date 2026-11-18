@@ -111,9 +111,9 @@ let lastShownPosition = -1;
 let copyFeedbackTimer;
 let firefoxPermissionPollTimer;
 let firefoxPermissionSuccessTimer;
-let globeEntryRetryPending = false;
-let globeEntryWasFailing = false;
-let lastGlobeEntryAttemptIndex = 0;
+let lastGlobeEntryAttemptIdentity = "";
+let globeEntryRetryAnimationTimer;
+let globeEntryFailureTransition = false;
 let globeRouteDrawWasVisible = false;
 let globeRouteDrawComplete = false;
 let connectionRevealPending = false;
@@ -293,18 +293,32 @@ function renderGlobe(result = {}) {
   const isOn = state === "connected";
   const phase = result.bridgeActivity || "";
   const isRetrying = isOn && ["trying", "failed", "closed"].includes(phase);
-  const isEntryConnecting = isConn || isRetrying;
+  const isEntryConnecting = isConn || (isOn && phase !== "connected");
   const attemptIndex = Number(result.currentBridgeIndex) || 0;
-  if (isEntryConnecting && attemptIndex > 0 && lastGlobeEntryAttemptIndex > 0
-    && attemptIndex !== lastGlobeEntryAttemptIndex) {
-    globeEntryRetryPending = true;
+  const manualEntries = snow ? [] : bridgeEntries();
+  const activeEntryPosition = activeBridgePosition(result, manualEntries);
+  const indexedEntry = attemptIndex > 0 ? manualEntries[attemptIndex - 1] : null;
+  const identityEntry = activeEntryPosition >= 0 ? manualEntries[activeEntryPosition] : indexedEntry;
+  const attemptIdentity = identityEntry
+    ? `bridge:${bridgeAddress(identityEntry)}`
+    : attemptIndex > 0 ? `index:${attemptIndex}` : "";
+  const bridgeChangedForRetry = !!attemptIdentity && !!lastGlobeEntryAttemptIdentity
+    && attemptIdentity !== lastGlobeEntryAttemptIdentity;
+  if (bridgeChangedForRetry) {
+    globeEntryFailureTransition = true;
+    if (!globeEntryRetryAnimationTimer) {
+      globeEntryRetryAnimationTimer = setTimeout(() => {
+        globeEntryRetryAnimationTimer = undefined;
+        globeEntryFailureTransition = false;
+        renderResult(currentResult);
+      }, 350);
+    }
   }
-  if (attemptIndex > 0) lastGlobeEntryAttemptIndex = attemptIndex;
-  else if (isOff && !globeEntryRetryPending) lastGlobeEntryAttemptIndex = 0;
-  const found = isConn && phase === "connected"; // OR connection confirms the entry responded
-  const isFail = !found && (["failed", "closed"].includes(phase) || state === "failed")
-    && (isEntryConnecting || state === "failed");
-  const isEntryFound = isConn ? found : isOn && !isRetrying;
+  if (attemptIdentity) lastGlobeEntryAttemptIdentity = attemptIdentity;
+  const found = (isConn || isOn) && phase === "connected";
+  const isFail = globeEntryFailureTransition || (!found && (["failed", "closed"].includes(phase) || state === "failed")
+    && (isEntryConnecting || state === "failed"));
+  const isEntryFound = !isFail && found;
 
   // Snowfall: snowflake mode, not connected
   if (globeSnowfallNode) globeSnowfallNode.hidden = !(snow && !isOn);
@@ -435,41 +449,14 @@ function renderGlobe(result = {}) {
   setGlobeGroupVisible(globeEntryTryNode, isEntryConnecting && !found && !isFail);
   setGlobeGroupVisible(globeEntryFailNode, isFail);
   setGlobeGroupVisible(globeEntryOkNode, isEntryFound);
-  const entryVisualState = isFail ? "fail"
-    : isEntryConnecting && !found ? "trying"
-      : isEntryFound ? "found"
-        : isOff ? "idle" : "inactive";
-  const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
-  if (isFail && !globeEntryWasFailing && !reduceMotion && typeof globeEntryFailNode?.animate === "function") {
-    globeEntryFailNode.style.transformBox = "fill-box";
-    globeEntryFailNode.style.transformOrigin = "center";
-    globeEntryFailNode.animate([
-      { transform: "translate(0, 0)" },
-      { transform: "translate(-32px, -7px)", offset: .38 },
-      { transform: "translate(0, 0)" }
-    ], { duration: 460, easing: "cubic-bezier(.2,.8,.3,1)" });
-  }
-  globeEntryWasFailing = isFail;
-  if (isFail) globeEntryRetryPending = true;
-  if (globeEntryRetryPending && entryVisualState === "trying" && globeEntryTryNode) {
-    if (!reduceMotion) {
-      globeEntryTryNode.style.transformBox = "fill-box";
-      globeEntryTryNode.style.transformOrigin = "center";
-      if (typeof globeEntryTryNode.animate === "function") {
-        globeEntryTryNode.animate([
-          { transform: "translate(-34px, -8px) scale(.88)" },
-          { transform: "translate(5px, 1px) scale(1.05)", offset: .72 },
-          { transform: "translate(0, 0) scale(1)" }
-        ], { duration: 680, easing: "cubic-bezier(.2,.8,.3,1)" });
-      } else {
-        globeEntryTryNode.classList.remove("is-retrying");
-        void globeEntryTryNode.getBoundingClientRect();
-        globeEntryTryNode.classList.add("is-retrying");
-      }
+  if (bridgeChangedForRetry && !window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) {
+    const shakeNode = globeEntryFailNode?.querySelector(".shk");
+    if (shakeNode) {
+      shakeNode.classList.remove("shk");
+      void shakeNode.getBoundingClientRect();
+      shakeNode.classList.add("shk");
     }
-    globeEntryRetryPending = false;
   }
-  if (entryVisualState === "found") globeEntryRetryPending = false;
   let entryCC = (result.bridgeCountryCode || "").toUpperCase();
   if (!entryCC && !snow) {
     const entries = bridgeEntries();
@@ -1863,10 +1850,18 @@ connectionToggle.addEventListener("click", async () => {
   connectionToggle.disabled = true;
   connectionToggle.classList.add("is-pressing");
   if (currentState === "connected" || currentState === "starting") {
+    lastGlobeEntryAttemptIdentity = "";
+    globeEntryFailureTransition = false;
+    clearTimeout(globeEntryRetryAnimationTimer);
+    globeEntryRetryAnimationTimer = undefined;
     setStatus(t("Disconnecting…"), "starting");
     renderResult(await send("disconnect"));
     return;
   }
+  lastGlobeEntryAttemptIdentity = "";
+  globeEntryFailureTransition = false;
+  clearTimeout(globeEntryRetryAnimationTimer);
+  globeEntryRetryAnimationTimer = undefined;
   setStatus(t("Connecting…"), "starting");
   beginBridgeAttemptTimer();
   renderResult(await connectWithSavedPreferences());
