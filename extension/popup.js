@@ -1140,8 +1140,7 @@ function bridgeAddress(line) {
 function activeBridgePosition(result, entries = bridgeEntries()) {
   if (result?.bridgeAddress) {
     const address = String(result.bridgeAddress).toLowerCase();
-    const match = entries.findIndex((line) => bridgeAddress(line) === address);
-    if (match >= 0) return match;
+    return entries.findIndex((line) => bridgeAddress(line) === address);
   }
   const originalIndex = Number(result?.currentBridgeIndex) - 1;
   if (originalIndex < 0) return -1;
