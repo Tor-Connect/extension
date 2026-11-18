@@ -574,19 +574,19 @@ class Helper:
                 if not is_current_process():
                     return
                 if targets:
-                    self.process_control_events(events, targets)
+                    self.process_control_events(events, targets, process)
                     # The bridge may already be connected before the control listener
                     # attaches, so seed our active bridge from Tor's current OR conns.
                     conn.sendall(b"GETINFO orconn-status\r\n")
                     orconn_snapshot = self.read_control_reply(conn)
                     if not is_current_process():
                         return
-                    self.process_orconn_snapshot(orconn_snapshot, targets)
+                    self.process_orconn_snapshot(orconn_snapshot, targets, process)
                 conn.sendall(b"GETINFO circuit-status\r\n")
                 circuit_text = self.read_control_reply(conn)
                 if not is_current_process():
                     return
-                self.process_circuit_snapshot(circuit_text, targets)
+                self.process_circuit_snapshot(circuit_text, targets, process)
                 threading.Thread(
                     target=self.lookup_exit_relay_from_snapshot_fresh,
                     args=(port, cookie, circuit_text, process),
@@ -622,11 +622,11 @@ class Helper:
                         if not is_current_process():
                             return
                         if targets:
-                            self.update_bridge_activity(event, targets)
+                            self.update_bridge_activity(event, targets, process)
                         elif " CIRC " in event:
                             fields = event.split()
                             if len(fields) >= 5:
-                                self.update_circuit_activity(fields[2], fields[3], fields[4], [])
+                                self.update_circuit_activity(fields[2], fields[3], fields[4], [], process)
                         if " CIRC " in event and "ONEHOP_TUNNEL" not in event and "IS_INTERNAL" not in event:
                             fields = event.split()
                             if len(fields) >= 5 and fields[3] in {"LAUNCHED", "EXTENDED", "BUILT"}:
@@ -657,11 +657,11 @@ class Helper:
             if "250 OK\r\n" in text: return text
         return data.decode("utf-8", "replace")
 
-    def process_control_events(self, text: str, targets: list[dict]) -> None:
+    def process_control_events(self, text: str, targets: list[dict], process: subprocess.Popen[str]) -> None:
         for line in text.split("\r\n"):
-            if line.startswith("650 "): self.update_bridge_activity(line, targets)
+            if line.startswith("650 "): self.update_bridge_activity(line, targets, process)
 
-    def process_orconn_snapshot(self, text: str, targets: list[dict]) -> None:
+    def process_orconn_snapshot(self, text: str, targets: list[dict], process: subprocess.Popen[str]) -> None:
         in_snapshot = False
         for line in text.split("\r\n"):
             if line.startswith("250+orconn-status="):
@@ -673,9 +673,9 @@ class Helper:
             if in_snapshot:
                 fields = line.split()
                 if len(fields) >= 2:
-                    self.update_bridge_activity(f"650 ORCONN {fields[0]} {fields[1]}", targets)
+                    self.update_bridge_activity(f"650 ORCONN {fields[0]} {fields[1]}", targets, process)
 
-    def process_circuit_snapshot(self, text: str, targets: list[dict]) -> None:
+    def process_circuit_snapshot(self, text: str, targets: list[dict], process: subprocess.Popen[str]) -> None:
         in_snapshot = False
         for line in text.split("\r\n"):
             if line.startswith("250+circuit-status="):
@@ -688,7 +688,7 @@ class Helper:
                 continue
             fields = line.split()
             if len(fields) >= 3:
-                self.update_circuit_activity(fields[0], fields[1], fields[2], targets)
+                self.update_circuit_activity(fields[0], fields[1], fields[2], targets, process)
 
     def bridge_index_for_target(self, reported: str, targets: list[dict]) -> int | None:
         target = reported.lower()
@@ -767,10 +767,13 @@ class Helper:
             self.exit_relay_country = tor_country or self.country_code(ip) or ""
             self.exit_relay_circuit_id = circuit_id
 
-    def update_circuit_activity(self, circuit_id: str, status: str, path: str, targets: list[dict]) -> None:
+    def update_circuit_activity(self, circuit_id: str, status: str, path: str, targets: list[dict],
+                                process: subprocess.Popen[str]) -> None:
         if status == "BUILT":
             bridge_index = self.bridge_index_for_target(path.split(",", 1)[0], targets)
             with self.lock:
+                if self.process is not process:
+                    return
                 # Some bridge lines omit their fingerprint. The CIRC event still
                 # proves a usable route exists, even if its saved-line index is unknown.
                 self.built_circuits[circuit_id] = bridge_index or 0
@@ -789,6 +792,8 @@ class Helper:
                     self.recovery_stable_since = time.monotonic()
         elif status in {"CLOSED", "FAILED", "DESTROYED"}:
             with self.lock:
+                if self.process is not process:
+                    return
                 self.built_circuits.pop(circuit_id, None)
                 self.exit_relay_candidates.discard(circuit_id)
                 if not self.built_circuits or circuit_id == self.exit_relay_circuit_id:
@@ -796,11 +801,11 @@ class Helper:
                     self.exit_relay_country = ""
                     self.exit_relay_circuit_id = ""
 
-    def update_bridge_activity(self, event: str, targets: list[dict]) -> None:
+    def update_bridge_activity(self, event: str, targets: list[dict], process: subprocess.Popen[str]) -> None:
         reported, activity = None, None
         fields = event.split()
         if " CIRC " in event and len(fields) >= 5:
-            self.update_circuit_activity(fields[2], fields[3], fields[4], targets)
+            self.update_circuit_activity(fields[2], fields[3], fields[4], targets, process)
             return
         if " STATUS_CLIENT " in event and " BOOTSTRAP " in event:
             match = re.search(r'(?:HOSTADDR|HOST)="([^"]+)"', event)
