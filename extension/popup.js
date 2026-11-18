@@ -284,16 +284,14 @@ function releaseConnectionReveal() {
 // The SVG viewBox is 320×320; globe centre cx=160, cy=160, r=116.
 // Drive all state-conditional globe SVG groups from the connection result.
 // Maps directly to the design's sc-if conditions.
-function renderGlobe(result = {}) {
+function renderGlobe(result = {}, visualState = result.state || "disconnected") {
   const state = result.state || "disconnected";
   const snow = preferences.mode === "snowflake";
   routeCardNode.dataset.mode = preferences.mode;
-  const isOff = state === "disconnected" || state === "failed";
-  const isConn = state === "starting";
+  const isOff = visualState === "disconnected" || visualState === "failed";
+  const isConn = visualState === "starting";
   const isOn = state === "connected";
   const phase = result.bridgeActivity || "";
-  const isRetrying = isOn && ["trying", "failed", "closed"].includes(phase);
-  const isEntryConnecting = isConn || (isOn && phase !== "connected");
   const attemptIndex = Number(result.currentBridgeIndex) || 0;
   const manualEntries = snow ? [] : bridgeEntries();
   const activeEntryPosition = activeBridgePosition(result, manualEntries);
@@ -315,10 +313,15 @@ function renderGlobe(result = {}) {
     }
   }
   if (attemptIdentity) lastGlobeEntryAttemptIdentity = attemptIdentity;
-  const found = (isConn || isOn) && phase === "connected";
-  const isFail = globeEntryFailureTransition || (!found && (["failed", "closed"].includes(phase) || state === "failed")
-    && (isEntryConnecting || state === "failed"));
-  const isEntryFound = !isFail && found;
+  const isRetrying = isOn && ["trying", "failed", "closed"].includes(phase);
+  const isEntryConnecting = isConn || (visualState === "connected" && isRetrying);
+  const topLevelConnected = visualState === "connected" && !isRetrying;
+  const isFail = !topLevelConnected && (
+    globeEntryFailureTransition
+    || ((["failed", "closed"].includes(phase) || visualState === "failed")
+      && (isEntryConnecting || visualState === "failed"))
+  );
+  const isEntryFound = topLevelConnected;
 
   // Snowfall: snowflake mode, not connected
   if (globeSnowfallNode) globeSnowfallNode.hidden = !(snow && !isOn);
@@ -342,7 +345,8 @@ function renderGlobe(result = {}) {
   renderGeographicDotMap(globeMapNode, centerLongitude);
   if (!globeLandMask) {
     loadGlobeLandMask().then((mask) => {
-      if (mask) renderGlobe(currentResult || {});
+      if (mask) renderGlobe(currentResult || {}, connectionRevealPending && currentResult?.state === "connected"
+        ? "starting" : currentResult?.state || "disconnected");
     });
   }
 
@@ -407,7 +411,7 @@ function renderGlobe(result = {}) {
       drawPath.style.animation = "globe-route-draw 1s ease-in-out both";
       drawPath.addEventListener("animationend", () => {
         globeRouteDrawComplete = true;
-        renderGlobe(currentResult);
+        renderGlobe(currentResult, connectionRevealPending ? "starting" : currentResult?.state || "disconnected");
         if (connectionRevealPending && globeExitLabelNode && !globeExitLabelNode.hidden) {
           clearTimeout(connectionRevealTimer);
           connectionRevealTimer = setTimeout(() => {
@@ -446,7 +450,7 @@ function renderGlobe(result = {}) {
 
   // Entry node: exactly one visible at a time
   setGlobeGroupVisible(globeEntryIdleNode, isOff);
-  setGlobeGroupVisible(globeEntryTryNode, isEntryConnecting && !found && !isFail);
+  setGlobeGroupVisible(globeEntryTryNode, isEntryConnecting && !isFail);
   setGlobeGroupVisible(globeEntryFailNode, isFail);
   setGlobeGroupVisible(globeEntryOkNode, isEntryFound);
   if (bridgeChangedForRetry && !window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) {
@@ -1479,7 +1483,7 @@ const ICON_SNOWFLAKE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColo
 const ICON_SPINNER = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-dasharray="28 60"/></svg>';
 
 function renderRoute(result = {}, visualState = connectionRevealPending && result?.state === "connected" ? "starting" : result.state) {
-  renderGlobe(result);
+  renderGlobe(result, visualState);
   if (initialStatusPending && routeCardNode.dataset.initialChecking === "true") {
     return;
   }
@@ -1743,7 +1747,7 @@ function renderResult(result) {
   setupPanelNode.hidden = true;
   routeCardNode.hidden = false;
   openSettingsButton.hidden = false;
-  renderGlobe(currentResult);
+  renderGlobe(currentResult, visualResult.state);
   renderRoute(currentResult, visualResult.state);
   renderProgress(currentResult, visualResult.state);
   const statusKind = visualResult.state === "connected" && currentResult.bridgeActivity === "trying" ? "starting"
