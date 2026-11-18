@@ -255,6 +255,57 @@ function setGlobeGroupVisible(node, visible) {
   }
 }
 
+function renderGlobeEntry(result = {}, visualState = result.state || "disconnected", bridgeChangedForRetry = false) {
+  const state = result.state || "disconnected";
+  const snow = preferences.mode === "snowflake";
+  const isOff = visualState === "disconnected" || visualState === "failed";
+  const isConn = visualState === "starting";
+  const isOn = state === "connected";
+  const phase = result.bridgeActivity || "";
+  const isRetrying = isOn && ["trying", "failed", "closed"].includes(phase);
+  const isEntryConnecting = isConn || (visualState === "connected" && isRetrying);
+  const topLevelConnected = visualState === "connected" && !isRetrying;
+  const isFail = !topLevelConnected && (
+    globeEntryFailureTransition
+    || ((["failed", "closed"].includes(phase) || visualState === "failed")
+      && (isEntryConnecting || visualState === "failed"))
+  );
+  const isEntryFound = topLevelConnected;
+
+  // Entry node: exactly one visible at a time
+  setGlobeGroupVisible(globeEntryIdleNode, isOff);
+  setGlobeGroupVisible(globeEntryTryNode, isEntryConnecting && !isFail);
+  setGlobeGroupVisible(globeEntryFailNode, isFail);
+  setGlobeGroupVisible(globeEntryOkNode, isEntryFound);
+  if (bridgeChangedForRetry && !window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) {
+    const shakeNode = globeEntryFailNode?.querySelector(".shk");
+    if (shakeNode) {
+      shakeNode.classList.remove("shk");
+      void shakeNode.getBoundingClientRect();
+      shakeNode.classList.add("shk");
+    }
+  }
+
+  let entryCC = (result.bridgeCountryCode || "").toUpperCase();
+  if (!entryCC && !snow) {
+    const entries = bridgeEntries();
+    const activePosition = activeBridgePosition(result, entries);
+    const position = activePosition >= 0 ? activePosition
+      : lastShownPosition >= 0 ? lastShownPosition : selectedBridgePosition(entries);
+    entryCC = (bridgeCountries.get(entries[position]) || "").toUpperCase();
+  }
+  if (globeEntryTryCCNode) globeEntryTryCCNode.textContent = entryCC;
+
+  if (globeEntryLabelNode) {
+    const bridgeNum = snow ? t("Snowflake")
+      : result.currentBridgeIndex ? t("Bridge {n}", { n: result.currentBridgeIndex }) : t("Bridge");
+    if (globeEntryCCNode) globeEntryCCNode.textContent = entryCC;
+    if (globeEntryNameNode) globeEntryNameNode.textContent = bridgeNum;
+    globeEntryLabelNode.hidden = !isEntryFound;
+  }
+  return { isRetrying };
+}
+
 function setGlobeRotationBrightness(enabled) {
   const fill = document.documentElement.dataset.theme === "light" ? "#238b58" : "#55b985";
   [globeDotsBridgeNode, globeDotsSnowNode, ...GLOBE_SKINS].forEach((node) => {
@@ -288,10 +339,7 @@ function renderGlobe(result = {}, visualState = result.state || "disconnected") 
   const state = result.state || "disconnected";
   const snow = preferences.mode === "snowflake";
   routeCardNode.dataset.mode = preferences.mode;
-  const isOff = visualState === "disconnected" || visualState === "failed";
-  const isConn = visualState === "starting";
   const isOn = state === "connected";
-  const phase = result.bridgeActivity || "";
   const attemptIndex = Number(result.currentBridgeIndex) || 0;
   const manualEntries = snow ? [] : bridgeEntries();
   const activeEntryPosition = activeBridgePosition(result, manualEntries);
@@ -308,20 +356,15 @@ function renderGlobe(result = {}, visualState = result.state || "disconnected") 
       globeEntryRetryAnimationTimer = setTimeout(() => {
         globeEntryRetryAnimationTimer = undefined;
         globeEntryFailureTransition = false;
-        renderResult(currentResult);
+        const result = currentResult || {};
+        const visualState = connectionRevealPending && result.state === "connected"
+          ? "starting" : result.state || "disconnected";
+        renderGlobeEntry(result, visualState);
       }, 350);
     }
   }
   if (attemptIdentity) lastGlobeEntryAttemptIdentity = attemptIdentity;
-  const isRetrying = isOn && ["trying", "failed", "closed"].includes(phase);
-  const isEntryConnecting = isConn || (visualState === "connected" && isRetrying);
-  const topLevelConnected = visualState === "connected" && !isRetrying;
-  const isFail = !topLevelConnected && (
-    globeEntryFailureTransition
-    || ((["failed", "closed"].includes(phase) || visualState === "failed")
-      && (isEntryConnecting || visualState === "failed"))
-  );
-  const isEntryFound = topLevelConnected;
+  const { isRetrying } = renderGlobeEntry(result, visualState, bridgeChangedForRetry);
 
   // Snowfall: snowflake mode, not connected
   if (globeSnowfallNode) globeSnowfallNode.hidden = !(snow && !isOn);
@@ -448,37 +491,6 @@ function renderGlobe(result = {}, visualState = result.state || "disconnected") 
     }, 0);
   }
 
-  // Entry node: exactly one visible at a time
-  setGlobeGroupVisible(globeEntryIdleNode, isOff);
-  setGlobeGroupVisible(globeEntryTryNode, isEntryConnecting && !isFail);
-  setGlobeGroupVisible(globeEntryFailNode, isFail);
-  setGlobeGroupVisible(globeEntryOkNode, isEntryFound);
-  if (bridgeChangedForRetry && !window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) {
-    const shakeNode = globeEntryFailNode?.querySelector(".shk");
-    if (shakeNode) {
-      shakeNode.classList.remove("shk");
-      void shakeNode.getBoundingClientRect();
-      shakeNode.classList.add("shk");
-    }
-  }
-  let entryCC = (result.bridgeCountryCode || "").toUpperCase();
-  if (!entryCC && !snow) {
-    const entries = bridgeEntries();
-    const activePosition = activeBridgePosition(result, entries);
-    const position = activePosition >= 0 ? activePosition
-      : lastShownPosition >= 0 ? lastShownPosition : selectedBridgePosition(entries);
-    entryCC = (bridgeCountries.get(entries[position]) || "").toUpperCase();
-  }
-  if (globeEntryTryCCNode) globeEntryTryCCNode.textContent = entryCC;
-
-  // Entry label: country code + bridge name shown below globe when connected
-  if (globeEntryLabelNode) {
-    const bridgeNum = snow ? t("Snowflake")
-      : result.currentBridgeIndex ? t("Bridge {n}", { n: result.currentBridgeIndex }) : t("Bridge");
-    if (globeEntryCCNode) globeEntryCCNode.textContent = entryCC;
-    if (globeEntryNameNode) globeEntryNameNode.textContent = bridgeNum;
-    globeEntryLabelNode.hidden = !isEntryFound;
-  }
 }
 
 function closePermissionErrorDetails(restoreFocus = true) {
