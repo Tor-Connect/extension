@@ -1123,9 +1123,14 @@ function selectedBridgePosition(entries = bridgeEntries()) {
   return index < 0 ? 0 : index;
 }
 
+const BRIDGE_TRANSPORT_TYPES = new Set(["obfs4", "webtunnel", "snowflake", "meek_lite", "meek"]);
+
 function bridgeAddress(line) {
   const parts = line?.trim().split(/\s+/) || [];
-  return (parts[0] === "Bridge" ? parts[2] : parts[1])?.toLowerCase() || "";
+  const start = parts[0]?.toLowerCase() === "bridge" ? 1 : 0;
+  const first = parts[start]?.toLowerCase() || "";
+  const addressIndex = start + (BRIDGE_TRANSPORT_TYPES.has(first) ? 1 : 0);
+  return parts[addressIndex]?.toLowerCase() || "";
 }
 
 function activeBridgePosition(result, entries = bridgeEntries()) {
