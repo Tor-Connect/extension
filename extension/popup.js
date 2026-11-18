@@ -265,12 +265,10 @@ function renderGlobeEntry(result = {}, visualState = result.state || "disconnect
   const isRetrying = isOn && ["trying", "failed", "closed"].includes(phase);
   const isEntryConnecting = isConn || (visualState === "connected" && isRetrying);
   const topLevelConnected = visualState === "connected" && !isRetrying;
-  const isFail = !topLevelConnected && (
-    globeEntryFailureTransition
-    || ((["failed", "closed"].includes(phase) || visualState === "failed")
-      && (isEntryConnecting || visualState === "failed"))
-  );
-  const isEntryFound = topLevelConnected;
+  const isFail = globeEntryFailureTransition || (!topLevelConnected
+    && ((["failed", "closed"].includes(phase) || visualState === "failed")
+      && (isEntryConnecting || visualState === "failed")));
+  const isEntryFound = topLevelConnected && !globeEntryFailureTransition;
 
   // Entry node: exactly one visible at a time
   setGlobeGroupVisible(globeEntryIdleNode, isOff);
@@ -1880,6 +1878,8 @@ connectionToggle.addEventListener("click", async () => {
     return;
   }
   lastGlobeEntryAttemptIdentity = "";
+  const firstBridge = preferences.mode === "manual" ? bridgeEntries()[0] : "";
+  if (firstBridge) lastGlobeEntryAttemptIdentity = `bridge:${bridgeAddress(firstBridge)}`;
   globeEntryFailureTransition = false;
   clearTimeout(globeEntryRetryAnimationTimer);
   globeEntryRetryAnimationTimer = undefined;
