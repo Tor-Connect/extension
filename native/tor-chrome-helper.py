@@ -356,7 +356,7 @@ class Helper:
                 if recovery_bridges is None: self.recovery_stable_since = None
                 self.diagnostics = []; self.last_error = None; self.stopping = False
             threading.Thread(target=self.read_output, args=(process,), daemon=True).start()
-            threading.Thread(target=self.monitor_control, args=(targets,), daemon=True).start()
+            threading.Thread(target=self.monitor_control, args=(targets, process), daemon=True).start()
             if mode == "manual" and selected_index is not None:
                 threading.Thread(target=self.manual_bridge_timeout_watchdog, args=(process,), daemon=True).start()
             if self.auto_recovery_bridges:
@@ -536,16 +536,21 @@ class Helper:
                             "fingerprint": fingerprint if re.fullmatch(r"[0-9a-f]{40}", fingerprint) else None})
         return targets
 
-    def monitor_control(self, targets: list[dict]) -> None:
+    def monitor_control(self, targets: list[dict], process: subprocess.Popen[str]) -> None:
         with self.lock:
-            process = self.process
-        if process is None:
-            return
+            if self.process is not process:
+                return
+
+        def is_current_process() -> bool:
+            with self.lock:
+                return self.process is process
 
         port_file, cookie_file = DATA / "control-port", DATA / "control_auth_cookie"
         deadline = time.monotonic() + 20
         port = cookie = None
         while time.monotonic() < deadline:
+            if not is_current_process():
+                return
             try:
                 port = int(port_file.read_text().strip().rsplit(":", 1)[-1])
             except (OSError, ValueError): port = None
@@ -557,6 +562,8 @@ class Helper:
             time.sleep(.1)
         if not port or not cookie: return
         try:
+            if not is_current_process():
+                return
             with socket.create_connection(("127.0.0.1", port), timeout=5) as conn:
                 conn.settimeout(1)
                 conn.sendall(f"AUTHENTICATE {cookie.hex()}\r\n".encode())
@@ -564,14 +571,21 @@ class Helper:
                 conn.sendall(b"SETEVENTS EXTENDED STATUS_CLIENT ORCONN CIRC\r\n")
                 events = self.read_control_reply(conn)
                 if "250 OK" not in events: return
+                if not is_current_process():
+                    return
                 if targets:
                     self.process_control_events(events, targets)
                     # The bridge may already be connected before the control listener
                     # attaches, so seed our active bridge from Tor's current OR conns.
                     conn.sendall(b"GETINFO orconn-status\r\n")
-                    self.process_orconn_snapshot(self.read_control_reply(conn), targets)
+                    orconn_snapshot = self.read_control_reply(conn)
+                    if not is_current_process():
+                        return
+                    self.process_orconn_snapshot(orconn_snapshot, targets)
                 conn.sendall(b"GETINFO circuit-status\r\n")
                 circuit_text = self.read_control_reply(conn)
+                if not is_current_process():
+                    return
                 self.process_circuit_snapshot(circuit_text, targets)
                 threading.Thread(
                     target=self.lookup_exit_relay_from_snapshot_fresh,
@@ -581,6 +595,8 @@ class Helper:
                 buffer = b""
                 exit_nodes_applied = False
                 while True:
+                    if not is_current_process():
+                        return
                     try: data = conn.recv(8192)
                     except socket.timeout:
                         if self.maybe_auto_recover(): return
@@ -603,6 +619,8 @@ class Helper:
                     while b"\r\n" in buffer:
                         raw, buffer = buffer.split(b"\r\n", 1)
                         event = raw.decode("utf-8", "replace")
+                        if not is_current_process():
+                            return
                         if targets:
                             self.update_bridge_activity(event, targets)
                         elif " CIRC " in event:
