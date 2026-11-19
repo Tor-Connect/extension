@@ -296,8 +296,12 @@ function renderGlobeEntry(result = {}, visualState = result.state || "disconnect
   if (globeEntryTryCCNode) globeEntryTryCCNode.textContent = entryCC;
 
   if (globeEntryLabelNode) {
+    const entries = snow ? [] : bridgeEntries();
+    const activePosition = activeBridgePosition(result, entries);
+    const activeLine = activePosition >= 0 ? entries[activePosition] : "";
     const bridgeNum = snow ? t("Snowflake")
-      : result.currentBridgeIndex ? t("Bridge {n}", { n: result.currentBridgeIndex }) : t("Bridge");
+      : activeLine ? t("Bridge {n}", { n: bridgeNumberForLine(activeLine) })
+        : result.currentBridgeIndex ? t("Bridge {n}", { n: result.currentBridgeIndex }) : t("Bridge");
     if (globeEntryCCNode) globeEntryCCNode.textContent = entryCC;
     if (globeEntryNameNode) globeEntryNameNode.textContent = bridgeNum;
     globeEntryLabelNode.hidden = !isEntryFound;
