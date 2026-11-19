@@ -125,6 +125,7 @@ let globeRotationPlayed = false;
 let siteCheckBadgeHideTimer;
 let siteCheckBadgeState = "";
 const t = (key, params) => (globalThis.torI18n?.t || ((s) => s))(key, params);
+const MAX_ENABLED_BRIDGES = 20;
 
 // Exit-country centers commonly returned by Tor relays. Coordinates are
 // latitude/longitude in degrees; the three design skins anchor the globe.
@@ -1116,7 +1117,7 @@ function readPreferences() {
 
 function bridgeEntries() {
   const disabled = new Set(preferences.disabledBridges);
-  return allBridgeEntries().filter((line) => !disabled.has(line));
+  return allBridgeEntries().filter((line) => !disabled.has(line) && isPopupBridgeLineValid(line));
 }
 
 function allBridgeEntries() {
@@ -1133,7 +1134,18 @@ function selectedBridgePosition(entries = bridgeEntries()) {
   return index < 0 ? 0 : index;
 }
 
-const BRIDGE_TRANSPORT_TYPES = new Set(["obfs4", "webtunnel", "snowflake", "meek_lite", "meek"]);
+const BRIDGE_TRANSPORT_TYPES = new Set(["obfs4", "webtunnel", "snowflake", "meek_lite"]);
+
+function isPopupBridgeLineValid(line) {
+  const parts = line?.trim().split(/\s+/) || [];
+  const start = parts[0]?.toLowerCase() === "bridge" ? 1 : 0;
+  const transport = parts[start]?.toLowerCase() || "";
+  if (BRIDGE_TRANSPORT_TYPES.has(transport)) return parts.length > start + 1;
+  const address = parts[start] || "";
+  const match = address.match(/^(\[[\da-f:]+\]|[\d.]+):(\d{1,5})$/i);
+  const port = Number(match?.[2]);
+  return !!match && port >= 1 && port <= 65535;
+}
 
 function bridgeAddress(line) {
   const parts = line?.trim().split(/\s+/) || [];
@@ -1854,6 +1866,13 @@ function pollForProgress() {
 async function connectWithSavedPreferences() {
   const saved = await readPreferences();
   const entries = bridgeEntries();
+  if (saved.mode === "manual" && entries.length > MAX_ENABLED_BRIDGES) {
+    return {
+      ok: false,
+      state: "failed",
+      error: t("Up to {n} bridges may be enabled at a time. Disable one to enable another.", { n: MAX_ENABLED_BRIDGES })
+    };
+  }
   if (saved.mode === "manual" && !entries.length) {
     return { ok: false, state: "failed", error: "Enable at least one bridge in Settings before connecting." };
   }

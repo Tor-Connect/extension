@@ -35,7 +35,7 @@ BUNDLE = Path(os.environ.get("TORCHROME_BUNDLE", RUNTIME / "bundle")).expanduser
 DATA = BASE / "data"
 
 
-KNOWN_TRANSPORTS = {"obfs4", "webtunnel", "snowflake", "meek_lite", "meek"}
+KNOWN_TRANSPORTS = {"obfs4", "webtunnel", "snowflake", "meek_lite"}
 
 def bridge_endpoint(line: str) -> str | None:
     fields = line.split()
@@ -75,16 +75,24 @@ def parse_bridges(raw: str) -> list[str] | None:
         return None
     allowed = re.compile(r"^[a-zA-Z0-9 .:/?=&,+_\-\[\]]+$")
     address_re = re.compile(r"^(\[[\da-fA-F:]+\]|[\d.]+):(\d{1,5})$")
+    parsed_lines = []
     for line in lines:
-        normalized = line[7:].strip() if line.startswith("Bridge ") else line
+        has_bridge_prefix = line.startswith("Bridge ")
+        normalized = line[7:].strip() if has_bridge_prefix else line
         if not allowed.fullmatch(normalized) or "#" in normalized or '"' in normalized:
             return None
-        first = normalized.split()[0]
-        if first not in {"obfs4", "webtunnel", "snowflake"}:
+        fields = normalized.split()
+        first = fields[0]
+        if first.lower() in KNOWN_TRANSPORTS:
+            if len(fields) < 2:
+                return None
+            normalized = normalized.replace(first, first.lower(), 1)
+        else:
             m = address_re.match(first)
             if not m or int(m.group(2)) < 1 or int(m.group(2)) > 65535:
                 return None
-    return lines
+        parsed_lines.append(("Bridge " if has_bridge_prefix else "") + normalized)
+    return parsed_lines
 
 
 class Helper:

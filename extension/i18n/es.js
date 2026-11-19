@@ -460,6 +460,8 @@ module.exports = {
       "You’re all set.": "You’re all set.",
       "Your browser": "Tu navegador",
       "Your traffic is relayed through Snowflake proxies. The route may change.": "Tu tráfico se retransmite mediante proxies Snowflake. La ruta puede cambiar.",
-      "{n} circuits": "{n} circuitos"
+      "{n} circuits": "{n} circuitos",
+      "{n} imported bridge lines were left disabled; up to {limit} bridges can be enabled.": "Se dejaron desactivadas {n} líneas de puente importadas; se pueden activar hasta {limit} puentes.",
+      "Up to {n} bridges may be enabled at a time. Disable one to enable another.": "Se pueden activar hasta {n} puentes a la vez. Desactiva uno para activar otro."
   },
 };

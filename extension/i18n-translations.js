@@ -458,7 +458,9 @@
       "You’re all set.": "",
       "Your browser": "",
       "Your traffic is relayed through Snowflake proxies. The route may change.": "",
-      "{n} circuits": ""
+      "{n} circuits": "",
+      "{n} imported bridge lines were left disabled; up to {limit} bridges can be enabled.": "",
+      "Up to {n} bridges may be enabled at a time. Disable one to enable another.": ""
     },
     fa: {
       " and ": " و ",
@@ -919,7 +921,9 @@
       "You’re all set.": "You’re all set.",
       "Your browser": "مرورگر شما",
       "Your traffic is relayed through Snowflake proxies. The route may change.": "ترافیک شما از پراکسی‌های اسنو‌فلیک عبور می‌کند. مسیر ممکن است تغییر کند.",
-      "{n} circuits": "{n} مدار"
+      "{n} circuits": "{n} مدار",
+      "{n} imported bridge lines were left disabled; up to {limit} bridges can be enabled.": "{n} خط پل واردشده غیرفعال ماند؛ حداکثر {limit} پل می‌تواند فعال باشد.",
+      "Up to {n} bridges may be enabled at a time. Disable one to enable another.": "هم‌زمان حداکثر {n} پل می‌تواند فعال باشد. برای فعال کردن پل دیگر، یکی را غیرفعال کنید."
     },
     de: {
       " and ": " und ",
@@ -1380,7 +1384,9 @@
       "You’re all set.": "You’re all set.",
       "Your browser": "Dein Browser",
       "Your traffic is relayed through Snowflake proxies. The route may change.": "Dein Datenverkehr wird über Snowflake-Proxys weitergeleitet. Die Route kann sich ändern.",
-      "{n} circuits": "{n} Schaltkreise"
+      "{n} circuits": "{n} Schaltkreise",
+      "{n} imported bridge lines were left disabled; up to {limit} bridges can be enabled.": "{n} importierte Bridge-Zeilen blieben deaktiviert; es können höchstens {limit} Bridges aktiviert sein.",
+      "Up to {n} bridges may be enabled at a time. Disable one to enable another.": "Es können höchstens {n} Bridges gleichzeitig aktiviert sein. Deaktiviere eine, um eine andere zu aktivieren."
     },
     es: {
       " and ": " y ",
@@ -1841,7 +1847,9 @@
       "You’re all set.": "You’re all set.",
       "Your browser": "Tu navegador",
       "Your traffic is relayed through Snowflake proxies. The route may change.": "Tu tráfico se retransmite mediante proxies Snowflake. La ruta puede cambiar.",
-      "{n} circuits": "{n} circuitos"
+      "{n} circuits": "{n} circuitos",
+      "{n} imported bridge lines were left disabled; up to {limit} bridges can be enabled.": "Se dejaron desactivadas {n} líneas de puente importadas; se pueden activar hasta {limit} puentes.",
+      "Up to {n} bridges may be enabled at a time. Disable one to enable another.": "Se pueden activar hasta {n} puentes a la vez. Desactiva uno para activar otro."
     },
     ar: {
       " and ": " و ",
@@ -2302,7 +2310,9 @@
       "You’re all set.": "You’re all set.",
       "Your browser": "متصفحك",
       "Your traffic is relayed through Snowflake proxies. The route may change.": "يتم تمرير حركة مرورك عبر وكلاء Snowflake. قد يتغير المسار.",
-      "{n} circuits": "{n} دوائر"
+      "{n} circuits": "{n} دوائر",
+      "{n} imported bridge lines were left disabled; up to {limit} bridges can be enabled.": "تُركت {n} من أسطر الجسور المستوردة معطّلة؛ يمكن تفعيل {limit} جسراً كحد أقصى.",
+      "Up to {n} bridges may be enabled at a time. Disable one to enable another.": "يمكن تفعيل ما يصل إلى {n} جسور في الوقت نفسه. عطّل جسراً لتفعيل آخر."
     },
     zh: {
       " and ": " 和 ",
@@ -2763,7 +2773,9 @@
       "You’re all set.": "You’re all set.",
       "Your browser": "你的浏览器",
       "Your traffic is relayed through Snowflake proxies. The route may change.": "你的流量通过 Snowflake 代理转发，连接路线可能会变化。",
-      "{n} circuits": "{n} 条回路"
+      "{n} circuits": "{n} 条回路",
+      "{n} imported bridge lines were left disabled; up to {limit} bridges can be enabled.": "有 {n} 条导入的网桥线路保持停用；最多可启用 {limit} 个网桥。",
+      "Up to {n} bridges may be enabled at a time. Disable one to enable another.": "最多可同时启用 {n} 个网桥。请先停用一个，再启用另一个。"
     },
     hi: {
       " and ": " और ",
@@ -3224,7 +3236,9 @@
       "You’re all set.": "You’re all set.",
       "Your browser": "आपका ब्राउज़र",
       "Your traffic is relayed through Snowflake proxies. The route may change.": "आपका ट्रैफ़िक Snowflake प्रॉक्सी से जाता है। रूट बदल सकता है।",
-      "{n} circuits": "{n} सर्किट"
+      "{n} circuits": "{n} सर्किट",
+      "{n} imported bridge lines were left disabled; up to {limit} bridges can be enabled.": "आयात की गई {n} ब्रिज लाइनें अक्षम रखी गईं; अधिकतम {limit} ब्रिज सक्षम हो सकते हैं।",
+      "Up to {n} bridges may be enabled at a time. Disable one to enable another.": "एक समय में अधिकतम {n} ब्रिज सक्षम हो सकते हैं। दूसरा सक्षम करने के लिए एक को अक्षम करें।"
     },
     fr: {
       " and ": " et ",
@@ -3685,7 +3699,9 @@
       "You’re all set.": "You’re all set.",
       "Your browser": "Votre navigateur",
       "Your traffic is relayed through Snowflake proxies. The route may change.": "Votre trafic passe par des proxys Snowflake. La route peut changer.",
-      "{n} circuits": "{n} circuits"
+      "{n} circuits": "{n} circuits",
+      "{n} imported bridge lines were left disabled; up to {limit} bridges can be enabled.": "{n} lignes de bridge importées ont été laissées désactivées ; vous pouvez en activer jusqu’à {limit}.",
+      "Up to {n} bridges may be enabled at a time. Disable one to enable another.": "Vous pouvez activer jusqu’à {n} bridges à la fois. Désactivez-en un pour en activer un autre."
     },
     ru: {
       " and ": " и ",
@@ -4146,7 +4162,9 @@
       "You’re all set.": "You’re all set.",
       "Your browser": "Ваш браузер",
       "Your traffic is relayed through Snowflake proxies. The route may change.": "Ваш трафик передаётся через прокси Snowflake. Маршрут может измениться.",
-      "{n} circuits": "{n} цепочки"
+      "{n} circuits": "{n} цепочки",
+      "{n} imported bridge lines were left disabled; up to {limit} bridges can be enabled.": "Импортированные строки мостов ({n}) оставлены выключенными; можно включить не более {limit} мостов.",
+      "Up to {n} bridges may be enabled at a time. Disable one to enable another.": "Одновременно можно включить не более {n} мостов. Отключите один, чтобы включить другой."
     },
     pt: {
       " and ": " e ",
@@ -4607,7 +4625,9 @@
       "You’re all set.": "You’re all set.",
       "Your browser": "Seu navegador",
       "Your traffic is relayed through Snowflake proxies. The route may change.": "Seu tráfego é retransmitido por proxies Snowflake. A rota pode mudar.",
-      "{n} circuits": "{n} circuitos"
+      "{n} circuits": "{n} circuitos",
+      "{n} imported bridge lines were left disabled; up to {limit} bridges can be enabled.": "{n} linhas de bridge importadas foram deixadas desativadas; até {limit} bridges podem ficar ativadas.",
+      "Up to {n} bridges may be enabled at a time. Disable one to enable another.": "Até {n} bridges podem ficar ativadas ao mesmo tempo. Desative uma para ativar outra."
     },
     tr: {
       " and ": " ve ",
@@ -5068,7 +5088,9 @@
       "You’re all set.": "You’re all set.",
       "Your browser": "Tarayıcınız",
       "Your traffic is relayed through Snowflake proxies. The route may change.": "Trafiğiniz Snowflake proxy'leri üzerinden iletiliyor. Rota değişebilir.",
-      "{n} circuits": "{n} devre"
+      "{n} circuits": "{n} devre",
+      "{n} imported bridge lines were left disabled; up to {limit} bridges can be enabled.": "İçe aktarılan {n} köprü satırı devre dışı bırakıldı; en fazla {limit} köprü etkin olabilir.",
+      "Up to {n} bridges may be enabled at a time. Disable one to enable another.": "Aynı anda en fazla {n} köprü etkin olabilir. Başka bir köprüyü etkinleştirmek için birini devre dışı bırakın."
     },
     ur: {
       " and ": " اور ",
@@ -5529,7 +5551,9 @@
       "You’re all set.": "You’re all set.",
       "Your browser": "آپ کا براؤزر",
       "Your traffic is relayed through Snowflake proxies. The route may change.": "آپ کی ٹریفک Snowflake پراکسیز کے ذریعے ریلے ہو رہی ہے۔ راستہ بدل سکتا ہے۔",
-      "{n} circuits": "{n} سرکٹ"
+      "{n} circuits": "{n} سرکٹ",
+      "{n} imported bridge lines were left disabled; up to {limit} bridges can be enabled.": "درآمد کی گئی {n} برج لائنیں غیر فعال رکھی گئیں؛ زیادہ سے زیادہ {limit} برج فعال ہو سکتے ہیں۔",
+      "Up to {n} bridges may be enabled at a time. Disable one to enable another.": "ایک وقت میں زیادہ سے زیادہ {n} برج فعال ہو سکتے ہیں۔ دوسرا فعال کرنے کے لیے ایک کو غیر فعال کریں۔"
     },
     bn: {
       " and ": " এবং ",
@@ -5990,7 +6014,9 @@
       "You’re all set.": "You’re all set.",
       "Your browser": "আপনার ব্রাউজার",
       "Your traffic is relayed through Snowflake proxies. The route may change.": "আপনার ট্রাফিক Snowflake প্রক্সির মাধ্যমে রিলে হচ্ছে। রুট পরিবর্তন হতে পারে।",
-      "{n} circuits": "{n} সার্কিট"
+      "{n} circuits": "{n} সার্কিট",
+      "{n} imported bridge lines were left disabled; up to {limit} bridges can be enabled.": "আমদানি করা {n}টি ব্রিজ লাইন বন্ধ রাখা হয়েছে; সর্বোচ্চ {limit}টি ব্রিজ চালু রাখা যাবে।",
+      "Up to {n} bridges may be enabled at a time. Disable one to enable another.": "একসঙ্গে সর্বোচ্চ {n}টি ব্রিজ চালু রাখা যাবে। আরেকটি চালু করতে একটি বন্ধ করুন।"
     },
     id: {
       " and ": " dan ",
@@ -6451,7 +6477,9 @@
       "You’re all set.": "You’re all set.",
       "Your browser": "Browser Anda",
       "Your traffic is relayed through Snowflake proxies. The route may change.": "Traffic Anda diteruskan melalui proksi Snowflake. Rute mungkin berubah.",
-      "{n} circuits": "{n} sirkuit"
+      "{n} circuits": "{n} sirkuit",
+      "{n} imported bridge lines were left disabled; up to {limit} bridges can be enabled.": "{n} baris bridge yang diimpor dinonaktifkan; maksimal {limit} bridge dapat diaktifkan.",
+      "Up to {n} bridges may be enabled at a time. Disable one to enable another.": "Maksimal {n} bridge dapat diaktifkan sekaligus. Nonaktifkan satu untuk mengaktifkan yang lain."
     },
     my: {
       " and ": " နှင့် ",
@@ -6912,7 +6940,9 @@
       "You’re all set.": "You’re all set.",
       "Your browser": "သင်၏ ဘရောက်ဇာ",
       "Your traffic is relayed through Snowflake proxies. The route may change.": "သင်၏ traffic ကို Snowflake proxy များမှတစ်ဆင့် ဆက်ဆံပေးနေသည်။ လမ်းကြောင်း ပြောင်းလဲနိုင်သည်။",
-      "{n} circuits": "လမ်းကြောင်း {n} ခု"
+      "{n} circuits": "လမ်းကြောင်း {n} ခု",
+      "{n} imported bridge lines were left disabled; up to {limit} bridges can be enabled.": "တင်သွင်းထားသော bridge လိုင်း {n} ခုကို ပိတ်ထားသည်။ အများဆုံး {limit} ခုအထိ ဖွင့်နိုင်သည်။",
+      "Up to {n} bridges may be enabled at a time. Disable one to enable another.": "တစ်ချိန်တည်းတွင် bridge {n} ခုအထိသာ ဖွင့်နိုင်သည်။ နောက်တစ်ခုဖွင့်ရန် တစ်ခုကို ပိတ်ပါ။"
     },
     ro: {
       " and ": " și ",
@@ -7373,6 +7403,8 @@
       "You’re all set.": "You’re all set.",
       "Your browser": "Browserul tău",
       "Your traffic is relayed through Snowflake proxies. The route may change.": "Traficul tău este transmis prin proxy-uri Snowflake. Ruta se poate schimba.",
-      "{n} circuits": "{n} circuite"
+      "{n} circuits": "{n} circuite",
+      "{n} imported bridge lines were left disabled; up to {limit} bridges can be enabled.": "{n} linii bridge importate au rămas dezactivate; pot fi activate cel mult {limit} bridge-uri.",
+      "Up to {n} bridges may be enabled at a time. Disable one to enable another.": "Pot fi activate simultan cel mult {n} bridge-uri. Dezactivează unul pentru a activa altul."
     }
   };

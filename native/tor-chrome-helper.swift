@@ -514,19 +514,24 @@ final class Helper {
         guard lines.count <= 20 else { return nil }
         let allowed = CharacterSet(charactersIn: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 .:/?=&,+_-[]")
         let addressPattern = #"^(\[[\da-fA-F:]+\]|[\d.]+):(\d{1,5})$"#
-        for line in lines {
+        var normalizedLines = lines
+        for (index, line) in lines.enumerated() {
             guard line.unicodeScalars.allSatisfy({ allowed.contains($0) }),
                   let first = line.split(separator: " ").first,
                   !line.contains("#"), !line.contains("\"") else { return nil }
             let firstStr = String(first)
-            if ["obfs4", "webtunnel", "snowflake"].contains(firstStr) { continue }
+            if ["obfs4", "webtunnel", "snowflake", "meek_lite"].contains(firstStr.lowercased()) {
+                guard line.split(whereSeparator: \.isWhitespace).count >= 2 else { return nil }
+                normalizedLines[index] = firstStr.lowercased() + String(line.dropFirst(firstStr.count))
+                continue
+            }
             // Vanilla bridge: must be numeric IP:port with port in 1…65535
             guard firstStr.range(of: addressPattern, options: .regularExpression) != nil,
                   let colonRange = firstStr.lastIndex(of: ":"),
                   let port = UInt16(firstStr[firstStr.index(after: colonRange)...]),
                   port > 0 else { return nil }
         }
-        return lines
+        return normalizedLines
     }
 
     private func pingBridges(_ raw: String) -> [String: Any] {
@@ -539,7 +544,7 @@ final class Helper {
             guard parts.count >= 2 else {
                 return ["line": line, "latencyMs": NSNull()]
             }
-            let knownTransports = ["obfs4", "webtunnel", "snowflake"]
+            let knownTransports = ["obfs4", "webtunnel", "snowflake", "meek_lite"]
             // Vanilla bridges: "IP:port fingerprint" — first token is the address.
             // Named-transport bridges: "transport IP:port ..." — second token is the address.
             let endpoint = knownTransports.contains(String(parts[0]).lowercased())
@@ -561,7 +566,7 @@ final class Helper {
         guard let parsed = parseBridgeLines(normalizedLines.joined(separator: "\n")), !parsed.isEmpty else {
             return ["ok": false, "error": "Add valid bridge lines before looking up countries."]
         }
-        let knownTransports = ["obfs4", "webtunnel", "snowflake"]
+        let knownTransports = ["obfs4", "webtunnel", "snowflake", "meek_lite"]
         let results: [[String: Any]] = zip(originalLines, parsed).map { line, parsedLine in
             let parts = parsedLine.split(whereSeparator: \.isWhitespace)
             var result: [String: Any] = ["line": line]
@@ -628,7 +633,7 @@ final class Helper {
     }
 
     private func parseBridgeTargets(from lines: [String], indexOffset: Int = 0) -> [BridgeTarget] {
-        let knownTransports = ["obfs4", "webtunnel", "snowflake"]
+        let knownTransports = ["obfs4", "webtunnel", "snowflake", "meek_lite"]
         return lines.enumerated().compactMap { offset, line in
             let parts = line.split(whereSeparator: \.isWhitespace)
             let start = parts.first == "Bridge" ? 1 : 0
