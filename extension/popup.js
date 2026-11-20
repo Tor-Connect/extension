@@ -43,6 +43,7 @@ const idleCardNode = document.querySelector("#idleCard");
 const idleCardIconNode = document.querySelector("#idleCardIcon");
 const idleCardTitleNode = document.querySelector("#idleCardTitle");
 const idleCardSubNode = document.querySelector("#idleCardSub");
+const idleCardStatusNode = document.querySelector("#idleCardStatus");
 const bridgesSheetToggleNode = document.querySelector("#bridgesSheetToggle");
 // Empty bridge info (manual mode, no bridges)
 const emptyBridgeInfoNode = document.querySelector("#emptyBridgeInfo");
@@ -310,7 +311,7 @@ function renderGlobeEntry(result = {}, visualState = result.state || "disconnect
 }
 
 function setGlobeRotationBrightness(enabled) {
-  const fill = document.documentElement.dataset.theme === "light" ? "#238b58" : "#55b985";
+  const fill = "url(#globeConnectedGradient)";
   [globeDotsBridgeNode, globeDotsSnowNode, ...GLOBE_SKINS].forEach((node) => {
     node?.querySelectorAll("circle").forEach((circle) => {
       if (enabled) {
@@ -995,6 +996,7 @@ function renderSiteCheck(result = {}) {
   siteCheckBadgeNode.classList.toggle("is-pending", pending);
   siteCheckBadgeNode.classList.toggle("is-passed", !pending && !siteCheckFailed && result.connectivityCheck === "passed");
   siteCheckSummaryNode.classList.toggle("is-failed", siteCheckFailed && !pending);
+  siteCheckSummaryNode.classList.toggle("is-all-failed", allSitesFailed && !pending);
   siteCheckSummaryNode.classList.toggle("is-pending", pending);
   siteCheckSummaryNode.classList.toggle("is-passed", !pending && !siteCheckFailed && result.connectivityCheck === "passed");
   if (pending) {
@@ -1567,6 +1569,7 @@ function renderRoute(result = {}, visualState = connectionRevealPending && resul
   const snowflake = preferences.mode === "snowflake";
   const enabledCount = entries.length;
   idleCardNode.hidden = hasNoBridgeLines;
+  idleCardStatusNode.hidden = !(snowflake && visualState === "disconnected");
 
   // Choose icon SVG and determine title/sub
   let iconSvg, idleTitle, idleSub;
@@ -1808,7 +1811,7 @@ function renderResult(result) {
       : visualResult.state === "disconnected"
         ? preferences.mode === "manual" && !bridgeEntries().length
           ? t("Add bridge lines in Settings to connect this way")
-          : preferences.mode === "manual" ? t("Tap the center to try saved bridges") : t("Tap the center to connect")
+          : t("Tap the center to connect")
         : "";
   setStatus(preferences.mode === "manual" && !bridgeEntries().length && visualResult.state === "disconnected"
     ? t("No bridges yet") : explain(visualResult), statusKind, detail);
