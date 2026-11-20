@@ -958,7 +958,13 @@ function renderSiteCheck(result = {}) {
     && ["pending", "passed", "failed"].includes(result.connectivityCheck);
   const failures = sites.filter((site) => site.state === "failed").length;
   const pending = result.connectivityCheck === "pending" || sites.some((site) => site.state === "pending");
-  const badgeState = !connected ? "disconnected" : pending ? "pending" : failures ? `failed:${failures}` : "passed";
+  const siteCheckFailed = failures > 0 || result.connectivityCheck === "failed";
+  const allSitesFailed = failures >= total;
+  const checkSummary = pending ? t("Checking your connection")
+    : allSitesFailed ? t("Connected, but sites aren't loading")
+      : siteCheckFailed ? t("Connected · some sites may be limited")
+        : t("Connection verified");
+  const badgeState = !connected ? "disconnected" : pending ? "pending" : siteCheckFailed ? `failed:${failures}` : "passed";
   if (badgeState !== siteCheckBadgeState) {
     if (siteCheckBadgeHideTimer) clearTimeout(siteCheckBadgeHideTimer);
     siteCheckBadgeHideTimer = undefined;
@@ -978,37 +984,33 @@ function renderSiteCheck(result = {}) {
     }
   }
   siteCheckSummaryNode.hidden = !connected;
-  const checkLabel = pending ? t("Checking sites…") : failures ? t("{n} of {total} sites blocked", { n: failures, total: sites.length || total }) : t("All sites reachable");
-  siteCheckBadgeNode.setAttribute("aria-label", t("Review site check: {summary}", { summary: checkLabel }));
-  siteCheckSummaryNode.setAttribute("aria-label", t("Review site check: {summary}", { summary: checkLabel }));
+  siteCheckBadgeNode.setAttribute("aria-label", t("Review site check: {summary}", { summary: checkSummary }));
+  siteCheckSummaryNode.setAttribute("aria-label", t("Review site check: {summary}", { summary: checkSummary }));
   siteCheckBadgeNode.innerHTML = pending
     ? '<span class="site-check-spinner" aria-hidden="true"></span>'
-    : failures
+    : siteCheckFailed
       ? '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4 3 20h18L12 4z"/><path d="M12 10v4M12 17.2v.1"/></svg>'
       : '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>';
-  siteCheckBadgeNode.classList.toggle("is-failed", failures > 0 && !pending);
+  siteCheckBadgeNode.classList.toggle("is-failed", siteCheckFailed && !pending);
   siteCheckBadgeNode.classList.toggle("is-pending", pending);
-  siteCheckBadgeNode.classList.toggle("is-passed", !pending && !failures && result.connectivityCheck === "passed");
-  siteCheckSummaryNode.classList.toggle("is-failed", failures > 0 && !pending);
+  siteCheckBadgeNode.classList.toggle("is-passed", !pending && !siteCheckFailed && result.connectivityCheck === "passed");
+  siteCheckSummaryNode.classList.toggle("is-failed", siteCheckFailed && !pending);
   siteCheckSummaryNode.classList.toggle("is-pending", pending);
-  siteCheckSummaryNode.classList.toggle("is-passed", !pending && !failures && result.connectivityCheck === "passed");
+  siteCheckSummaryNode.classList.toggle("is-passed", !pending && !siteCheckFailed && result.connectivityCheck === "passed");
   if (pending) {
-    siteCheckSummaryNode.innerHTML = `${t("Checking sites…").replace(/…$/, "")}<span class="checking-dots" aria-hidden="true"></span>`;
-  } else if (failures) {
-    siteCheckSummaryNode.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4 3 20h18L12 4z"/><path d="M12 10v4m0 3.2v.1"/></svg>${t("{n} of {total} sites blocked", { n: failures, total })}<svg class="site-check-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg>`;
-  } else if (result.connectivityCheck === "passed") {
-    siteCheckSummaryNode.textContent = t("all sites reachable");
+    siteCheckSummaryNode.innerHTML = `${checkSummary}<span class="checking-dots" aria-hidden="true"></span>`;
+  } else if (siteCheckFailed) {
+    siteCheckSummaryNode.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4 3 20h18L12 4z"/><path d="M12 10v4m0 3.2v.1"/></svg>${checkSummary}<svg class="site-check-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg>`;
   } else {
-    siteCheckSummaryNode.textContent = t("Checking sites…");
+    siteCheckSummaryNode.textContent = checkSummary;
   }
-  const blockedSummary = failures ? t("{n} of {total} sites blocked", { n: failures, total }) : t("All sites reachable");
-  siteCheckCountNode.textContent = pending ? t("Checking sites…") : failures ? blockedSummary : t("All sites reachable");
-  siteCheckCountNode.classList.toggle("has-failures", failures > 0 && !pending);
+  siteCheckCountNode.textContent = checkSummary;
+  siteCheckCountNode.classList.toggle("has-failures", siteCheckFailed && !pending);
   siteCheckSheetNode.classList.toggle("is-pending", pending);
-  siteCheckSheetNode.classList.toggle("is-failed", failures > 0 && !pending);
-  siteCheckSheetNode.classList.toggle("is-passed", !pending && !failures && result.connectivityCheck === "passed");
+  siteCheckSheetNode.classList.toggle("is-failed", siteCheckFailed && !pending);
+  siteCheckSheetNode.classList.toggle("is-passed", !pending && !siteCheckFailed && result.connectivityCheck === "passed");
   nextRouteNode.textContent = t(preferences.mode === "manual" ? "Next bridge" : "New proxy");
-  nextRouteNode.hidden = pending || failures === 0;
+  nextRouteNode.hidden = pending || !siteCheckFailed;
   document.querySelector("#retestSites").disabled = pending;
   siteCheckRowsNode.replaceChildren(...SITE_CHECK_NAMES.map((name) => {
     const resultForSite = sites.find((site) => site.site === name) || { state: "pending" };
@@ -1520,7 +1522,9 @@ function renderRoute(result = {}, visualState = connectionRevealPending && resul
   }
   delete routeCardNode.dataset.initialChecking;
   bridgeAttemptTimerNode.hidden = true;
-  connectedDurationNode.hidden = visualState !== "connected";
+  const siteCheckFailed = result.connectivityCheck === "failed"
+    || (Array.isArray(result.siteChecks) && result.siteChecks.some((site) => site.state === "failed"));
+  connectedDurationNode.hidden = visualState !== "connected" || siteCheckFailed;
   copyBridgeButton.hidden = true;
   routeBridgeLine = "";
   const prevDetail = routeDetailNode.textContent;
