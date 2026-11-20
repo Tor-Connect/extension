@@ -73,7 +73,7 @@ def parse_bridges(raw: str) -> list[str] | None:
     lines = [line.strip() for line in raw.splitlines() if line.strip()]
     if not lines or len(lines) > 20:
         return None
-    allowed = re.compile(r"^[a-zA-Z0-9 .:/?=&,+_\-\[\]]+$")
+    allowed = re.compile(r"^[a-zA-Z0-9 .:/?=&,+%_\-\[\]]+$")
     address_re = re.compile(r"^(\[[\da-fA-F:]+\]|[\d.]+):(\d{1,5})$")
     parsed_lines = []
     for line in lines:
@@ -459,10 +459,11 @@ class Helper:
     def ping(self, raw: str) -> dict:
         lines = parse_bridges(raw)
         if not lines: return {"ok": False, "error": "Add valid bridge lines before pinging them."}
+        original_lines = [line.strip() for line in raw.splitlines() if line.strip()]
         results = []
-        for line in lines:
+        for original_line, line in zip(original_lines, lines):
             endpoint = bridge_endpoint(line)
-            result = {"line": line, "latencyMs": None}
+            result = {"line": original_line, "latencyMs": None}
             parsed = endpoint_host_port(endpoint) if endpoint else None
             if parsed:
                 started = time.monotonic()

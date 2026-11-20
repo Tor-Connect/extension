@@ -1143,8 +1143,10 @@ function selectedBridgePosition(entries = bridgeEntries()) {
 const BRIDGE_TRANSPORT_TYPES = new Set(["obfs4", "webtunnel", "snowflake", "meek_lite"]);
 
 function isPopupBridgeLineValid(line) {
-  const parts = line?.trim().split(/\s+/) || [];
-  const start = parts[0]?.toLowerCase() === "bridge" ? 1 : 0;
+  const normalizedLine = line?.trim() || "";
+  if (!/^[A-Za-z0-9 .:/?=&,+_%\-\[\]]+$/.test(normalizedLine)) return false;
+  const parts = normalizedLine.split(/\s+/);
+  const start = parts[0] === "Bridge" ? 1 : 0;
   const transport = parts[start]?.toLowerCase() || "";
   if (BRIDGE_TRANSPORT_TYPES.has(transport)) return parts.length > start + 1;
   const address = parts[start] || "";

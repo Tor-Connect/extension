@@ -318,7 +318,7 @@ final class Helper {
                 }
                 bridgeIndexOffset = selectedBridgeIndex - 1
             }
-            bridgeLines = parsed.map { "Bridge \($0)" }
+            bridgeLines = parsed.map { $0.hasPrefix("Bridge ") ? $0 : "Bridge \($0)" }
         }
         let configuredBridgeTargets = mode == "manual" ? parseBridgeTargets(from: bridgeLines, indexOffset: bridgeIndexOffset) : []
 
@@ -512,17 +512,22 @@ final class Helper {
         let lines = raw.components(separatedBy: .newlines).map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
             .filter { !$0.isEmpty }
         guard lines.count <= 20 else { return nil }
-        let allowed = CharacterSet(charactersIn: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 .:/?=&,+_-[]")
+        let allowed = CharacterSet(charactersIn: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 .:/?=&,+%_-[]")
         let addressPattern = #"^(\[[\da-fA-F:]+\]|[\d.]+):(\d{1,5})$"#
         var normalizedLines = lines
         for (index, line) in lines.enumerated() {
             guard line.unicodeScalars.allSatisfy({ allowed.contains($0) }),
-                  let first = line.split(separator: " ").first,
                   !line.contains("#"), !line.contains("\"") else { return nil }
+            let hasBridgePrefix = line.split(whereSeparator: \.isWhitespace).first == "Bridge"
+            let bridgeContent = hasBridgePrefix
+                ? String(line.dropFirst("Bridge".count)).trimmingCharacters(in: .whitespacesAndNewlines)
+                : line
+            guard let first = bridgeContent.split(whereSeparator: \.isWhitespace).first else { return nil }
             let firstStr = String(first)
             if ["obfs4", "webtunnel", "snowflake", "meek_lite"].contains(firstStr.lowercased()) {
-                guard line.split(whereSeparator: \.isWhitespace).count >= 2 else { return nil }
-                normalizedLines[index] = firstStr.lowercased() + String(line.dropFirst(firstStr.count))
+                guard bridgeContent.split(whereSeparator: \.isWhitespace).count >= 2 else { return nil }
+                let normalized = firstStr.lowercased() + String(bridgeContent.dropFirst(firstStr.count))
+                normalizedLines[index] = (hasBridgePrefix ? "Bridge " : "") + normalized
                 continue
             }
             // Vanilla bridge: must be numeric IP:port with port in 1…65535
@@ -530,6 +535,7 @@ final class Helper {
                   let colonRange = firstStr.lastIndex(of: ":"),
                   let port = UInt16(firstStr[firstStr.index(after: colonRange)...]),
                   port > 0 else { return nil }
+            normalizedLines[index] = (hasBridgePrefix ? "Bridge " : "") + bridgeContent
         }
         return normalizedLines
     }
@@ -538,18 +544,21 @@ final class Helper {
         guard let lines = parseBridgeLines(raw), !lines.isEmpty else {
             return ["ok": false, "error": "Add valid bridge lines before pinging them."]
         }
-        let results: [[String: Any]] = lines.map { line in
+        let originalLines = raw.components(separatedBy: .newlines)
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+        let results: [[String: Any]] = zip(originalLines, lines).map { originalLine, line in
             let normalized = line.hasPrefix("Bridge ") ? String(line.dropFirst(7)) : line
             let parts = normalized.split(whereSeparator: \.isWhitespace)
             guard parts.count >= 2 else {
-                return ["line": line, "latencyMs": NSNull()]
+                return ["line": originalLine, "latencyMs": NSNull()]
             }
             let knownTransports = ["obfs4", "webtunnel", "snowflake", "meek_lite"]
             // Vanilla bridges: "IP:port fingerprint" — first token is the address.
             // Named-transport bridges: "transport IP:port ..." — second token is the address.
             let endpoint = knownTransports.contains(String(parts[0]).lowercased())
                 ? String(parts[1]) : String(parts[0])
-            var result: [String: Any] = ["line": line]
+            var result: [String: Any] = ["line": originalLine]
             if let latency = tcpLatency(endpoint: endpoint) { result["latencyMs"] = latency }
             else { result["latencyMs"] = NSNull() }
             if let country = countryCode(for: endpoint) { result["countryCode"] = country }
@@ -562,13 +571,13 @@ final class Helper {
         let originalLines = raw.components(separatedBy: .newlines)
             .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
             .filter { !$0.isEmpty }
-        let normalizedLines = originalLines.map { $0.hasPrefix("Bridge ") ? String($0.dropFirst(7)) : $0 }
-        guard let parsed = parseBridgeLines(normalizedLines.joined(separator: "\n")), !parsed.isEmpty else {
+        guard let parsed = parseBridgeLines(raw), !parsed.isEmpty else {
             return ["ok": false, "error": "Add valid bridge lines before looking up countries."]
         }
         let knownTransports = ["obfs4", "webtunnel", "snowflake", "meek_lite"]
         let results: [[String: Any]] = zip(originalLines, parsed).map { line, parsedLine in
-            let parts = parsedLine.split(whereSeparator: \.isWhitespace)
+            let normalizedLine = parsedLine.hasPrefix("Bridge ") ? String(parsedLine.dropFirst(7)) : parsedLine
+            let parts = normalizedLine.split(whereSeparator: \.isWhitespace)
             var result: [String: Any] = ["line": line]
             let vanilla = parts.first.map { !knownTransports.contains(String($0).lowercased()) } ?? true
             let addressToken = vanilla ? parts.first : (parts.count >= 2 ? parts[1] : nil)

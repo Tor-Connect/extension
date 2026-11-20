@@ -313,7 +313,9 @@ function validPort(address) {
 }
 
 function isBridgeLineValid(line) {
-  const parts = line.trim().split(/\s+/);
+  const normalizedLine = line.trim();
+  if (!/^[A-Za-z0-9 .:/?=&,+_%\-\[\]]+$/.test(normalizedLine)) return false;
+  const parts = normalizedLine.split(/\s+/);
   const offset = parts[0] === "Bridge" ? 1 : 0;
   const first = parts[offset] || "";
   if (KNOWN_TRANSPORTS.has(first.toLowerCase())) return parts.length > offset + 1;
