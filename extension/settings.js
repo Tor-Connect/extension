@@ -42,7 +42,7 @@ const exitCountryOptionButtons = [...document.querySelectorAll("[data-exit-count
 const exitCountryCardNode = document.querySelector("#exitCountryCard");
 const exitCountryNoticeNode = document.querySelector("#exitCountryNotice");
 const exitCountryNavBadge = document.querySelector("#exitCountryNavBadge");
-let preferences = { mode: "snowflake", bridges: "", autoBridgeSelection: true, selectedBridge: "", disabledBridges: [], killSwitch: false, exitCountry: "" };
+let preferences = { mode: "snowflake", bridges: "", selectedBridge: "", disabledBridges: [], killSwitch: false, exitCountry: "" };
 let selectedMode = "snowflake";
 let bridgeLines = [];
 let disabledBridgeLines = new Set();
@@ -60,6 +60,7 @@ let pollTimer;
 let bridgeSaveRevision = 0;
 let copiedTimers = new Map();
 const t = (key, params) => (globalThis.torI18n?.t || ((s) => s))(key, params);
+const MAX_ENABLED_BRIDGES = 20;
 
 function send(type, extra = {}) {
   return new Promise((resolve) => chrome.runtime.sendMessage({ type, ...extra }, resolve));
@@ -82,7 +83,8 @@ function markSaveState(message, kind = "") {
 function readPreferences() {
   return new Promise((resolve) => {
     chrome.storage.local.get("torConnectionPreferences", (stored) => {
-      const saved = stored?.torConnectionPreferences || {};
+      const saved = { ...(stored?.torConnectionPreferences || {}) };
+      delete saved.autoBridgeSelection;
       bridgeLines = typeof saved.bridges === "string"
         ? saved.bridges.split(/\r?\n/).map((line) => line.trim()).filter(Boolean) : [];
       disabledBridgeLines = new Set(Array.isArray(saved.disabledBridges)
@@ -93,7 +95,6 @@ function readPreferences() {
         mode: saved.mode === "manual" ? "manual" : "snowflake",
         bridges: bridgeLines.join("\n"),
         disabledBridges: [...disabledBridgeLines],
-        autoBridgeSelection: saved.autoBridgeSelection !== false,
         selectedBridge: enabled.includes(saved.selectedBridge) ? saved.selectedBridge : enabled[0] || "",
         killSwitch: saved.killSwitch === true,
         exitCountry: typeof saved.exitCountry === "string" ? saved.exitCountry : ""
@@ -101,6 +102,9 @@ function readPreferences() {
       selectedMode = preferences.mode;
       setMode(selectedMode);
       renderBridgeList();
+      if (allEnabledLines().length > MAX_ENABLED_BRIDGES) {
+        showClipboardStatus(t("Up to {n} bridges may be enabled at a time. Disable one to enable another.", { n: MAX_ENABLED_BRIDGES }), "warning");
+      }
       renderKillSwitch();
       renderExitCountry();
       isDirty = false;
@@ -299,7 +303,7 @@ function parseBridgeLine(line) {
   };
 }
 
-const KNOWN_TRANSPORTS = new Set(["obfs4", "webtunnel", "snowflake", "meek_lite", "meek"]);
+const KNOWN_TRANSPORTS = new Set(["obfs4", "webtunnel", "snowflake", "meek_lite"]);
 // Vanilla bridges must use a numeric IP (matching the native Swift/Python parsers).
 const VANILLA_ADDRESS_RE = /^(\[[\da-f:]+\]|[\d.]+):\d{1,5}$/i;
 
@@ -309,10 +313,12 @@ function validPort(address) {
 }
 
 function isBridgeLineValid(line) {
-  const parts = line.trim().split(/\s+/);
+  const normalizedLine = line.trim();
+  if (!/^[A-Za-z0-9 .:/?=&,+_%\-\[\]]+$/.test(normalizedLine)) return false;
+  const parts = normalizedLine.split(/\s+/);
   const offset = parts[0] === "Bridge" ? 1 : 0;
   const first = parts[offset] || "";
-  if (KNOWN_TRANSPORTS.has(first.toLowerCase())) return true;
+  if (KNOWN_TRANSPORTS.has(first.toLowerCase())) return parts.length > offset + 1;
   // Vanilla: first token must be a numeric IP:port within valid port range
   return VANILLA_ADDRESS_RE.test(first) && validPort(first);
 }
@@ -450,6 +456,10 @@ function renderBridgeList() {
     toggle.title = !valid ? t("Bridge line is invalid") : enabled ? t("Bridge is included in connections") : t("Bridge is excluded from connections");
     toggle.disabled = !valid;
     toggle.addEventListener("click", () => {
+      if (!enabled && allEnabledLines().length >= MAX_ENABLED_BRIDGES) {
+        showClipboardStatus(t("Up to {n} bridges may be enabled at a time. Disable one to enable another.", { n: MAX_ENABLED_BRIDGES }), "error");
+        return;
+      }
       if (enabled && selectedMode === "manual" && allEnabledLines().length <= 1) {
         showClipboardStatus(t("Keep at least one bridge enabled when using bridge lines."), "error");
         return;
@@ -591,6 +601,12 @@ function renderKillSwitch() {
 }
 
 function saveSettings() {
+  if (allEnabledLines().length > MAX_ENABLED_BRIDGES) {
+    const message = t("Up to {n} bridges may be enabled at a time. Disable one to enable another.", { n: MAX_ENABLED_BRIDGES });
+    markSaveState(message, "error");
+    showClipboardStatus(message, "error");
+    return;
+  }
   if (selectedMode === "manual" && !allEnabledLines().length) {
     markSaveState(t("Enable at least one bridge to use bridge lines."), "error");
     return;
@@ -615,6 +631,13 @@ function saveSettings() {
 }
 
 function saveBridgeList(successMessage, kind = "success") {
+  if (allEnabledLines().length > MAX_ENABLED_BRIDGES) {
+    const message = t("Up to {n} bridges may be enabled at a time. Disable one to enable another.", { n: MAX_ENABLED_BRIDGES });
+    isDirty = true;
+    markSaveState(message, "error");
+    showClipboardStatus(message, "error");
+    return;
+  }
   const revision = ++bridgeSaveRevision;
   const nextPreferences = storedPreferences();
   chrome.storage.local.set({ torConnectionPreferences: nextPreferences }, () => {
@@ -657,14 +680,26 @@ function importBridgeText(text, sourceName = t("Clipboard")) {
     showClipboardStatus(t("No new bridges. {details}.", { details: parts.join(", ") }), invalidCount ? "warning" : "");
     return;
   }
-  bridgeLines.push(...imported);
+  let enabledCount = allEnabledLines().length;
+  let disabledByLimit = 0;
+  imported.forEach((line) => {
+    bridgeLines.push(line);
+    if (enabledCount >= MAX_ENABLED_BRIDGES) {
+      disabledBridgeLines.add(line);
+      disabledByLimit++;
+    } else {
+      enabledCount++;
+    }
+  });
   renderBridgeList();
   markDirty();
   const countText = t("{n} {bridges} added and saved.", { n: imported.length, bridges: imported.length === 1 ? t("bridge") : t("bridges") });
   const skippedParts = [];
   if (duplicateCount) skippedParts.push(t("{n} duplicate {lines}", { n: duplicateCount, lines: duplicateCount === 1 ? t("line") : t("lines") }));
   if (invalidCount) skippedParts.push(t("{n} invalid {lines}", { n: invalidCount, lines: invalidCount === 1 ? t("line") : t("lines") }));
-  const savedText = skippedParts.length ? t("{count} {skipped} skipped.", { count: countText, skipped: skippedParts.join(t(" and ")) }) : countText;
+  const savedText = disabledByLimit
+    ? t("{n} imported bridge lines were left disabled; up to {limit} bridges can be enabled.", { n: disabledByLimit, limit: MAX_ENABLED_BRIDGES })
+    : skippedParts.length ? t("{count} {skipped} skipped.", { count: countText, skipped: skippedParts.join(t(" and ")) }) : countText;
   saveBridgeList(savedText, invalidCount ? "warning" : "success");
 }
 
@@ -836,7 +871,7 @@ function sendStatus() {
     connectedBridgeFingerprint = active && typeof result.bridgeFingerprint === "string" ? result.bridgeFingerprint.toLowerCase() : "";
     if (active) {
       const reportedIndex = Number(result.currentBridgeIndex) || 0;
-      if (selectedMode === "manual" && preferences.autoBridgeSelection && reportedIndex > 0) {
+      if (selectedMode === "manual" && reportedIndex > 0) {
         const activeLine = allEnabledLines()[reportedIndex - 1];
         connectedBridgeIndex = activeLine ? bridgeLines.indexOf(activeLine) + 1 : null;
       } else {
@@ -907,15 +942,16 @@ useBridgeLinesButton.addEventListener("click", () => {
 saveButton.addEventListener("click", saveSettings);
 
 async function reconnectUsingSavedSettings() {
-  const allLines = bridgeLines;
   const enabled = allEnabledLines();
+  if (enabled.length > MAX_ENABLED_BRIDGES) {
+    showClipboardStatus(t("Up to {n} bridges may be enabled at a time. Disable one to enable another.", { n: MAX_ENABLED_BRIDGES }), "error");
+    return;
+  }
   if (selectedMode === "manual" && !enabled.length) {
     showClipboardStatus(t("Enable at least one bridge before reconnecting."), "error");
     return;
   }
-  const selectedBridgeIndex = selectedMode === "manual" && !preferences.autoBridgeSelection
-    ? allLines.indexOf(preferences.selectedBridge) + 1 : null;
-  const bridges = selectedBridgeIndex ? preferences.selectedBridge : enabled.join("\n");
+  const bridges = enabled.join("\n");
   reconnectNowButton.disabled = true;
   hideChangeBanner();
   setConnectionBadge(t("Reconnecting…"), "starting", t("Restarting Tor with the saved settings."));
@@ -925,7 +961,7 @@ async function reconnectUsingSavedSettings() {
     reconnectNowButton.disabled = false;
     return;
   }
-  const result = await send("connect", { mode: selectedMode, bridges, selectedBridgeIndex, exitCountry: preferences.exitCountry || "" });
+  const result = await send("connect", { mode: selectedMode, bridges, selectedBridgeIndex: null, exitCountry: preferences.exitCountry || "" });
   if (!result?.ok) setConnectionBadge(t("Connection needs attention"), "error", result?.error || "Could not reconnect.");
   else setConnectionBadge(t("Connecting…"), "starting", result.message || "Tor is reconnecting.");
   reconnectNowButton.disabled = false;
@@ -956,7 +992,8 @@ document.addEventListener("tor-language-changed", () => { renderBridgeList(); re
 
 chrome.storage.onChanged.addListener((changes, areaName) => {
   if (areaName !== "local" || !changes.torConnectionPreferences || isDirty) return;
-  const saved = changes.torConnectionPreferences.newValue || {};
+  const saved = { ...(changes.torConnectionPreferences.newValue || {}) };
+  delete saved.autoBridgeSelection;
   bridgeLines = typeof saved.bridges === "string" ? saved.bridges.split(/\r?\n/).map((line) => line.trim()).filter(Boolean) : [];
   disabledBridgeLines = new Set(Array.isArray(saved.disabledBridges)
     ? saved.disabledBridges.filter((line) => bridgeLines.includes(line)) : []);
@@ -965,7 +1002,6 @@ chrome.storage.onChanged.addListener((changes, areaName) => {
     mode: saved.mode === "manual" ? "manual" : "snowflake",
     bridges: bridgeLines.join("\n"),
     disabledBridges: [...disabledBridgeLines],
-    autoBridgeSelection: saved.autoBridgeSelection !== false,
     selectedBridge: typeof saved.selectedBridge === "string" ? saved.selectedBridge : allEnabledLines()[0] || "",
     killSwitch: saved.killSwitch === true,
     exitCountry: typeof saved.exitCountry === "string" ? saved.exitCountry : ""

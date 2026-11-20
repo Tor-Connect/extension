@@ -1,10 +1,8 @@
 const statusNode = document.querySelector("#status");
 const routeCardNode = document.querySelector("#routeCard");
-const snowflakeInfoNode = document.querySelector("#snowflakeInfo");
-const snowflakeInfoTextNode = document.querySelector("#snowflakeInfoText");
 const errorDetailsNode = document.querySelector("#errorDetails");
 const errorTextNode = document.querySelector("#errorText");
-const routeLabelNode = document.querySelector("#routeLabel");
+// Legacy route-identity nodes kept for JS compat (hidden in new design)
 const routeIdentityNode = document.querySelector(".route-identity");
 const routeNameNode = document.querySelector("#routeName");
 const routeDetailNode = document.querySelector("#routeDetail");
@@ -13,13 +11,42 @@ const bridgeAttemptTimerNode = document.querySelector("#bridgeAttemptTimer");
 const connectedDurationNode = document.querySelector("#connectedDuration");
 const statusDetailNode = document.querySelector("#statusDetail");
 const metaSeparatorNode = document.querySelector(".meta-separator");
-const orbitNodesNode = document.querySelector("#orbitNodes");
-const orbitFlowNode = document.querySelector("#orbitFlow");
+// Globe-stage nodes
+const globeStageNode = document.querySelector("#globeStage");
+const globeDotsBridgeNode = document.querySelector("#globeDotsBridge");
+const globeDotsSnowNode = document.querySelector("#globeDotsSnow");
+const globeSnowfallNode = document.querySelector("#globeSnowfall");
+const globeSkinDE = document.querySelector("#globeSkinDE");
+const globeSkinJP = document.querySelector("#globeSkinJP");
+const globeSkinBR = document.querySelector("#globeSkinBR");
+const globeRouteDrawNode = document.querySelector("#globeRouteDraw");
+const globeRouteFlowNode = document.querySelector("#globeRouteFlow");
+const globeExitNodeEl = document.querySelector("#globeExitNode");
+const globeExitLabelNode = document.querySelector("#globeExitLabel");
+const globeEntryLabelNode = document.querySelector("#globeEntryLabel");
+const globeEntryCCNode = document.querySelector("#globeEntryCC");
+const globeEntryNameNode = document.querySelector("#globeEntryName");
+const globeEntryIdleNode = document.querySelector("#globeEntryIdle");
+const globeEntryTryNode = document.querySelector("#globeEntryTry");
+const globeEntryFailNode = document.querySelector("#globeEntryFail");
+const globeEntryOkNode = document.querySelector("#globeEntryOk");
+const globeEntryTryCCNode = document.querySelector("#globeEntryTryCC");
+// Keep legacy aliases used elsewhere
+const globeDotsNode = globeDotsBridgeNode;
+const globeCountrySkinNode = null; // replaced by per-country skins
+// Method switch (pager)
 const methodSwitchNode = document.querySelector("#connectionMethodSwitch");
 const methodButtons = [...document.querySelectorAll(".connection-method-option")];
+const methodIndicatorNode = document.querySelector(".connection-method-indicator");
+// Bottom card
+const idleCardNode = document.querySelector("#idleCard");
+const idleCardIconNode = document.querySelector("#idleCardIcon");
+const idleCardTitleNode = document.querySelector("#idleCardTitle");
+const idleCardSubNode = document.querySelector("#idleCardSub");
+const bridgesSheetToggleNode = document.querySelector("#bridgesSheetToggle");
+// Empty bridge info (manual mode, no bridges)
 const emptyBridgeInfoNode = document.querySelector("#emptyBridgeInfo");
 const addBridgesButton = document.querySelector("#addBridges");
-const autoBridgeHintNode = document.querySelector("#autoBridgeHint");
 const copyBridgeButton = document.querySelector("#copyBridge");
 const connectionToggle = document.querySelector("#connectionToggle");
 const connectionProgress = document.querySelector("#connectionProgress");
@@ -42,7 +69,6 @@ const closePermissionErrorDetailsButton = document.querySelector("#closePermissi
 const permissionErrorTextNode = document.querySelector("#permissionErrorText");
 const copyPermissionErrorDetailsButton = document.querySelector("#copyPermissionErrorDetails");
 const isFirefoxExtension = typeof browser !== "undefined" && typeof browser.runtime?.getBrowserInfo === "function";
-const bridgeSelectorNode = document.querySelector("#bridgeSelector");
 const statsToggleNode = document.querySelector("#statsToggle");
 const liveStatsNode = document.querySelector("#liveStats");
 const statsBackdropNode = document.querySelector("#statsBackdrop");
@@ -55,14 +81,20 @@ const siteCheckSummaryNode = document.querySelector("#siteCheckSummary");
 const siteCheckRowsNode = document.querySelector("#siteCheckRows");
 const siteCheckCountNode = document.querySelector("#siteCheckCount");
 const nextRouteNode = document.querySelector("#nextRoute");
+// Bridges sheet
+const bridgesSheetNode = document.querySelector("#bridgesSheet");
+const bridgesBackdropNode = document.querySelector("#bridgesBackdrop");
+const closeBridgesNode = document.querySelector("#closeBridges");
+const bridgeRowsNode = document.querySelector("#bridgeRows");
+const addBridgesFromSheetButton = document.querySelector("#addBridgesFromSheet");
+let bridgesSheetOpen = false;
 let statsPollTimer;
 let lastStatsSample;
-const autoBridgeSelectionNode = document.querySelector("#autoBridgeSelection");
 let pollTimer;
 let outdatedPollGeneration = 0;
 let initialStatusPending = true;
 let initialStatusRetries = 0;
-let preferences = { mode: "snowflake", bridges: "", autoBridgeSelection: true, selectedBridge: "", disabledBridges: [], exitCountry: "" };
+let preferences = { mode: "snowflake", bridges: "", selectedBridge: "", disabledBridges: [], exitCountry: "" };
 let currentState = "disconnected";
 let currentResult = {};
 let bridgeCountries = new Map();
@@ -79,7 +111,390 @@ let lastShownPosition = -1;
 let copyFeedbackTimer;
 let firefoxPermissionPollTimer;
 let firefoxPermissionSuccessTimer;
+let lastGlobeEntryAttemptIdentity = "";
+let globeEntryRetryAnimationTimer;
+let globeEntryFailureTransition = false;
+let globeRouteDrawWasVisible = false;
+let globeRouteDrawComplete = false;
+let connectionRevealPending = false;
+let connectionRevealTimer;
+let connectionRevealFallbackTimer;
+let connectionRevealReleased = false;
+let globeOrientationExitCode = "";
+let globeRotationPlayed = false;
+let siteCheckBadgeHideTimer;
+let siteCheckBadgeState = "";
 const t = (key, params) => (globalThis.torI18n?.t || ((s) => s))(key, params);
+const MAX_ENABLED_BRIDGES = 20;
+
+// Exit-country centers commonly returned by Tor relays. Coordinates are
+// latitude/longitude in degrees; the three design skins anchor the globe.
+const EXIT_COUNTRY_CENTERS = {
+  AD:[42.55,1.60], AE:[23.42,53.85], AL:[41.15,20.17], AR:[-38.42,-63.62], AT:[47.52,14.55], AU:[-25.27,133.78],
+  AZ:[40.14,47.58], BA:[43.92,17.68], BD:[23.68,90.36], BE:[50.50,4.47], BG:[42.73,25.49], BR:[-14.24,-51.93],
+  BY:[53.71,27.95], CA:[56.13,-106.35], CH:[46.82,8.23], CL:[-35.68,-71.54], CN:[35.86,104.20], CO:[4.57,-74.30],
+  CR:[9.75,-83.75], CZ:[49.82,15.47], DE:[51.17,10.45], DK:[56.26,9.50], DO:[18.74,-70.16], DZ:[28.03,1.66],
+  EC:[-1.83,-78.18], EE:[58.60,25.01], EG:[26.82,30.80], ES:[40.46,-3.75], FI:[61.92,25.75], FR:[46.23,2.21],
+  GB:[55.38,-3.44], GE:[42.32,43.36], GH:[7.95,-1.02], GR:[39.07,21.82], HR:[45.10,15.20], HU:[47.16,19.50],
+  ID:[-0.79,113.92], IE:[53.41,-8.24], IL:[31.05,34.85], IN:[20.59,78.96], IR:[32.43,53.69], IS:[64.96,-19.02],
+  IT:[41.87,12.57], JP:[36.20,138.25], KE:[-0.02,37.91], KR:[35.91,127.77], LT:[55.17,23.88], LU:[49.82,6.13],
+  LV:[56.88,24.60], MD:[47.41,28.37], MX:[23.63,-102.55], MY:[4.21,101.98], NG:[9.08,8.68], NL:[52.13,5.29],
+  NO:[60.47,8.47], NZ:[-40.90,174.89], PA:[8.54,-80.78], PE:[-9.19,-75.02], PH:[12.88,121.77], PK:[30.38,69.35],
+  PL:[51.92,19.15], PT:[39.40,-8.22], RO:[45.94,24.97], RS:[44.02,21.01], RU:[61.52,105.32], SA:[23.89,45.08],
+  SE:[60.13,18.64], SG:[1.35,103.82], TH:[15.87,100.99], TR:[38.96,35.24], TW:[23.70,120.96], UA:[48.38,31.17],
+  US:[37.09,-95.71], UY:[-32.52,-55.77], UZ:[41.38,64.59], VN:[14.06,108.28], ZA:[-30.56,22.94]
+};
+
+const GLOBE_SKINS = [
+  globeSkinDE,
+  globeSkinJP,
+  globeSkinBR
+];
+
+function radians(degrees) { return degrees * Math.PI / 180; }
+const GLOBE_RADIUS = 116;
+const GLOBE_PITCH = radians(11);
+const GLOBE_GRID_STEP = 3.5;
+const CONNECTION_REVEAL_FALLBACK_MS = 4000;
+let globeLandMask;
+let globeLandMaskPromise;
+
+function loadGlobeLandMask() {
+  if (globeLandMask) return Promise.resolve(globeLandMask);
+  if (!globeLandMaskPromise) {
+    globeLandMaskPromise = new Promise((resolve) => {
+      const image = new Image();
+      image.onload = () => {
+        const canvas = document.createElement("canvas");
+        canvas.width = image.naturalWidth;
+        canvas.height = image.naturalHeight;
+        const context = canvas.getContext("2d", { willReadFrequently: true });
+        if (!context) return resolve(null);
+        context.drawImage(image, 0, 0);
+        globeLandMask = {
+          width: canvas.width,
+          height: canvas.height,
+          pixels: context.getImageData(0, 0, canvas.width, canvas.height).data
+        };
+        resolve(globeLandMask);
+      };
+      image.onerror = () => resolve(null);
+      image.src = chrome.runtime.getURL("assets/globe-land-mask.png");
+    });
+  }
+  return globeLandMaskPromise;
+}
+
+function renderGeographicDotMap(node, centerLongitude) {
+  if (!node || !globeLandMask) return;
+  const centerKey = String(Math.round(centerLongitude * 1000) / 1000);
+  if (node.dataset.globeCenterLongitude === centerKey) return;
+
+  const dotField = node.firstElementChild;
+  if (!dotField) return;
+  const { width, height, pixels } = globeLandMask;
+  const circles = [];
+  const sinPitch = Math.sin(GLOBE_PITCH);
+  const cosPitch = Math.cos(GLOBE_PITCH);
+  const longitudeStep = GLOBE_GRID_STEP;
+  for (let row = 0, latitudeDegrees = -62; latitudeDegrees <= 82; row += 1, latitudeDegrees += GLOBE_GRID_STEP) {
+    const latitude = radians(latitudeDegrees);
+    const cosLatitude = Math.cos(latitude);
+    const sinLatitude = Math.sin(latitude);
+    const stagger = row % 2 ? longitudeStep / 2 : 0;
+    for (let longitudeDegrees = -180 + stagger; longitudeDegrees < 180; longitudeDegrees += longitudeStep) {
+      const longitude = radians(longitudeDegrees);
+      const relativeLongitude = longitude - centerLongitude;
+      const sphereX = cosLatitude * Math.sin(relativeLongitude);
+      const sphereY = sinLatitude;
+      const sphereDepth = cosLatitude * Math.cos(relativeLongitude);
+
+      // Pitch the globe toward the viewer while keeping its north pole upright.
+      const projectedY = sphereY * cosPitch - sphereDepth * sinPitch;
+      const depth = sphereY * sinPitch + sphereDepth * cosPitch;
+      if (depth <= 0) continue;
+
+      const mapLongitudeDegrees = ((longitudeDegrees + 180) % 360 + 360) % 360;
+      const mapX = Math.min(width - 1, Math.floor(mapLongitudeDegrees / 360 * width));
+      const mapY = Math.max(0, Math.min(height - 1, Math.floor((90 - latitudeDegrees) / 180 * height)));
+      if (!pixels[(mapY * width + mapX) * 4 + 3]) continue;
+
+      const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+      circle.setAttribute("cx", (160 + sphereX * GLOBE_RADIUS).toFixed(1));
+      circle.setAttribute("cy", (160 - projectedY * GLOBE_RADIUS).toFixed(1));
+      circle.setAttribute("r", (0.95 + depth * 0.65).toFixed(2));
+      circles.push(circle);
+    }
+  }
+  dotField.replaceChildren(...circles);
+  node.dataset.globeCenterLongitude = centerKey;
+}
+
+function projectGlobePoint(latitudeDegrees, longitudeDegrees, centerLongitude) {
+  const latitude = radians(latitudeDegrees);
+  const relativeLongitude = radians(longitudeDegrees) - centerLongitude;
+  const cosLatitude = Math.cos(latitude);
+  const sphereX = cosLatitude * Math.sin(relativeLongitude);
+  const sphereY = Math.sin(latitude);
+  const sphereDepth = cosLatitude * Math.cos(relativeLongitude);
+  const projectedY = sphereY * Math.cos(GLOBE_PITCH) - sphereDepth * Math.sin(GLOBE_PITCH);
+  const depth = sphereY * Math.sin(GLOBE_PITCH) + sphereDepth * Math.cos(GLOBE_PITCH);
+  return {
+    x: 160 + sphereX * GLOBE_RADIUS,
+    y: 160 - projectedY * GLOBE_RADIUS,
+    depth
+  };
+}
+
+function setGlobeGroupVisible(node, visible) {
+  if (!node) return;
+  if (visible) {
+    node.removeAttribute("hidden");
+    node.style.removeProperty("display");
+  } else {
+    node.setAttribute("hidden", "");
+  }
+}
+
+function renderGlobeEntry(result = {}, visualState = result.state || "disconnected", bridgeChangedForRetry = false) {
+  const state = result.state || "disconnected";
+  const snow = preferences.mode === "snowflake";
+  const isOff = visualState === "disconnected" || visualState === "failed";
+  const isConn = visualState === "starting";
+  const isOn = state === "connected";
+  const phase = result.bridgeActivity || "";
+  const isRetrying = isOn && ["trying", "failed", "closed"].includes(phase);
+  const isEntryConnecting = isConn || (visualState === "connected" && isRetrying);
+  const topLevelConnected = visualState === "connected" && !isRetrying;
+  const isFail = globeEntryFailureTransition || (!topLevelConnected
+    && ((["failed", "closed"].includes(phase) || visualState === "failed")
+      && (isEntryConnecting || visualState === "failed")));
+  const isEntryFound = topLevelConnected && !globeEntryFailureTransition;
+
+  // Entry node: exactly one visible at a time
+  setGlobeGroupVisible(globeEntryIdleNode, isOff);
+  setGlobeGroupVisible(globeEntryTryNode, isEntryConnecting && !isFail);
+  setGlobeGroupVisible(globeEntryFailNode, isFail);
+  setGlobeGroupVisible(globeEntryOkNode, isEntryFound);
+  if (bridgeChangedForRetry && !window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) {
+    const shakeNode = globeEntryFailNode?.querySelector(".shk");
+    if (shakeNode) {
+      shakeNode.classList.remove("shk");
+      void shakeNode.getBoundingClientRect();
+      shakeNode.classList.add("shk");
+    }
+  }
+
+  let entryCC = (result.bridgeCountryCode || "").toUpperCase();
+  if (!entryCC && !snow) {
+    const entries = bridgeEntries();
+    const activePosition = activeBridgePosition(result, entries);
+    const position = activePosition >= 0 ? activePosition
+      : lastShownPosition >= 0 ? lastShownPosition : selectedBridgePosition(entries);
+    entryCC = (bridgeCountries.get(entries[position]) || "").toUpperCase();
+  }
+  if (globeEntryTryCCNode) globeEntryTryCCNode.textContent = entryCC;
+
+  if (globeEntryLabelNode) {
+    const entries = snow ? [] : bridgeEntries();
+    const activePosition = activeBridgePosition(result, entries);
+    const activeLine = activePosition >= 0 ? entries[activePosition] : "";
+    const bridgeNum = snow ? t("Snowflake")
+      : activeLine ? t("Bridge {n}", { n: bridgeNumberForLine(activeLine) })
+        : result.currentBridgeIndex ? t("Bridge {n}", { n: result.currentBridgeIndex }) : t("Bridge");
+    if (globeEntryCCNode) globeEntryCCNode.textContent = entryCC;
+    if (globeEntryNameNode) globeEntryNameNode.textContent = bridgeNum;
+    globeEntryLabelNode.hidden = !isEntryFound;
+  }
+  return { isRetrying };
+}
+
+function setGlobeRotationBrightness(enabled) {
+  const fill = document.documentElement.dataset.theme === "light" ? "#238b58" : "#55b985";
+  [globeDotsBridgeNode, globeDotsSnowNode, ...GLOBE_SKINS].forEach((node) => {
+    node?.querySelectorAll("circle").forEach((circle) => {
+      if (enabled) {
+        circle.style.setProperty("fill", fill, "important");
+        circle.style.setProperty("animation", "none", "important");
+        circle.style.setProperty("opacity", "1", "important");
+      } else {
+        circle.style.removeProperty("fill");
+        circle.style.removeProperty("animation");
+        circle.style.removeProperty("opacity");
+      }
+    });
+  });
+}
+
+function releaseConnectionReveal() {
+  connectionRevealPending = false;
+  connectionRevealReleased = true;
+  clearTimeout(connectionRevealFallbackTimer);
+  connectionRevealFallbackTimer = undefined;
+  renderResult(currentResult);
+}
+
+// Populate the globe dot field with a projected lat/lon grid.
+// The SVG viewBox is 320×320; globe centre cx=160, cy=160, r=116.
+// Drive all state-conditional globe SVG groups from the connection result.
+// Maps directly to the design's sc-if conditions.
+function renderGlobe(result = {}, visualState = result.state || "disconnected") {
+  const state = result.state || "disconnected";
+  const snow = preferences.mode === "snowflake";
+  routeCardNode.dataset.mode = preferences.mode;
+  const isOn = state === "connected";
+  const attemptIndex = Number(result.currentBridgeIndex) || 0;
+  const manualEntries = snow ? [] : bridgeEntries();
+  const activeEntryPosition = activeBridgePosition(result, manualEntries);
+  const indexedEntry = attemptIndex > 0 ? manualEntries[attemptIndex - 1] : null;
+  const identityEntry = activeEntryPosition >= 0 ? manualEntries[activeEntryPosition] : indexedEntry;
+  const attemptIdentity = identityEntry
+    ? `bridge:${bridgeAddress(identityEntry)}`
+    : attemptIndex > 0 ? `index:${attemptIndex}` : "";
+  const bridgeChangedForRetry = !!attemptIdentity && !!lastGlobeEntryAttemptIdentity
+    && attemptIdentity !== lastGlobeEntryAttemptIdentity;
+  if (bridgeChangedForRetry) {
+    globeEntryFailureTransition = true;
+    if (!globeEntryRetryAnimationTimer) {
+      globeEntryRetryAnimationTimer = setTimeout(() => {
+        globeEntryRetryAnimationTimer = undefined;
+        globeEntryFailureTransition = false;
+        const result = currentResult || {};
+        const visualState = connectionRevealPending && result.state === "connected"
+          ? "starting" : result.state || "disconnected";
+        renderGlobeEntry(result, visualState);
+      }, 350);
+    }
+  }
+  if (attemptIdentity) lastGlobeEntryAttemptIdentity = attemptIdentity;
+  const { isRetrying } = renderGlobeEntry(result, visualState, bridgeChangedForRetry);
+
+  // Snowfall: snowflake mode, not connected
+  if (globeSnowfallNode) globeSnowfallNode.hidden = !(snow && !isOn);
+
+  const exitCC = (result.exitRelayCountryCode || "").toUpperCase();
+  const exitCenter = EXIT_COUNTRY_CENTERS[exitCC];
+  if (!isOn) {
+    globeOrientationExitCode = "";
+    globeRotationPlayed = false;
+  } else if (exitCenter && exitCC !== globeOrientationExitCode) {
+    globeOrientationExitCode = exitCC;
+  }
+  const globeMapNode = snow ? globeDotsSnowNode : globeDotsBridgeNode;
+  setGlobeGroupVisible(globeDotsBridgeNode, !snow);
+  setGlobeGroupVisible(globeDotsSnowNode, snow);
+  GLOBE_SKINS.forEach((skin) => setGlobeGroupVisible(skin, false));
+  const orientationCenter = EXIT_COUNTRY_CENTERS[globeOrientationExitCode];
+  const centerLongitude = isOn && orientationCenter
+    ? radians(orientationCenter[1])
+    : radians(20);
+  renderGeographicDotMap(globeMapNode, centerLongitude);
+  if (!globeLandMask) {
+    loadGlobeLandMask().then((mask) => {
+      if (mask) renderGlobe(currentResult || {}, connectionRevealPending && currentResult?.state === "connected"
+        ? "starting" : currentResult?.state || "disconnected");
+    });
+  }
+
+  if (isOn && exitCenter) {
+    const projectedExit = projectGlobePoint(exitCenter[0], exitCenter[1], centerLongitude);
+    const exitX = projectedExit.x;
+    const exitY = projectedExit.y;
+    globeExitNodeEl?.querySelectorAll("circle").forEach((circle) => {
+      circle.setAttribute("cx", String(exitX));
+      circle.setAttribute("cy", String(exitY));
+    });
+    const routeSide = exitX < 160 ? -1 : 1;
+    const routePath = `M160 294 C ${160 + routeSide * 158} 292 ${160 + routeSide * 144} ${exitY + 13} ${exitX} ${exitY}`;
+    globeRouteDrawNode?.querySelectorAll("path").forEach((path) => path.setAttribute("d", routePath));
+    globeRouteFlowNode?.querySelectorAll("path").forEach((path) => path.setAttribute("d", routePath));
+    globeRouteFlowNode?.querySelector("animateMotion")?.setAttribute("path", routePath);
+    if (globeExitLabelNode) {
+      globeExitLabelNode.style.left = `${exitX}px`;
+      globeExitLabelNode.style.top = `${Math.max(4, exitY - 8)}px`;
+    }
+  } else {
+    globeExitNodeEl?.querySelectorAll("circle").forEach((circle) => {
+      circle.setAttribute("cx", "160");
+      circle.setAttribute("cy", "87.4");
+    });
+    globeExitLabelNode?.style.removeProperty("left");
+    globeExitLabelNode?.style.removeProperty("top");
+  }
+
+  // Draw the route only after connection succeeds and the exit location is known.
+  // Until then the line would point to the SVG's placeholder endpoint.
+  if (!isOn || isRetrying) globeRouteDrawComplete = false;
+  const routeReady = isOn && !isRetrying && !!exitCenter;
+  const reduceRouteMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+  if (routeReady && !globeRotationPlayed) {
+    globeRotationPlayed = true;
+    routeCardNode.dataset.globeRotating = "true";
+    setGlobeRotationBrightness(true);
+    if (!reduceRouteMotion && typeof globeMapNode?.animate === "function") {
+      globeMapNode.style.transformBox = "view-box";
+      globeMapNode.style.transformOrigin = "160px 160px";
+      globeMapNode.animate([
+        { transform: "rotate(-50deg) scale(.94)" },
+        { transform: "none" }
+      ], { duration: 900, easing: "cubic-bezier(.2,.8,.2,1)" });
+    }
+  }
+  if (isOn && connectionRevealPending && globeRotationPlayed) {
+    routeCardNode.dataset.globeRotating = "true";
+    setGlobeRotationBrightness(true);
+  }
+  if (routeReady && reduceRouteMotion) globeRouteDrawComplete = true;
+  const showRouteDraw = routeReady && !globeRouteDrawComplete;
+  setGlobeGroupVisible(globeRouteDrawNode, showRouteDraw);
+  if (showRouteDraw && !globeRouteDrawWasVisible) {
+    const drawPath = globeRouteDrawNode?.querySelector(".draw");
+    if (drawPath) {
+      drawPath.style.animation = "none";
+      drawPath.style.strokeDasharray = "100";
+      drawPath.style.strokeDashoffset = "100";
+      void drawPath.getBBox();
+      drawPath.style.animation = "globe-route-draw 1s ease-in-out both";
+      drawPath.addEventListener("animationend", () => {
+        globeRouteDrawComplete = true;
+        renderGlobe(currentResult, connectionRevealPending ? "starting" : currentResult?.state || "disconnected");
+        if (connectionRevealPending && globeExitLabelNode && !globeExitLabelNode.hidden) {
+          clearTimeout(connectionRevealTimer);
+          connectionRevealTimer = setTimeout(() => {
+            connectionRevealTimer = undefined;
+            const stillConnected = currentResult?.state === "connected"
+              && !["trying", "failed", "closed"].includes(currentResult.bridgeActivity);
+            if (!stillConnected || globeExitLabelNode.hidden) return;
+            releaseConnectionReveal();
+          }, 450);
+        }
+      }, { once: true });
+    }
+  }
+  globeRouteDrawWasVisible = showRouteDraw;
+  setGlobeGroupVisible(globeRouteFlowNode, routeReady && globeRouteDrawComplete);
+
+  // Let the route reach its known endpoint before revealing the exit marker and label.
+  const showExitMarker = routeReady && !!exitCC && globeRouteDrawComplete;
+  setGlobeGroupVisible(globeExitNodeEl, showExitMarker);
+  if (globeExitLabelNode) {
+    const country = exitCC
+      ? (new Intl.DisplayNames([globalThis.torI18n?.language || navigator.language || "en"], { type: "region" }).of(exitCC) || exitCC)
+      : "";
+    globeExitLabelNode.textContent = country;
+    globeExitLabelNode.hidden = !(showExitMarker && !!country);
+  }
+  if (reduceRouteMotion && connectionRevealPending && globeExitLabelNode && !globeExitLabelNode.hidden && !connectionRevealTimer) {
+    connectionRevealTimer = setTimeout(() => {
+      connectionRevealTimer = undefined;
+      const stillConnected = currentResult?.state === "connected"
+        && !["trying", "failed", "closed"].includes(currentResult.bridgeActivity);
+      if (!stillConnected || globeExitLabelNode.hidden) return;
+      releaseConnectionReveal();
+    }, 0);
+  }
+
+}
 
 function closePermissionErrorDetails(restoreFocus = true) {
   const wasOpen = !permissionErrorSheetNode.hidden;
@@ -360,6 +775,48 @@ liveStatsNode.addEventListener("keydown", (event) => {
 document.addEventListener("focusin", (event) => {
   if (!liveStatsNode.hidden && !liveStatsNode.contains(event.target)) closeStatsNode.focus();
   if (!siteCheckSheetNode.hidden && !siteCheckSheetNode.contains(event.target)) closeSiteCheckNode.focus();
+  if (bridgesSheetOpen && !bridgesSheetNode.contains(event.target)) closeBridgesNode.focus();
+});
+
+function closeBridgesSheet() {
+  const wasOpen = bridgesSheetOpen;
+  bridgesSheetOpen = false;
+  bridgesSheetNode.classList.remove("is-open");
+  bridgesBackdropNode.classList.remove("is-open");
+  if (bridgesSheetToggleNode) bridgesSheetToggleNode.setAttribute("aria-expanded", "false");
+  window.setTimeout(() => {
+    if (!bridgesSheetOpen) {
+      bridgesSheetNode.hidden = true;
+      bridgesBackdropNode.hidden = true;
+    }
+  }, 300);
+  if (wasOpen) (bridgesSheetToggleNode?.hidden === false ? bridgesSheetToggleNode : connectionToggle).focus();
+}
+
+function openBridgesSheet() {
+  bridgesSheetOpen = true;
+  bridgesSheetNode.hidden = false;
+  bridgesBackdropNode.hidden = false;
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    bridgesSheetNode.classList.add("is-open");
+    bridgesBackdropNode.classList.add("is-open");
+  }));
+  if (bridgesSheetToggleNode) bridgesSheetToggleNode.setAttribute("aria-expanded", "true");
+  closeBridgesNode.focus();
+}
+
+closeBridgesNode.addEventListener("click", closeBridgesSheet);
+bridgesBackdropNode.addEventListener("click", closeBridgesSheet);
+if (addBridgesFromSheetButton) addBridgesFromSheetButton.addEventListener("click", () => chrome.runtime.openOptionsPage());
+if (bridgesSheetToggleNode) bridgesSheetToggleNode.addEventListener("click", openBridgesSheet);
+
+bridgesSheetNode.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") { event.preventDefault(); closeBridgesSheet(); return; }
+  if (event.key !== "Tab") return;
+  const focusable = [...bridgesSheetNode.querySelectorAll("button:not([disabled]):not([hidden])")];
+  const first = focusable[0], last = focusable.at(-1);
+  if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+  else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
 });
 
 function formatBytes(value) {
@@ -426,15 +883,32 @@ function updateLiveStats(result = {}) {
   summary.hidden = result.state !== "connected";
   statsToggleNode.hidden = result.state !== "connected";
   if (result.state !== "connected" && !liveStatsNode.hidden) closeLiveStats();
-  document.querySelector("#summaryRouteName").textContent = snowflake ? t("Snowflake") : (result.currentBridgeIndex ? t("Bridge {n}", { n: result.currentBridgeIndex }) : t("Bridge"));
+  // Connected bottom card: show exit IP if available (matches design), otherwise bridge
+  const hasExitIp = !!result.exitRelayIp;
+  const summaryName = document.querySelector("#summaryRouteName");
   const summaryAddr = document.querySelector("#summaryRouteAddress");
-  summaryAddr.textContent = snowflake ? t("Volunteer proxy") : (result.bridgeAddress || "");
-  summaryAddr.classList.toggle("is-label", snowflake);
+  if (hasExitIp) {
+    summaryName.textContent = result.exitRelayIp;
+    summaryAddr.textContent = t("The address websites see");
+    summaryAddr.classList.remove("is-label");
+  } else {
+    summaryName.textContent = snowflake ? t("Snowflake") : (result.currentBridgeIndex ? t("Bridge {n}", { n: result.currentBridgeIndex }) : t("Bridge"));
+    summaryAddr.textContent = snowflake ? t("Volunteer proxy") : (result.bridgeAddress || "");
+    summaryAddr.classList.toggle("is-label", snowflake);
+  }
   document.querySelector("#summaryDownloadRate").textContent = Number.isFinite(down) ? downRate : "—";
   document.querySelector("#summaryUploadRate").textContent = Number.isFinite(up) ? upRate : "—";
   const summaryIcon = document.querySelector("#summaryRouteIcon");
-  summaryIcon.textContent = snowflake ? "" : (result.bridgeCountryCode || "—").toUpperCase();
-  summaryIcon.classList.toggle("is-snowflake", snowflake);
+  if (hasExitIp) {
+    summaryIcon.innerHTML = '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/></svg>';
+    summaryIcon.classList.remove("is-snowflake");
+    summaryIcon.classList.add("is-globe");
+  } else {
+    summaryIcon.innerHTML = "";
+    summaryIcon.textContent = snowflake ? "" : (result.bridgeCountryCode || "—").toUpperCase();
+    summaryIcon.classList.toggle("is-snowflake", snowflake);
+    summaryIcon.classList.remove("is-globe");
+  }
   const showExit = !!result.exitRelayIp;
   document.querySelector("#statsExitCapCell").hidden = !showExit;
   document.querySelector("#statsExitLabel").hidden = !showExit;
@@ -484,39 +958,59 @@ function renderSiteCheck(result = {}) {
     && ["pending", "passed", "failed"].includes(result.connectivityCheck);
   const failures = sites.filter((site) => site.state === "failed").length;
   const pending = result.connectivityCheck === "pending" || sites.some((site) => site.state === "pending");
-  siteCheckBadgeNode.hidden = !connected;
+  const siteCheckFailed = failures > 0 || result.connectivityCheck === "failed";
+  const allSitesFailed = failures >= total;
+  const checkSummary = pending ? t("Checking your connection")
+    : allSitesFailed ? t("Connected, but sites aren't loading")
+      : siteCheckFailed ? t("Connected · some sites may be limited")
+        : t("Connection verified");
+  const badgeState = !connected ? "disconnected" : pending ? "pending" : siteCheckFailed ? `failed:${failures}` : "passed";
+  if (badgeState !== siteCheckBadgeState) {
+    if (siteCheckBadgeHideTimer) clearTimeout(siteCheckBadgeHideTimer);
+    siteCheckBadgeHideTimer = undefined;
+    siteCheckBadgeState = badgeState;
+    siteCheckBadgeNode.classList.remove("is-expiring");
+    // Keep site status in the text row above the globe; never overlay a badge on the map.
+    siteCheckBadgeNode.hidden = true;
+    if (badgeState === "passed") {
+      siteCheckBadgeHideTimer = window.setTimeout(() => {
+        siteCheckBadgeNode.classList.add("is-expiring");
+        siteCheckBadgeHideTimer = window.setTimeout(() => {
+          siteCheckBadgeNode.hidden = true;
+          siteCheckBadgeNode.classList.remove("is-expiring");
+          siteCheckBadgeHideTimer = undefined;
+        }, 260);
+      }, 3200);
+    }
+  }
   siteCheckSummaryNode.hidden = !connected;
-  const checkLabel = pending ? t("Checking sites…") : failures ? t("{n} of {total} sites blocked", { n: failures, total: sites.length || total }) : t("All sites reachable");
-  siteCheckBadgeNode.setAttribute("aria-label", t("Review site check: {summary}", { summary: checkLabel }));
-  siteCheckSummaryNode.setAttribute("aria-label", t("Review site check: {summary}", { summary: checkLabel }));
+  siteCheckBadgeNode.setAttribute("aria-label", t("Review site check: {summary}", { summary: checkSummary }));
+  siteCheckSummaryNode.setAttribute("aria-label", t("Review site check: {summary}", { summary: checkSummary }));
   siteCheckBadgeNode.innerHTML = pending
     ? '<span class="site-check-spinner" aria-hidden="true"></span>'
-    : failures
-      ? `<span>${failures}</span>`
+    : siteCheckFailed
+      ? '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4 3 20h18L12 4z"/><path d="M12 10v4M12 17.2v.1"/></svg>'
       : '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>';
-  siteCheckBadgeNode.classList.toggle("is-failed", failures > 0 && !pending);
+  siteCheckBadgeNode.classList.toggle("is-failed", siteCheckFailed && !pending);
   siteCheckBadgeNode.classList.toggle("is-pending", pending);
-  siteCheckBadgeNode.classList.toggle("is-passed", !pending && !failures && result.connectivityCheck === "passed");
-  siteCheckSummaryNode.classList.toggle("is-failed", failures > 0 && !pending);
+  siteCheckBadgeNode.classList.toggle("is-passed", !pending && !siteCheckFailed && result.connectivityCheck === "passed");
+  siteCheckSummaryNode.classList.toggle("is-failed", siteCheckFailed && !pending);
   siteCheckSummaryNode.classList.toggle("is-pending", pending);
-  siteCheckSummaryNode.classList.toggle("is-passed", !pending && !failures && result.connectivityCheck === "passed");
+  siteCheckSummaryNode.classList.toggle("is-passed", !pending && !siteCheckFailed && result.connectivityCheck === "passed");
   if (pending) {
-    siteCheckSummaryNode.innerHTML = `${t("Checking sites…").replace(/…$/, "")}<span class="checking-dots" aria-hidden="true"></span>`;
-  } else if (failures) {
-    siteCheckSummaryNode.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4 3 20h18L12 4z"/><path d="M12 10v4m0 3.2v.1"/></svg>${t("{n} of {total} sites blocked", { n: failures, total })}<svg class="site-check-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg>`;
-  } else if (result.connectivityCheck === "passed") {
-    siteCheckSummaryNode.textContent = t("all sites reachable");
+    siteCheckSummaryNode.innerHTML = `${checkSummary}<span class="checking-dots" aria-hidden="true"></span>`;
+  } else if (siteCheckFailed) {
+    siteCheckSummaryNode.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4 3 20h18L12 4z"/><path d="M12 10v4m0 3.2v.1"/></svg>${checkSummary}<svg class="site-check-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg>`;
   } else {
-    siteCheckSummaryNode.textContent = t("Checking sites…");
+    siteCheckSummaryNode.textContent = checkSummary;
   }
-  const blockedSummary = failures ? t("{n} of {total} sites blocked", { n: failures, total }) : t("All sites reachable");
-  siteCheckCountNode.textContent = pending ? t("Checking sites…") : failures ? blockedSummary : t("All sites reachable");
-  siteCheckCountNode.classList.toggle("has-failures", failures > 0 && !pending);
+  siteCheckCountNode.textContent = checkSummary;
+  siteCheckCountNode.classList.toggle("has-failures", siteCheckFailed && !pending);
   siteCheckSheetNode.classList.toggle("is-pending", pending);
-  siteCheckSheetNode.classList.toggle("is-failed", failures > 0 && !pending);
-  siteCheckSheetNode.classList.toggle("is-passed", !pending && !failures && result.connectivityCheck === "passed");
+  siteCheckSheetNode.classList.toggle("is-failed", siteCheckFailed && !pending);
+  siteCheckSheetNode.classList.toggle("is-passed", !pending && !siteCheckFailed && result.connectivityCheck === "passed");
   nextRouteNode.textContent = t(preferences.mode === "manual" ? "Next bridge" : "New proxy");
-  nextRouteNode.hidden = pending || failures === 0;
+  nextRouteNode.hidden = pending || !siteCheckFailed;
   document.querySelector("#retestSites").disabled = pending;
   siteCheckRowsNode.replaceChildren(...SITE_CHECK_NAMES.map((name) => {
     const resultForSite = sites.find((site) => site.site === name) || { state: "pending" };
@@ -615,7 +1109,6 @@ function readPreferences() {
       preferences = {
         mode: saved?.mode === "manual" ? "manual" : "snowflake",
         bridges: typeof saved?.bridges === "string" ? saved.bridges : "",
-        autoBridgeSelection: saved?.autoBridgeSelection !== false,
         selectedBridge: typeof saved?.selectedBridge === "string" ? saved.selectedBridge : "",
         disabledBridges: Array.isArray(saved?.disabledBridges) ? saved.disabledBridges : [],
         exitCountry: typeof saved?.exitCountry === "string" ? saved.exitCountry : ""
@@ -630,7 +1123,7 @@ function readPreferences() {
 
 function bridgeEntries() {
   const disabled = new Set(preferences.disabledBridges);
-  return allBridgeEntries().filter((line) => !disabled.has(line));
+  return allBridgeEntries().filter((line) => !disabled.has(line) && isPopupBridgeLineValid(line));
 }
 
 function allBridgeEntries() {
@@ -647,22 +1140,37 @@ function selectedBridgePosition(entries = bridgeEntries()) {
   return index < 0 ? 0 : index;
 }
 
+const BRIDGE_TRANSPORT_TYPES = new Set(["obfs4", "webtunnel", "snowflake", "meek_lite"]);
+
+function isPopupBridgeLineValid(line) {
+  const normalizedLine = line?.trim() || "";
+  if (!/^[A-Za-z0-9 .:/?=&,+_%\-\[\]]+$/.test(normalizedLine)) return false;
+  const parts = normalizedLine.split(/\s+/);
+  const start = parts[0] === "Bridge" ? 1 : 0;
+  const transport = parts[start]?.toLowerCase() || "";
+  if (BRIDGE_TRANSPORT_TYPES.has(transport)) return parts.length > start + 1;
+  const address = parts[start] || "";
+  const match = address.match(/^(\[[\da-f:]+\]|[\d.]+):(\d{1,5})$/i);
+  const port = Number(match?.[2]);
+  return !!match && port >= 1 && port <= 65535;
+}
+
 function bridgeAddress(line) {
   const parts = line?.trim().split(/\s+/) || [];
-  return (parts[0] === "Bridge" ? parts[2] : parts[1])?.toLowerCase() || "";
+  const start = parts[0]?.toLowerCase() === "bridge" ? 1 : 0;
+  const first = parts[start]?.toLowerCase() || "";
+  const addressIndex = start + (BRIDGE_TRANSPORT_TYPES.has(first) ? 1 : 0);
+  return parts[addressIndex]?.toLowerCase() || "";
 }
 
 function activeBridgePosition(result, entries = bridgeEntries()) {
   if (result?.bridgeAddress) {
     const address = String(result.bridgeAddress).toLowerCase();
-    const match = entries.findIndex((line) => bridgeAddress(line) === address);
-    if (match >= 0) return match;
+    return entries.findIndex((line) => bridgeAddress(line) === address);
   }
   const originalIndex = Number(result?.currentBridgeIndex) - 1;
   if (originalIndex < 0) return -1;
-  if (preferences.autoBridgeSelection) return originalIndex < entries.length ? originalIndex : -1;
-  const originalLine = allBridgeEntries()[originalIndex];
-  return originalLine ? entries.indexOf(originalLine) : -1;
+  return originalIndex < entries.length ? originalIndex : -1;
 }
 
 function countryFlag(countryCode) {
@@ -710,92 +1218,91 @@ async function refreshBridgeCountries() {
   renderRoute(currentResult);
 }
 
+// renderBridgeSelector: rebuilds the bridges-sheet toggle rows and the bottom card action.
 function renderBridgeSelector() {
-  const entries = bridgeEntries();
-  bridgeSelectorNode.hidden = preferences.mode !== "manual" || entries.length === 0;
-  if (entries.length && !entries.includes(preferences.selectedBridge)) preferences.selectedBridge = entries[0];
-  autoBridgeSelectionNode.checked = preferences.autoBridgeSelection;
-  autoBridgeHintNode.textContent = preferences.autoBridgeSelection
-    ? entries.length
-      ? t("{n} saved {bridges} in order", { n: entries.length, bridges: entries.length === 1 ? t("bridge") : t("bridges") })
-      : t("No saved bridges")
-    : t("Off: you choose");
-}
+  const allEntries = allBridgeEntries();
+  const disabled = new Set(preferences.disabledBridges);
+  if (!bridgeRowsNode) return;
+  const focusedBridgeLine = bridgeRowsNode.contains(document.activeElement)
+    ? document.activeElement.closest(".bridge-row")?.dataset.bridgeLine
+    : undefined;
 
-function renderOrbitNodes(focusPosition, activePosition) {
-  const entries = preferences.mode === "manual" ? bridgeEntries() : [];
-  orbitNodesNode.replaceChildren();
-  if (!entries.length) {
-    orbitFlowNode.hidden = true;
-    if (preferences.mode === "manual") {
-      for (const slot of ["top", "right", "left"]) {
-        const node = document.createElement("span");
-        node.className = "orbit-empty-node orbit-empty-node-" + slot;
-        node.setAttribute("aria-hidden", "true");
-        node.textContent = "+";
-        orbitNodesNode.append(node);
-      }
-    }
-    return;
-  }
-  const slots = [
-    { angle: -90, slot: "top" },
-    { angle: 30, slot: "right" },
-    { angle: 150, slot: "left" }
-  ];
-  const routePosition = activePosition >= 0 ? activePosition : focusPosition;
-  const activeSlot = slots[((routePosition % slots.length) + slots.length) % slots.length];
-  // Keep the route line's geometry fixed and rotate it around the orbit center.
-  // This lets CSS carry the dashed route to the next bridge instead of snapping.
-  if (activeSlot) {
-    if (orbitRoutePosition < 0) orbitRouteRotation = activeSlot.angle - 30;
-    else if (routePosition !== orbitRoutePosition) orbitRouteRotation += (routePosition - orbitRoutePosition) * 120;
-    orbitRoutePosition = routePosition;
-  }
-  orbitFlowNode.style.transform = `rotate(${orbitRouteRotation}deg)`;
-  orbitFlowNode.hidden = !activeSlot;
-  for (const position of [focusPosition - 1, focusPosition, focusPosition + 1]) {
-    if (position < 0 || position >= entries.length) continue;
-    const { slot } = slots[position % slots.length];
-    const line = entries[position];
+  bridgeRowsNode.replaceChildren(...allEntries.map((line, i) => {
+    const on = !disabled.has(line);
+    const parts = line.trim().split(/\s+/);
+    const addr = (parts[0] === "Bridge" ? parts[2] : parts[1]) || "";
+    const bridgeNum = i + 1;
     const countryCode = (bridgeCountries.get(line) || "").toUpperCase();
-    const selected = !preferences.autoBridgeSelection && position === selectedBridgePosition(entries);
-    const active = position === activePosition;
-    const candidate = position === focusPosition && activePosition < 0 && currentResult?.state === "starting";
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "orbit-node orbit-node-" + slot
-      + (selected ? " is-selected" : "")
-      + (active || candidate ? " is-active" : "");
-    button.setAttribute("aria-pressed", String(selected || active || candidate));
-    const country = document.createElement("span");
-    country.className = "orbit-country";
-    country.textContent = /^[A-Z]{2}$/.test(countryCode) ? countryCode : "··";
-    const label = document.createElement("span");
-    label.className = "orbit-node-label";
-    const bridgeNumber = bridgeNumberForLine(line);
-    label.textContent = t("Bridge {n}", { n: bridgeNumber });
-    button.append(country, label);
-    const name = /^[A-Z]{2}$/.test(countryCode)
-      ? new Intl.DisplayNames([globalThis.torI18n?.language || navigator.language || "en"], { type: "region" }).of(countryCode)
-      : t("country unknown");
-    button.setAttribute("aria-label", t("Bridge {n}", { n: bridgeNumber }) + ", " + name
-      + (active ? ", " + t("currently connected") : selected ? ", " + t("selected") : ""));
-    button.title = t("Bridge {n}", { n: bridgeNumber }) + " · " + name;
-    button.addEventListener("click", () => {
-      saveBridgeSelection(false, line);
+    const isActive = currentResult?.state === "connected"
+      && activeBridgePosition(currentResult, bridgeEntries()) === bridgeEntries().indexOf(line)
+      && bridgeEntries().includes(line);
+
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.role = "switch";
+    btn.setAttribute("role", "switch");
+    btn.setAttribute("aria-checked", String(on));
+    btn.className = "bridge-row";
+    btn.dataset.bridgeLine = line;
+    const countryName = /^[A-Z]{2}$/.test(countryCode)
+      ? new Intl.DisplayNames([globalThis.torI18n?.language || navigator.language || "en"], { type: "region" }).of(countryCode) || countryCode
+      : "";
+    btn.setAttribute("aria-label", t("Bridge {n}", { n: bridgeNum }) + (countryName ? ", " + countryName : "") + " — " + (on ? t("on") : t("off")));
+
+    const badge = document.createElement("span");
+    badge.className = "bridge-row-badge";
+    badge.setAttribute("aria-hidden", "true");
+    badge.textContent = /^[A-Z]{2}$/.test(countryCode) ? countryCode : String(bridgeNum);
+
+    const info = document.createElement("span");
+    info.className = "bridge-row-info";
+
+    const nameRow = document.createElement("span");
+    nameRow.className = "bridge-row-name";
+    nameRow.textContent = t("Bridge {n}", { n: bridgeNum });
+    if (isActive) {
+      const inUse = document.createElement("span");
+      inUse.className = "bridge-in-use-badge";
+      inUse.setAttribute("aria-label", t("in use"));
+      inUse.textContent = t("IN USE");
+      nameRow.append(inUse);
+    }
+
+    const addrRow = document.createElement("span");
+    addrRow.className = "bridge-row-addr";
+    addrRow.textContent = addr;
+
+    info.append(nameRow, addrRow);
+
+    const sw = document.createElement("span");
+    sw.className = "bridge-row-switch";
+    sw.setAttribute("aria-hidden", "true");
+    const knob = document.createElement("span");
+    knob.className = "bridge-row-knob";
+    sw.append(knob);
+
+    btn.append(badge, info, sw);
+
+    btn.addEventListener("click", () => {
+      const d = new Set(preferences.disabledBridges);
+      if (d.has(line)) d.delete(line); else d.add(line);
+      preferences.disabledBridges = [...d];
+      chrome.storage.local.set({ torConnectionPreferences: preferences });
+      renderBridgeSelector();
       renderRoute(currentResult);
     });
-    orbitNodesNode.append(button);
+    return btn;
+  }));
+  if (focusedBridgeLine !== undefined) {
+    const replacement = [...bridgeRowsNode.querySelectorAll(".bridge-row")]
+      .find((button) => button.dataset.bridgeLine === focusedBridgeLine);
+    replacement?.focus();
   }
-  orbitNodesNode.dataset.auto = String(preferences.autoBridgeSelection);
-}
 
-function saveBridgeSelection(autoBridgeSelection, selectedBridge) {
-  preferences.autoBridgeSelection = autoBridgeSelection;
-  preferences.selectedBridge = selectedBridge;
-  renderBridgeSelector();
-  chrome.storage.local.set({ torConnectionPreferences: preferences });
+  // Show/hide the chevron action button on the bottom card
+  if (bridgesSheetToggleNode) {
+    bridgesSheetToggleNode.hidden = preferences.mode !== "manual" || allEntries.length === 0;
+  }
 }
 
 function renderConnectionMethodSwitch() {
@@ -805,6 +1312,8 @@ function renderConnectionMethodSwitch() {
     button.setAttribute("aria-checked", String(selected));
     button.tabIndex = selected ? 0 : -1;
   });
+  // Update pager underline position via CSS [data-mode] on the switch — already handled by CSS.
+  // The indicator `left` is driven by CSS [data-mode] on .connection-method-switch.
 }
 
 async function selectConnectionMethod(mode) {
@@ -1003,20 +1512,32 @@ function renderErrorDetails(result) {
   errorTextNode.textContent = diagnostic;
 }
 
-function renderRoute(result = {}) {
+// SVG source strings for idle-card icon
+const ICON_LOOP = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3l3 3-3 3"/><path d="M4 11V9a3 3 0 0 1 3-3h13"/><path d="M7 21l-3-3 3-3"/><path d="M20 13v2a3 3 0 0 1-3 3H4"/></svg>';
+const ICON_SNOWFLAKE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v18M4.2 7.5l15.6 9M4.2 16.5l15.6-9"/><path d="M9.5 4.8 12 7l2.5-2.2M9.5 19.2 12 17l2.5 2.2"/></svg>';
+const ICON_SPINNER = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-dasharray="28 60"/></svg>';
+
+function renderRoute(result = {}, visualState = connectionRevealPending && result?.state === "connected" ? "starting" : result.state) {
+  renderGlobe(result, visualState);
   if (initialStatusPending && routeCardNode.dataset.initialChecking === "true") {
-    snowflakeInfoNode.hidden = preferences.mode !== "snowflake";
-    snowflakeInfoTextNode.textContent = t("Connect through volunteer proxies. No bridge lines to add.");
     return;
   }
   delete routeCardNode.dataset.initialChecking;
   bridgeAttemptTimerNode.hidden = true;
-  connectedDurationNode.hidden = result.state !== "connected";
+  const siteCheckFailed = result.connectivityCheck === "failed"
+    || (Array.isArray(result.siteChecks) && result.siteChecks.some((site) => site.state === "failed"));
+  connectedDurationNode.hidden = visualState !== "connected" || siteCheckFailed;
   copyBridgeButton.hidden = true;
   routeBridgeLine = "";
-  routeIdentityNode.hidden = false;
   const prevDetail = routeDetailNode.textContent;
-  routeCardNode.dataset.state = result.state || "disconnected";
+  routeCardNode.dataset.state = visualState || "disconnected";
+  if (visualState === "connected" || result.state !== "connected") {
+    delete routeCardNode.dataset.globeRotating;
+    setGlobeRotationBrightness(false);
+  } else if (globeRotationPlayed) {
+    routeCardNode.dataset.globeRotating = "true";
+    setGlobeRotationBrightness(true);
+  }
   routeCardNode.dataset.activity = result.bridgeActivity || "";
   routeCardNode.dataset.check = result.connectivityCheck || "";
   connectionToggle.dataset.check = result.connectivityCheck || "";
@@ -1028,58 +1549,87 @@ function renderRoute(result = {}) {
   routeCardNode.dataset.empty = String(hasNoBridgeLines);
   emptyBridgeInfoNode.hidden = !hasNoBridgeLines;
   renderConnectionMethodSwitch();
-  const activePosition = (result.state === "connected" || result.state === "starting")
+  const activePosition = (visualState === "connected" || visualState === "starting")
     ? activeBridgePosition(result, entries) : -1;
-  const selectedPosition = entries.length ? selectedBridgePosition(entries) : -1;
-  const focusPosition = !preferences.autoBridgeSelection && selectedPosition >= 0
-    ? selectedPosition : activePosition >= 0 ? activePosition : Math.max(0, selectedPosition);
-  renderOrbitNodes(focusPosition, activePosition);
-  if (preferences.mode === "snowflake") {
-    orbitFlowNode.hidden = result.state !== "connected";
-    orbitFlowNode.style.transform = "rotate(0deg)";
-  }
-
   let shownPosition = -1;
   if (entries.length) {
     if (activePosition >= 0) shownPosition = activePosition;
-    else if (!preferences.autoBridgeSelection) shownPosition = selectedPosition;
-    else if (result.state === "starting" && lastShownPosition >= 0) shownPosition = lastShownPosition;
+    else if (visualState === "starting" && lastShownPosition >= 0) shownPosition = lastShownPosition;
   }
   if (shownPosition >= 0) lastShownPosition = shownPosition;
-  if (result.state !== "starting" && result.state !== "connected") lastShownPosition = -1;
+  if (visualState !== "starting" && visualState !== "connected") lastShownPosition = -1;
   renderBridgeCountry(result, shownPosition);
-  snowflakeInfoNode.hidden = preferences.mode !== "snowflake" || result.state === "connected";
-  if (preferences.mode === "snowflake") {
-    const nextSnowflakeText = result.state === "failed"
-      ? t("Couldn’t connect. Check the error details or try again.")
-      : result.state === "starting"
-      ? t("Asking volunteer proxies to relay your traffic.")
-      : result.state === "connected" && result.bridgeActivity === "trying"
-        ? t("Trying another volunteer proxy.")
-        : result.state === "connected" && ["failed", "closed"].includes(result.bridgeActivity)
-          ? t("The route was interrupted. Tor may retry automatically.")
-          : result.state === "connected"
-            ? t("Your traffic is relayed through Snowflake proxies. The route may change.")
-            : t("Connect through volunteer proxies. No bridge lines to add.");
-    if (snowflakeInfoTextNode.textContent !== nextSnowflakeText) {
-      fadeText(snowflakeInfoTextNode, () => { snowflakeInfoTextNode.textContent = nextSnowflakeText; });
-    }
-  }
-  const nextRouteLabel = result.state === "connected" && shownPosition >= 0 ? t("CONNECTED THROUGH")
-    : result.state === "starting" && shownPosition >= 0 ? t("TRYING BRIDGE")
-      : result.state === "starting" ? t("CONNECTING THROUGH") : t("WILL CONNECT THROUGH");
-  if (routeLabelNode.textContent !== nextRouteLabel) {
-    fadeText(routeLabelNode, () => { routeLabelNode.textContent = nextRouteLabel; });
-  }
-  if (result.state === "starting") routeCardNode.dataset.route = "trying-bridge";
+  if (visualState === "starting") routeCardNode.dataset.route = "trying-bridge";
 
-  if (hasNoBridgeLines) {
-    routeIdentityNode.hidden = true;
-  } else if (shownPosition >= 0) {
-    const line = entries[shownPosition];
-    const parts = line.split(/\s+/);
+  // --- Idle card (bottom card) ---
+  const isStarting = visualState === "starting";
+  const isConnected = visualState === "connected";
+  const snowflake = preferences.mode === "snowflake";
+  const enabledCount = entries.length;
+  idleCardNode.hidden = hasNoBridgeLines;
+
+  // Choose icon SVG and determine title/sub
+  let iconSvg, idleTitle, idleSub;
+  const entryResponded = isStarting && result.bridgeActivity === "connected";
+  if (isStarting) {
+    iconSvg = ICON_SPINNER;
+    idleTitle = snowflake ? t("Finding a proxy…") : t("Finding a bridge…");
+    if (entryResponded && shownPosition >= 0) {
+      idleSub = t("Responded");
+    } else {
+      const attempt = Math.min(Math.max(shownPosition >= 0
+        ? shownPosition + 1
+        : Number(result.currentBridgeIndex) || 1, 1), Math.max(enabledCount, 1));
+      idleSub = snowflake ? t("Volunteer proxies") : (enabledCount > 0
+        ? t("Trying {k} of {m}", { k: attempt, m: enabledCount })
+        : t("Looking for a bridge\u2026"));
+    }
+  } else if (isConnected) {
+    iconSvg = ICON_SPINNER;
+    if (shownPosition >= 0) {
+      const line = entries[shownPosition];
+      idleTitle = snowflake ? t("Snowflake") : t("Bridge {n}", { n: bridgeNumberForLine(line) });
+      idleSub = t("Responded");
+    } else {
+      idleTitle = snowflake ? t("Finding a proxy\u2026") : t("Finding a bridge\u2026");
+      idleSub = snowflake ? t("Volunteer proxies") : t("Looking for a bridge\u2026");
+    }
+  } else if (snowflake) {
+    iconSvg = ICON_SNOWFLAKE;
+    idleTitle = t("No bridge needed");
+    idleSub = t("Volunteer proxies");
+  } else if (hasNoBridgeLines) {
+    iconSvg = ICON_LOOP;
+    idleTitle = t("Choose a bridge");
+    idleSub = t("Turn one on, or add");
+  } else if (enabledCount === 1) {
+    iconSvg = ICON_LOOP;
+    idleTitle = t("One bridge on");
+    idleSub = t("Turn on more to rotate");
+  } else {
+    iconSvg = ICON_LOOP;
+    idleTitle = t("Switches automatically");
+    idleSub = t("Tries your {n} bridges", { n: enabledCount });
+  }
+
+  const iconKey = iconSvg === ICON_SPINNER ? "spinner" : iconSvg === ICON_SNOWFLAKE ? "snowflake" : "loop";
+  if (idleCardIconNode.dataset.iconKey !== iconKey) {
+    idleCardIconNode.innerHTML = iconSvg;
+    idleCardIconNode.dataset.iconKey = iconKey;
+  }
+  if (idleCardTitleNode.textContent !== idleTitle) {
+    fadeText(idleCardTitleNode, () => { idleCardTitleNode.textContent = idleTitle; });
+  }
+  if (idleCardSubNode.textContent !== idleSub) {
+    fadeText(idleCardSubNode, () => { idleCardSubNode.textContent = idleSub; });
+  }
+
+  // Legacy route-identity: still used for copyBridge button logic
+  const shownLine = shownPosition >= 0 ? entries[shownPosition] : null;
+  if (shownLine) {
+    const parts = shownLine.split(/\s+/);
     const endpoint = parts[0] === "Bridge" ? (parts[2] || "") : (parts[1] || "");
-    const nextName = t("Bridge {n}", { n: bridgeNumberForLine(line) });
+    const nextName = t("Bridge {n}", { n: bridgeNumberForLine(shownLine) });
     if (routeNameNode.textContent !== nextName) {
       fadeText(routeNameNode, () => { routeNameNode.textContent = nextName; });
     }
@@ -1089,28 +1639,9 @@ function renderRoute(result = {}) {
         fadeText(routeDetailNode, () => { routeDetailNode.textContent = nextDetail; });
       }
       routeDetailNode.hidden = false;
-      routeBridgeLine = line;
+      routeBridgeLine = shownLine;
       copyBridgeButton.hidden = false;
     }
-  } else if (preferences.mode === "manual") {
-    const bridgeCount = entries.length;
-    if (preferences.autoBridgeSelection) {
-      routeIdentityNode.hidden = true;
-    } else {
-      const nextName = t("Automatic");
-      if (routeNameNode.textContent !== nextName) {
-        fadeText(routeNameNode, () => { routeNameNode.textContent = nextName; });
-      }
-      if (bridgeCount) {
-        const nextDetail = t("{n} saved {bridges} · tries in order", { n: bridgeCount, bridges: bridgeCount === 1 ? t("bridge") : t("bridges") });
-        if (prevDetail !== nextDetail) {
-          fadeText(routeDetailNode, () => { routeDetailNode.textContent = nextDetail; });
-        }
-        routeDetailNode.hidden = false;
-      }
-    }
-  } else {
-    routeIdentityNode.hidden = true;
   }
 
   copyBridgeButton.hidden = !routeBridgeLine;
@@ -1136,6 +1667,43 @@ function pollOutdatedStatus() {
 function renderResult(result) {
   connectionToggle.classList.remove("is-pressing");
   currentResult = result || {};
+  const stableConnected = currentResult.state === "connected"
+    && !["trying", "failed", "closed"].includes(currentResult.bridgeActivity);
+  if (!stableConnected) {
+    connectionRevealPending = false;
+    connectionRevealReleased = false;
+    clearTimeout(connectionRevealTimer);
+    connectionRevealTimer = undefined;
+    clearTimeout(connectionRevealFallbackTimer);
+    connectionRevealFallbackTimer = undefined;
+  } else {
+    const exitCode = (currentResult.exitRelayCountryCode || "").toUpperCase();
+    const hasExitPoint = Boolean(EXIT_COUNTRY_CENTERS[exitCode]);
+    const reduceRouteMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    if (hasExitPoint) {
+      clearTimeout(connectionRevealFallbackTimer);
+      connectionRevealFallbackTimer = undefined;
+      if (!connectionRevealReleased) {
+        connectionRevealPending = false;
+        connectionRevealReleased = true;
+      }
+    } else if (!connectionRevealReleased) {
+      connectionRevealPending = true;
+    }
+    if (!hasExitPoint && connectionRevealPending && !connectionRevealReleased && !connectionRevealFallbackTimer) {
+      connectionRevealFallbackTimer = setTimeout(() => {
+        connectionRevealFallbackTimer = undefined;
+        const stillConnected = currentResult?.state === "connected"
+          && !["trying", "failed", "closed"].includes(currentResult.bridgeActivity);
+        const latestExitCode = (currentResult?.exitRelayCountryCode || "").toUpperCase();
+        if (!stillConnected || EXIT_COUNTRY_CENTERS[latestExitCode]) return;
+        releaseConnectionReveal();
+      }, CONNECTION_REVEAL_FALLBACK_MS);
+    }
+  }
+  const visualResult = connectionRevealPending
+    ? { ...currentResult, state: "starting" }
+    : currentResult;
   const currentError = currentResult.error || currentResult.message || "";
   if (isFirefoxExtension && /proxy\.settings requires private browsing permission|private browsing permission/i.test(currentError)) {
     initialStatusPending = false;
@@ -1173,8 +1741,8 @@ function renderResult(result) {
   initialStatusPending = false;
   renderErrorDetails(currentResult);
   syncBridgeAttemptTimer(currentResult.state);
-  syncConnectedDuration(currentResult);
-  updateLiveStats(result);
+  syncConnectedDuration(visualResult);
+  updateLiveStats(visualResult);
   if (result?.helperOutdated) {
     popupMainNode.dataset.view = "helper-outdated";
     outdatedPanelNode.hidden = false;
@@ -1216,52 +1784,53 @@ function renderResult(result) {
   setupPanelNode.hidden = true;
   routeCardNode.hidden = false;
   openSettingsButton.hidden = false;
-  renderRoute(result || {});
-  renderProgress(result);
-  const statusKind = result?.state === "connected" && result?.bridgeActivity === "trying" ? "starting"
-    : result?.state === "connected" && ["failed", "closed"].includes(result?.bridgeActivity) ? "error"
-      : result?.state === "connected" && result?.connectivityCheck === "failed" ? "connected-check-failed"
-      : result?.state === "connected" ? "connected"
-    : result?.state === "starting" ? "starting"
-      : result?.state === "failed" || !result?.ok ? "error" : "";
-  const failureMessage = result?.error || result?.message;
-  const detail = result?.state === "failed" || !result?.ok
+  renderGlobe(currentResult, visualResult.state);
+  renderRoute(currentResult, visualResult.state);
+  renderProgress(currentResult, visualResult.state);
+  const statusKind = visualResult.state === "connected" && currentResult.bridgeActivity === "trying" ? "starting"
+    : visualResult.state === "connected" && ["failed", "closed"].includes(currentResult.bridgeActivity) ? "error"
+      : visualResult.state === "connected" && currentResult.connectivityCheck === "failed" ? "connected-check-failed"
+      : visualResult.state === "connected" ? "connected"
+    : visualResult.state === "starting" ? "starting"
+      : visualResult.state === "failed" || !visualResult.ok ? "error" : "";
+  const failureMessage = visualResult.error || visualResult.message;
+  const detail = visualResult.state === "failed" || !visualResult.ok
     ? connectionErrorHint(failureMessage)
-    : result?.state === "connected" && ["failed", "closed"].includes(result?.bridgeActivity)
+    : visualResult.state === "connected" && ["failed", "closed"].includes(currentResult.bridgeActivity)
     ? preferences.mode === "snowflake" ? t("Tor may retry the Snowflake route") : t("Tor may retry the bridge")
-    : result?.state === "connected" && result?.bridgeActivity === "trying"
+    : visualResult.state === "connected" && currentResult.bridgeActivity === "trying"
       ? preferences.mode === "snowflake" ? t("Trying another volunteer proxy") : t("Trying another bridge")
-      : result?.state === "connected" && ["pending", "passed", "failed"].includes(result?.connectivityCheck) ? ""
-      : result?.state === "connected" ? t("Tap the center to disconnect")
-    : result?.state === "starting"
-      ? Number(result.currentBridgeIndex) > 0 ? t("Crossing through Bridge {n}", { n: Number(result.currentBridgeIndex) })
+      : visualResult.state === "connected" && ["pending", "passed", "failed"].includes(currentResult.connectivityCheck) ? ""
+      : visualResult.state === "connected" ? t("Tap the center to disconnect")
+    : visualResult.state === "starting"
+      ? Number(currentResult.currentBridgeIndex) > 0 ? t("Crossing through Bridge {n}", { n: Number(currentResult.currentBridgeIndex) })
         : preferences.mode === "manual" ? t("Trying saved bridges") : t("Finding a volunteer proxy · tap to cancel")
-      : result?.state === "disconnected"
+      : visualResult.state === "disconnected"
         ? preferences.mode === "manual" && !bridgeEntries().length
           ? t("Add bridge lines in Settings to connect this way")
-          : preferences.mode === "manual" && !preferences.autoBridgeSelection
-          ? t("Pick a bridge, then tap the center")
           : preferences.mode === "manual" ? t("Tap the center to try saved bridges") : t("Tap the center to connect")
         : "";
-  setStatus(preferences.mode === "manual" && !bridgeEntries().length && result?.state === "disconnected"
-    ? t("No bridges yet") : explain(result), statusKind, detail);
-  setToggleState(result?.state || "disconnected", result?.bridgeActivity);
-  if (result?.state === "starting" || result?.state === "connected") pollForProgress();
+  setStatus(preferences.mode === "manual" && !bridgeEntries().length && visualResult.state === "disconnected"
+    ? t("No bridges yet") : explain(visualResult), statusKind, detail);
+  setToggleState(currentResult.state || "disconnected", currentResult.bridgeActivity, visualResult.state);
+  if (currentResult.state === "starting" || currentResult.state === "connected") pollForProgress();
   else if (pollTimer) { clearTimeout(pollTimer); pollTimer = undefined; }
 }
 
-function setToggleState(state, bridgeActivity) {
+function setToggleState(state, bridgeActivity, requestedVisualState = state) {
   currentState = state;
   delete connectionToggle.dataset.initialChecking;
   renderBridgeSelector();
   connectionToggle.disabled = false;
-  const visualState = state === "connected" && bridgeActivity === "trying" ? "reconnecting"
+  const connectionState = state === "connected" && bridgeActivity === "trying" ? "reconnecting"
     : state === "connected" && ["failed", "closed"].includes(bridgeActivity) ? "bridge-interrupted"
       : state;
+  const visualState = connectionState === "connected" && requestedVisualState === "starting"
+    ? "starting" : connectionState;
   connectionToggle.dataset.state = visualState;
   connectionToggle.dataset.mode = preferences.mode;
   connectionToggle.dataset.empty = String(preferences.mode === "manual" && !bridgeEntries().length);
-  connectionProgress.hidden = state !== "starting";
+  connectionProgress.hidden = visualState !== "starting";
   const label = state === "connected" ? t("Disconnect") : state === "starting" ? t("Cancel connection") : t("Connect");
   const accessibleLabel = state === "connected" && bridgeActivity === "trying"
     ? t("Disconnect from Tor; the bridge is reconnecting")
@@ -1273,8 +1842,8 @@ function setToggleState(state, bridgeActivity) {
   connectionToggle.title = accessibleLabel;
 }
 
-function renderProgress(result) {
-  if (result?.state !== "starting") {
+function renderProgress(result, visualState = result?.state) {
+  if (visualState !== "starting") {
     connectionProgress.hidden = true;
     connectionProgress.removeAttribute("aria-valuenow");
     delete connectionToggle.dataset.progressMode;
@@ -1299,20 +1868,26 @@ function pollForProgress() {
   if (pollTimer) clearTimeout(pollTimer);
   pollTimer = setTimeout(async () => {
     renderResult(await send("status"));
-  }, currentResult.state === "connected" ? 2000 : 1200);
+  }, currentResult.state === "connected"
+    ? (currentResult.exitRelayCountryCode ? 2000 : 500)
+    : 1200);
 }
 
 async function connectWithSavedPreferences() {
   const saved = await readPreferences();
   const entries = bridgeEntries();
+  if (saved.mode === "manual" && entries.length > MAX_ENABLED_BRIDGES) {
+    return {
+      ok: false,
+      state: "failed",
+      error: t("Up to {n} bridges may be enabled at a time. Disable one to enable another.", { n: MAX_ENABLED_BRIDGES })
+    };
+  }
   if (saved.mode === "manual" && !entries.length) {
     return { ok: false, state: "failed", error: "Enable at least one bridge in Settings before connecting." };
   }
-  const selectedBridgeIndex = saved.mode === "manual" && !saved.autoBridgeSelection
-    ? allBridgeEntries().indexOf(saved.selectedBridge) + 1
-    : null;
-  const bridges = selectedBridgeIndex ? saved.selectedBridge : entries.join("\n");
-  return send("connect", { mode: saved.mode, bridges, selectedBridgeIndex, exitCountry: saved.exitCountry || "" });
+  const bridges = entries.join("\n");
+  return send("connect", { mode: saved.mode, bridges, selectedBridgeIndex: null, exitCountry: saved.exitCountry || "" });
 }
 
 connectionToggle.addEventListener("click", async () => {
@@ -1323,10 +1898,20 @@ connectionToggle.addEventListener("click", async () => {
   connectionToggle.disabled = true;
   connectionToggle.classList.add("is-pressing");
   if (currentState === "connected" || currentState === "starting") {
+    lastGlobeEntryAttemptIdentity = "";
+    globeEntryFailureTransition = false;
+    clearTimeout(globeEntryRetryAnimationTimer);
+    globeEntryRetryAnimationTimer = undefined;
     setStatus(t("Disconnecting…"), "starting");
     renderResult(await send("disconnect"));
     return;
   }
+  lastGlobeEntryAttemptIdentity = "";
+  const firstBridge = preferences.mode === "manual" ? bridgeEntries()[0] : "";
+  if (firstBridge) lastGlobeEntryAttemptIdentity = `bridge:${bridgeAddress(firstBridge)}`;
+  globeEntryFailureTransition = false;
+  clearTimeout(globeEntryRetryAnimationTimer);
+  globeEntryRetryAnimationTimer = undefined;
   setStatus(t("Connecting…"), "starting");
   beginBridgeAttemptTimer();
   renderResult(await connectWithSavedPreferences());
@@ -1363,11 +1948,6 @@ copyBridgeButton.addEventListener("click", async () => {
   }
 });
 
-autoBridgeSelectionNode.addEventListener("change", () => {
-  saveBridgeSelection(autoBridgeSelectionNode.checked, preferences.selectedBridge || bridgeEntries()[0] || "");
-  renderRoute(currentResult);
-});
-
 document.addEventListener("tor-language-changed", () => {
   // Skip re-render on the initial language load — the MutationObserver in i18n.js
   // already translates every text node in place. Only re-render when the user
@@ -1381,7 +1961,6 @@ chrome.storage.onChanged.addListener((changes, areaName) => {
   preferences = {
     mode: saved.mode === "manual" ? "manual" : "snowflake",
     bridges: typeof saved.bridges === "string" ? saved.bridges : "",
-    autoBridgeSelection: saved.autoBridgeSelection !== false,
     selectedBridge: typeof saved.selectedBridge === "string" ? saved.selectedBridge : "",
     disabledBridges: Array.isArray(saved.disabledBridges) ? saved.disabledBridges : [],
     exitCountry: typeof saved.exitCountry === "string" ? saved.exitCountry : ""

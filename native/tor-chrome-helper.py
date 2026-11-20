@@ -35,7 +35,7 @@ BUNDLE = Path(os.environ.get("TORCHROME_BUNDLE", RUNTIME / "bundle")).expanduser
 DATA = BASE / "data"
 
 
-KNOWN_TRANSPORTS = {"obfs4", "webtunnel", "snowflake", "meek_lite", "meek"}
+KNOWN_TRANSPORTS = {"obfs4", "webtunnel", "snowflake", "meek_lite"}
 
 def bridge_endpoint(line: str) -> str | None:
     fields = line.split()
@@ -73,18 +73,26 @@ def parse_bridges(raw: str) -> list[str] | None:
     lines = [line.strip() for line in raw.splitlines() if line.strip()]
     if not lines or len(lines) > 20:
         return None
-    allowed = re.compile(r"^[a-zA-Z0-9 .:/?=&,+_\-\[\]]+$")
+    allowed = re.compile(r"^[a-zA-Z0-9 .:/?=&,+%_\-\[\]]+$")
     address_re = re.compile(r"^(\[[\da-fA-F:]+\]|[\d.]+):(\d{1,5})$")
+    parsed_lines = []
     for line in lines:
-        normalized = line[7:].strip() if line.startswith("Bridge ") else line
+        has_bridge_prefix = line.startswith("Bridge ")
+        normalized = line[7:].strip() if has_bridge_prefix else line
         if not allowed.fullmatch(normalized) or "#" in normalized or '"' in normalized:
             return None
-        first = normalized.split()[0]
-        if first not in {"obfs4", "webtunnel", "snowflake"}:
+        fields = normalized.split()
+        first = fields[0]
+        if first.lower() in KNOWN_TRANSPORTS:
+            if len(fields) < 2:
+                return None
+            normalized = normalized.replace(first, first.lower(), 1)
+        else:
             m = address_re.match(first)
             if not m or int(m.group(2)) < 1 or int(m.group(2)) > 65535:
                 return None
-    return lines
+        parsed_lines.append(("Bridge " if has_bridge_prefix else "") + normalized)
+    return parsed_lines
 
 
 class Helper:
@@ -99,6 +107,7 @@ class Helper:
         self.current_index: int | None = None
         self.bridge_activity: str | None = None
         self.built_circuits: dict[str, int] = {}
+        self.exit_relay_candidates: set[str] = set()
         self.reconnect_since: float | None = None
         self.auto_recovery_bridges: list[str] = []
         self.auto_recovery_tried: set[int] = set()
@@ -344,7 +353,7 @@ class Helper:
                 self.process = process; self.targets = targets; self.current_index = None
                 self.bridge_activity = None; self.connected_at = None; self.state = "starting"; self.message = "Starting Tor…"
                 self.bootstrap_progress = -1
-                self.built_circuits = {}; self.reconnect_since = None
+                self.built_circuits = {}; self.exit_relay_candidates = set(); self.reconnect_since = None
                 self.exit_relay_ip = ""; self.exit_relay_country = ""; self.exit_relay_circuit_id = ""
                 self.exit_country = exit_country
                 self.auto_recovery_bridges = list(recovery_bridges) if recovery_bridges is not None else (auto_bridges if mode == "manual" and selected_index is None else [])
@@ -355,7 +364,7 @@ class Helper:
                 if recovery_bridges is None: self.recovery_stable_since = None
                 self.diagnostics = []; self.last_error = None; self.stopping = False
             threading.Thread(target=self.read_output, args=(process,), daemon=True).start()
-            threading.Thread(target=self.monitor_control, args=(targets,), daemon=True).start()
+            threading.Thread(target=self.monitor_control, args=(targets, process), daemon=True).start()
             if mode == "manual" and selected_index is not None:
                 threading.Thread(target=self.manual_bridge_timeout_watchdog, args=(process,), daemon=True).start()
             if self.auto_recovery_bridges:
@@ -450,10 +459,11 @@ class Helper:
     def ping(self, raw: str) -> dict:
         lines = parse_bridges(raw)
         if not lines: return {"ok": False, "error": "Add valid bridge lines before pinging them."}
+        original_lines = [line.strip() for line in raw.splitlines() if line.strip()]
         results = []
-        for line in lines:
+        for original_line, line in zip(original_lines, lines):
             endpoint = bridge_endpoint(line)
-            result = {"line": line, "latencyMs": None}
+            result = {"line": original_line, "latencyMs": None}
             parsed = endpoint_host_port(endpoint) if endpoint else None
             if parsed:
                 started = time.monotonic()
@@ -535,11 +545,21 @@ class Helper:
                             "fingerprint": fingerprint if re.fullmatch(r"[0-9a-f]{40}", fingerprint) else None})
         return targets
 
-    def monitor_control(self, targets: list[dict]) -> None:
+    def monitor_control(self, targets: list[dict], process: subprocess.Popen[str]) -> None:
+        with self.lock:
+            if self.process is not process:
+                return
+
+        def is_current_process() -> bool:
+            with self.lock:
+                return self.process is process
+
         port_file, cookie_file = DATA / "control-port", DATA / "control_auth_cookie"
         deadline = time.monotonic() + 20
         port = cookie = None
         while time.monotonic() < deadline:
+            if not is_current_process():
+                return
             try:
                 port = int(port_file.read_text().strip().rsplit(":", 1)[-1])
             except (OSError, ValueError): port = None
@@ -551,6 +571,8 @@ class Helper:
             time.sleep(.1)
         if not port or not cookie: return
         try:
+            if not is_current_process():
+                return
             with socket.create_connection(("127.0.0.1", port), timeout=5) as conn:
                 conn.settimeout(1)
                 conn.sendall(f"AUTHENTICATE {cookie.hex()}\r\n".encode())
@@ -558,15 +580,22 @@ class Helper:
                 conn.sendall(b"SETEVENTS EXTENDED STATUS_CLIENT ORCONN CIRC\r\n")
                 events = self.read_control_reply(conn)
                 if "250 OK" not in events: return
+                if not is_current_process():
+                    return
                 if targets:
-                    self.process_control_events(events, targets)
+                    self.process_control_events(events, targets, process)
                     # The bridge may already be connected before the control listener
                     # attaches, so seed our active bridge from Tor's current OR conns.
                     conn.sendall(b"GETINFO orconn-status\r\n")
-                    self.process_orconn_snapshot(self.read_control_reply(conn), targets)
+                    orconn_snapshot = self.read_control_reply(conn)
+                    if not is_current_process():
+                        return
+                    self.process_orconn_snapshot(orconn_snapshot, targets, process)
                 conn.sendall(b"GETINFO circuit-status\r\n")
                 circuit_text = self.read_control_reply(conn)
-                self.process_circuit_snapshot(circuit_text, targets)
+                if not is_current_process():
+                    return
+                self.process_circuit_snapshot(circuit_text, targets, process)
                 threading.Thread(
                     target=self.lookup_exit_relay_from_snapshot_fresh,
                     args=(port, cookie, circuit_text, process),
@@ -575,6 +604,8 @@ class Helper:
                 buffer = b""
                 exit_nodes_applied = False
                 while True:
+                    if not is_current_process():
+                        return
                     try: data = conn.recv(8192)
                     except socket.timeout:
                         if self.maybe_auto_recover(): return
@@ -597,22 +628,28 @@ class Helper:
                     while b"\r\n" in buffer:
                         raw, buffer = buffer.split(b"\r\n", 1)
                         event = raw.decode("utf-8", "replace")
+                        if not is_current_process():
+                            return
                         if targets:
-                            self.update_bridge_activity(event, targets)
+                            self.update_bridge_activity(event, targets, process)
                         elif " CIRC " in event:
                             fields = event.split()
                             if len(fields) >= 5:
-                                self.update_circuit_activity(fields[2], fields[3], fields[4], [])
-                        if " CIRC " in event and " BUILT " in event and "ONEHOP_TUNNEL" not in event and "IS_INTERNAL" not in event:
+                                self.update_circuit_activity(fields[2], fields[3], fields[4], [], process)
+                        if " CIRC " in event and "ONEHOP_TUNNEL" not in event and "IS_INTERNAL" not in event:
                             fields = event.split()
-                            if len(fields) >= 5:
+                            if len(fields) >= 5 and fields[3] in {"LAUNCHED", "EXTENDED", "BUILT"}:
                                 hops = fields[4].split(",")
-                                last_fp = hops[-1].split("~", 1)[0] if hops else ""
-                                threading.Thread(
-                                    target=self.lookup_exit_relay_fresh,
-                                    args=(port, cookie, last_fp, fields[2], process),
-                                    daemon=True
-                                ).start()
+                                if len(hops) >= 3:
+                                    last_fp = hops[-1].split("~", 1)[0] if hops else ""
+                                    if fields[3] in {"LAUNCHED", "EXTENDED"}:
+                                        with self.lock:
+                                            self.exit_relay_candidates.add(fields[2])
+                                    threading.Thread(
+                                        target=self.lookup_exit_relay_fresh,
+                                        args=(port, cookie, last_fp, fields[2], process),
+                                        daemon=True
+                                    ).start()
                         if self.maybe_auto_recover(): return
                     if len(buffer) > 65536: buffer = b""
         except OSError: return
@@ -629,11 +666,11 @@ class Helper:
             if "250 OK\r\n" in text: return text
         return data.decode("utf-8", "replace")
 
-    def process_control_events(self, text: str, targets: list[dict]) -> None:
+    def process_control_events(self, text: str, targets: list[dict], process: subprocess.Popen[str]) -> None:
         for line in text.split("\r\n"):
-            if line.startswith("650 "): self.update_bridge_activity(line, targets)
+            if line.startswith("650 "): self.update_bridge_activity(line, targets, process)
 
-    def process_orconn_snapshot(self, text: str, targets: list[dict]) -> None:
+    def process_orconn_snapshot(self, text: str, targets: list[dict], process: subprocess.Popen[str]) -> None:
         in_snapshot = False
         for line in text.split("\r\n"):
             if line.startswith("250+orconn-status="):
@@ -645,9 +682,9 @@ class Helper:
             if in_snapshot:
                 fields = line.split()
                 if len(fields) >= 2:
-                    self.update_bridge_activity(f"650 ORCONN {fields[0]} {fields[1]}", targets)
+                    self.update_bridge_activity(f"650 ORCONN {fields[0]} {fields[1]}", targets, process)
 
-    def process_circuit_snapshot(self, text: str, targets: list[dict]) -> None:
+    def process_circuit_snapshot(self, text: str, targets: list[dict], process: subprocess.Popen[str]) -> None:
         in_snapshot = False
         for line in text.split("\r\n"):
             if line.startswith("250+circuit-status="):
@@ -660,7 +697,7 @@ class Helper:
                 continue
             fields = line.split()
             if len(fields) >= 3:
-                self.update_circuit_activity(fields[0], fields[1], fields[2], targets)
+                self.update_circuit_activity(fields[0], fields[1], fields[2], targets, process)
 
     def bridge_index_for_target(self, reported: str, targets: list[dict]) -> int | None:
         target = reported.lower()
@@ -683,43 +720,73 @@ class Helper:
                 return  # use first BUILT circuit found
 
     def lookup_exit_relay_fresh(self, port: int, cookie: bytes, fingerprint: str, circuit_id: str, process: subprocess.Popen[str]) -> None:
-        """Open a fresh control-port connection and resolve the exit relay IP."""
+        """Retry fresh control-port lookups while a newly built circuit settles."""
         fp = fingerprint.strip("$").upper()
         if not re.fullmatch(r"[0-9A-F]{40}", fp):
             return
-        try:
-            with socket.create_connection(("127.0.0.1", port), timeout=5) as conn:
-                conn.settimeout(5)
-                conn.sendall(f"AUTHENTICATE {cookie.hex()}\r\n".encode())
-                if "250 OK" not in self.read_control_reply(conn):
-                    return
-                conn.sendall(f"GETINFO ns/id/{fp}\r\n".encode())
-                reply = self.read_control_reply(conn)
-        except OSError:
-            return
         ip = None
-        for line in reply.split("\r\n"):
-            if line.startswith("r "):
-                parts = line.split()
-                # r <name> <b64id> <b64digest> <date> <time> <ip> <orport>
-                if len(parts) >= 7:
-                    try: ipaddress.ip_address(parts[6]); ip = parts[6]
-                    except ValueError: pass
+        tor_country = None
+        for attempt in range(4):
+            with self.lock:
+                if self.process is not process or (circuit_id not in self.built_circuits and circuit_id not in self.exit_relay_candidates):
+                    return
+            try:
+                with socket.create_connection(("127.0.0.1", port), timeout=5) as conn:
+                    conn.settimeout(5)
+                    conn.sendall(f"AUTHENTICATE {cookie.hex()}\r\n".encode())
+                    if "250 OK" in self.read_control_reply(conn):
+                        conn.sendall(f"GETINFO ns/id/{fp}\r\n".encode())
+                        reply = self.read_control_reply(conn)
+                    else:
+                        reply = ""
+                    for line in reply.split("\r\n"):
+                        if not line.startswith("r "):
+                            continue
+                        parts = line.split()
+                        # r <name> <b64id> <b64digest> <date> <time> <ip> <orport>
+                        if len(parts) >= 7:
+                            try:
+                                ipaddress.ip_address(parts[6])
+                                ip = parts[6]
+                            except ValueError:
+                                pass
+                        break
+                    if ip:
+                        conn.sendall(f"GETINFO ip-to-country/{ip}\r\n".encode())
+                        country_reply = self.read_control_reply(conn)
+                        key = f"250-ip-to-country/{ip}="
+                        for line in country_reply.split("\r\n"):
+                            if line.startswith(key):
+                                candidate = line.split("=", 1)[1].strip().strip('"').upper()
+                                if re.fullmatch(r"[A-Z]{2}", candidate) and candidate != "??":
+                                    tor_country = candidate
+                                break
+            except OSError:
+                reply = ""
+            if ip:
                 break
+            if attempt < 3:
+                time.sleep(0.5 * (2 ** attempt))
+        if not ip:
+            return
         with self.lock:
-            if self.process is not process or circuit_id not in self.built_circuits:
+            if self.process is not process or (circuit_id not in self.built_circuits and circuit_id not in self.exit_relay_candidates):
                 return
-            self.exit_relay_ip = ip or ""
-            self.exit_relay_country = self.country_code(ip) or "" if ip else ""
-            self.exit_relay_circuit_id = circuit_id if ip else ""
+            self.exit_relay_ip = ip
+            self.exit_relay_country = tor_country or self.country_code(ip) or ""
+            self.exit_relay_circuit_id = circuit_id
 
-    def update_circuit_activity(self, circuit_id: str, status: str, path: str, targets: list[dict]) -> None:
+    def update_circuit_activity(self, circuit_id: str, status: str, path: str, targets: list[dict],
+                                process: subprocess.Popen[str]) -> None:
         if status == "BUILT":
             bridge_index = self.bridge_index_for_target(path.split(",", 1)[0], targets)
             with self.lock:
+                if self.process is not process:
+                    return
                 # Some bridge lines omit their fingerprint. The CIRC event still
                 # proves a usable route exists, even if its saved-line index is unknown.
                 self.built_circuits[circuit_id] = bridge_index or 0
+                self.exit_relay_candidates.discard(circuit_id)
                 if bridge_index is not None: self.current_index = bridge_index
                 self.bridge_activity = "connected"
                 self.reconnect_since = None
@@ -734,17 +801,20 @@ class Helper:
                     self.recovery_stable_since = time.monotonic()
         elif status in {"CLOSED", "FAILED", "DESTROYED"}:
             with self.lock:
+                if self.process is not process:
+                    return
                 self.built_circuits.pop(circuit_id, None)
+                self.exit_relay_candidates.discard(circuit_id)
                 if not self.built_circuits or circuit_id == self.exit_relay_circuit_id:
                     self.exit_relay_ip = ""
                     self.exit_relay_country = ""
                     self.exit_relay_circuit_id = ""
 
-    def update_bridge_activity(self, event: str, targets: list[dict]) -> None:
+    def update_bridge_activity(self, event: str, targets: list[dict], process: subprocess.Popen[str]) -> None:
         reported, activity = None, None
         fields = event.split()
         if " CIRC " in event and len(fields) >= 5:
-            self.update_circuit_activity(fields[2], fields[3], fields[4], targets)
+            self.update_circuit_activity(fields[2], fields[3], fields[4], targets, process)
             return
         if " STATUS_CLIENT " in event and " BOOTSTRAP " in event:
             match = re.search(r'(?:HOSTADDR|HOST)="([^"]+)"', event)
@@ -848,7 +918,7 @@ class Helper:
         with self.lock:
             self.process = None; self.state = "disconnected"; self.message = "Tor stopped."
             self.last_error = None; self.targets = []; self.current_index = None
-            self.bridge_activity = None; self.built_circuits = {}; self.reconnect_since = None
+            self.bridge_activity = None; self.built_circuits = {}; self.exit_relay_candidates = set(); self.reconnect_since = None
             self.exit_relay_ip = ""; self.exit_relay_country = ""; self.exit_relay_circuit_id = ""
             self.auto_recovery_bridges = auto_bridges; self.auto_recovery_tried = auto_tried
             self.auto_recovery_in_progress = recovery_in_progress; self.recovery_attempt_since = recovery_attempt_since

@@ -153,7 +153,7 @@ html[data-theme="light"] .picker-code-badge { background: #edf1ef; color: #14864
 .import-menu-toggle[aria-expanded="true"] .menu-chevron { transform: rotate(180deg); }
 .import-menu { position: absolute; z-index: 5; top: calc(100% + 8px); right: 0; width: 280px; padding: 6px; border: 1px solid #262d2b; border-radius: 14px; background: #111716; box-shadow: 0 16px 40px rgb(0 0 0 / 50%); }
 .import-menu[hidden] { display: none; }
-.import-menu-item { display: flex; width: 100%; min-height: 52px; align-items: center; gap: 12px; padding: 8px 10px; border: 0; border-radius: 10px; color: #eaf1ee; background: transparent; text-align: left; }
+.import-menu-item { display: flex; width: 100%; min-height: 52px; align-items: center; gap: 12px; padding: 8px 10px; border: 0; border-radius: 10px; color: #eaf1ee; background: transparent; text-align: start; }
 .import-menu-item:hover, .import-menu-item:focus-visible { background: #1a2420; }
 .import-menu-item > svg { width: 20px; height: 20px; flex: 0 0 20px; fill: none; stroke: #2bd576; stroke-linecap: round; stroke-linejoin: round; stroke-width: 2; }
 .import-menu-item span { display: flex; flex-direction: column; gap: 1px; }
