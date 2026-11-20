@@ -1010,6 +1010,7 @@ function renderSiteCheck(result = {}) {
   siteCheckCountNode.classList.toggle("has-failures", siteCheckFailed && !pending);
   siteCheckSheetNode.classList.toggle("is-pending", pending);
   siteCheckSheetNode.classList.toggle("is-failed", siteCheckFailed && !pending);
+  siteCheckSheetNode.classList.toggle("is-all-failed", allSitesFailed && !pending);
   siteCheckSheetNode.classList.toggle("is-passed", !pending && !siteCheckFailed && result.connectivityCheck === "passed");
   nextRouteNode.textContent = t(preferences.mode === "manual" ? "Next bridge" : "New proxy");
   nextRouteNode.hidden = pending || !siteCheckFailed;
