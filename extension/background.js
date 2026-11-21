@@ -269,7 +269,7 @@ async function clearProxy() {
 }
 
 async function setActionConnected(connected, reconnecting = false) {
-  const variant = reconnecting ? "reconnecting" : connected ? "connected" : "disconnected";
+  const variant = reconnecting ? "reconnecting" : connected ? "connected-pearl" : "disconnected";
   const title = reconnecting ? "Reconnecting to Tor" : connected ? "Connected to Tor" : "Tor connection";
   const update = actionUpdateQueue.then(async () => {
     await chrome.action.setIcon({
