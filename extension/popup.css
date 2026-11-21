@@ -477,7 +477,7 @@ body.popup-page .summary-route { display: flex; min-width: 0; flex: 1; flex-dire
 body.popup-page .summary-route strong { overflow: hidden; color: var(--pearl-text); font-size: 15px; text-overflow: ellipsis; white-space: nowrap; }
 body.popup-page .summary-route small { overflow: hidden; color: var(--pearl-secondary); font: 12px "IBM Plex Mono", monospace; text-overflow: ellipsis; white-space: nowrap; }
 body.popup-page .summary-route small.is-label { font-family: inherit; }
-body.popup-page button.summary-rates { display: flex; width: 118px; height: 56px; flex: none; flex-direction: column; align-items: flex-start; justify-content: center; gap: 4px; margin: 0; padding: 0 12px; border: 0; border-radius: 12px; color: var(--pearl-accent); background: var(--pearl-accent-soft); font: 12px "IBM Plex Mono", monospace; cursor: pointer; }
+body.popup-page button.summary-rates { display: flex; width: 118px; height: 56px; flex: none; flex-direction: column; align-items: flex-start; justify-content: center; gap: 4px; margin: 0; padding: 0 12px; border: 0; border-radius: 12px; color: var(--pearl-accent); background: var(--pearl-accent-soft); font: 13px "IBM Plex Mono", monospace; cursor: pointer; }
 body.popup-page .summary-rates:hover { background: var(--pearl-accent-soft); }
 body.popup-page .summary-rates:focus-visible { outline: 2px solid var(--pearl-accent); outline-offset: 2px; }
 body.popup-page .summary-rates[hidden] { display: none !important; }
@@ -485,7 +485,7 @@ body.popup-page .summary-rates span { display: flex; align-items: center; gap: 4
 body.popup-page .summary-rates .rate-arrow { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
 body.popup-page .summary-rates .rate-arrow-down { animation: stats-bob-down 1.2s ease-in-out infinite; }
 body.popup-page .summary-rates .rate-arrow-up { animation: stats-bob 1.2s ease-in-out infinite; }
-body.popup-page .summary-rates strong { min-width: 7ch; font-weight: 500; font-variant-numeric: tabular-nums; }
+body.popup-page .summary-rates strong { min-width: 7ch; font-weight: 400; font-variant-numeric: tabular-nums; }
 body.popup-page .snowflake-info { display: flex; min-height: 76px; flex: 0 0 auto; align-items: flex-start; gap: 8px; margin-top: auto; padding-top: 2px; }
 body.popup-page .snowflake-info[hidden] { display: none !important; }
 body.popup-page .snowflake-info-icon { display: grid; width: 18px; height: 22px; flex: 0 0 18px; place-items: center; color: var(--pearl-secondary); }
@@ -2881,13 +2881,13 @@ html[data-theme="light"] {
   --pearl-method-selected: #1B1B26;
   --pearl-ready-pill-bg: #E8E8F0;
   --pearl-ready-pill-color: #62627A;
-  --pearl-page: #FFFFFF;
-  --pearl-surface: #F6F6F9;
+  --pearl-page: #F6F6F9;
+  --pearl-surface: #FFFFFF;
   --pearl-text: #1B1B26;
   --pearl-secondary: #62627A;
   --pearl-muted: #6C6C80;
   --pearl-border: #E8E8F0;
-  --pearl-accent: #5B6CF0;
+  --pearl-accent: #5869E8;
   --pearl-accent-soft: #EFEFF5;
   --pearl-accent-border: #CBCBD6;
   --pearl-on-accent: #FFFFFF;
@@ -3017,6 +3017,64 @@ html[data-theme] body.popup-page .site-check-sheet.is-all-failed .site-check-nex
 html[data-theme] body.popup-page .site-check-sheet.is-all-failed .site-check-next:disabled {
   filter: saturate(.65);
   opacity: .6;
+}
+html[data-theme="light"] body.popup-page .site-check-sheet.is-all-failed .site-check-next {
+  color: #FFFFFF;
+}
+html[data-theme="light"] body.popup-page .site-check-sheet.is-all-failed .site-check-next:hover:not(:disabled) {
+  background: #C83232;
+  filter: none;
+}
+html[data-theme="light"] body.popup-page .site-check-sheet.is-all-failed .site-check-next:active:not(:disabled) {
+  background: #B52A2A;
+  filter: none;
+}
+
+/* Match the Pearl light mockup's exit marker, country pill, and header buttons. */
+html[data-theme="light"] body.popup-page .globe-exit-label {
+  color: #FFFFFF;
+}
+html[data-theme="light"] body.popup-page #globeExitNode circle.rip {
+  stroke: url(#globeConnectedGradient) !important;
+}
+html[data-theme="light"] body.popup-page #globeExitNode circle:not(.rip):not(.globe-exit-core) {
+  fill: rgb(27 27 38 / 25%) !important;
+}
+html[data-theme="light"] body.popup-page #globeExitNode .globe-exit-core {
+  fill: url(#globeConnectedGradient) !important;
+}
+html[data-theme="light"] body.popup-page .heading button.expand-button,
+html[data-theme="light"] body.popup-page .popup-main[data-view="cold-start"] button.expand-button {
+  background: #FFFFFF;
+}
+html[data-theme="light"] body.popup-page .heading button.expand-button:hover,
+html[data-theme="light"] body.popup-page .popup-main[data-view="cold-start"] button.expand-button:hover {
+  background: var(--pearl-accent-soft);
+}
+html[data-theme="light"] body.popup-page .heading h1,
+html[data-theme="light"] body.popup-page .heading button.expand-button {
+  color: #4C4C5C;
+}
+html[data-theme="light"] body.popup-page .globe-ring {
+  stroke: rgba(20, 20, 45, .10);
+}
+html[data-theme="light"] body.popup-page .orbit-card[data-state="connected"] .globe-ring {
+  stroke: rgba(20, 20, 45, .12);
+}
+html[data-theme="light"] body.popup-page #globeEntryTry .entry-node-circle,
+html[data-theme="light"] body.popup-page #globeEntryOk .entry-node-circle {
+  fill: #E8E8F0 !important;
+  stroke: url(#globeConnectedGradient) !important;
+}
+html[data-theme="light"] body.popup-page .globe-entry-cc {
+  color: #1B1B26;
+}
+html[data-theme="light"] body.popup-page #globeRouteDraw path,
+html[data-theme="light"] body.popup-page #globeRouteFlow path {
+  stroke: url(#globeConnectedGradient) !important;
+}
+html[data-theme="light"] body.popup-page #globeRouteFlow circle {
+  fill: #15151A;
 }
 
 /* Live-statistics values use neutral Pearl text, not the brand accent. */
