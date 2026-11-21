@@ -1,5 +1,5 @@
 <p align="left">
-  <img src="brand-assets/tor-connect-store-icon-128.png" alt="Tor Connect logo" width="96">
+  <img src="brand-assets/tor-connect-store-icon-128-pearl.png" alt="Tor Connect Pearl logo" width="96">
 </p>
 
 # Tor Connect
@@ -22,13 +22,14 @@ Tor Connect is a browser extension that routes Chrome or Firefox through a Tor c
 - Check bridge endpoint reachability from your computer.
 - Use the interface in dark, light, or system theme.
 
-## Design previews
+## Pearl theme design
 
-These images are rendered from the interactive design mockups and show the intended interface. They are design previews, not screenshots of a live extension session.
+Dim theme designs for the main popup, connected state, and live statistics:
 
-<p>
-  <a href="docs/screenshots/connection-method-mockup.png"><img src="docs/screenshots/connection-method-mockup.png" width="240" alt="Tor Connect connection-method screen design" /></a>
-  <a href="docs/screenshots/connected-bridge-mockup.png"><img src="docs/screenshots/connected-bridge-mockup.png" width="240" alt="Tor Connect connected through a saved bridge design" /></a>
+<p align="center">
+  <img src="docs/screenshots/pearl-dim-not-connected.png" width="280" alt="Tor Connect dim theme, not connected" />
+  <img src="docs/screenshots/pearl-dim-connected.png" width="280" alt="Tor Connect dim theme, connected" />
+  <img src="docs/screenshots/pearl-dim-live-statistics.png" width="280" alt="Tor Connect dim theme live statistics" />
 </p>
 
 ## Install
