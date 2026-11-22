@@ -134,7 +134,7 @@ class Helper:
         elif command == "ping": result = self.ping(request.get("bridges", ""))
         elif command == "countries": result = self.countries(request.get("bridges", ""))
         elif command == "start":
-            result = self.start(request.get("mode", ""), request.get("bridges", ""), request.get("selectedBridgeIndex"), exit_country=request.get("exitCountry", ""))
+            result = self.start(request.get("mode", ""), request.get("bridges", ""), request.get("selectedBridgeIndex"), exit_country=request.get("exitCountry", ""), bridge_indices=request.get("bridgeIndices"))
         elif command == "stop": self.stop(); result = self.status()
         else: result = {"ok": False, "error": "Unsupported command."}
         result["id"] = request_id
@@ -292,7 +292,8 @@ class Helper:
     def start(self, mode: str, raw_bridges: str, selected_index,
               recovery_bridges: list[str] | None = None,
               recovery_tried: set[int] | None = None,
-              exit_country: str = "") -> dict:
+              exit_country: str = "",
+              bridge_indices: list[int] | None = None) -> dict:
         with self.lock:
             if self.process and self.process.poll() is None:
                 return self.status_payload(True)
@@ -314,9 +315,16 @@ class Helper:
                 if not isinstance(selected_index, int) or selected_index <= 0 or len(parsed) != 1:
                     return {"ok": False, "error": "Choose one valid bridge from Settings."}
                 offset = selected_index - 1
+            if bridge_indices is not None and not (
+                isinstance(bridge_indices, list)
+                and len(bridge_indices) == len(parsed)
+                and all(type(index) is int and 1 <= index <= 20 for index in bridge_indices)
+                and len(set(bridge_indices)) == len(bridge_indices)
+            ):
+                bridge_indices = None
             bridge_lines = ["Bridge " + (line[7:].strip() if line.startswith("Bridge ") else line) for line in parsed]
 
-        targets = self.parse_targets(bridge_lines, offset) if mode == "manual" else []
+        targets = self.parse_targets(bridge_lines, offset, bridge_indices) if mode == "manual" else []
         try:
             BASE.mkdir(parents=True, exist_ok=True)
             DATA.mkdir(parents=True, exist_ok=True)
@@ -525,7 +533,7 @@ class Helper:
         return ranges[index][2] if index >= 0 and numeric <= ranges[index][1] else None
 
     @staticmethod
-    def parse_targets(lines: list[str], offset: int) -> list[dict]:
+    def parse_targets(lines: list[str], offset: int, bridge_indices: list[int] | None = None) -> list[dict]:
         targets = []
         for number, line in enumerate(lines, start=1):
             fields = line.split()
@@ -540,7 +548,8 @@ class Helper:
             address = first if vanilla else fields[start + 1].lower()
             fp_field = (fields[start + 1] if len(fields) > start + 1 else "") if vanilla else (fields[start + 2] if len(fields) > start + 2 else "")
             fingerprint = fp_field.lower()
-            targets.append({"index": number + offset, "transport": transport,
+            index = bridge_indices[number - 1] if bridge_indices and len(bridge_indices) == len(lines) else number + offset
+            targets.append({"index": index, "transport": transport,
                             "address": address,
                             "fingerprint": fingerprint if re.fullmatch(r"[0-9a-f]{40}", fingerprint) else None})
         return targets

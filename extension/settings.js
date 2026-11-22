@@ -29,6 +29,10 @@ const donationStatusNode = document.querySelector("#donationStatus");
 const killSwitchToggle = document.querySelector("#killSwitchToggle");
 const killSwitchCard = document.querySelector("#killSwitchCard");
 const killSwitchActivePanel = document.querySelector("#killSwitchActivePanel");
+const connectionHealthCard = document.querySelector("#connectionHealthCard");
+const autoBridgeFailoverToggle = document.querySelector("#autoBridgeFailoverToggle");
+const siteCheckIntervalInput = document.querySelector("#siteCheckIntervalMinutes");
+const autoBridgeFailoverNavBadge = document.querySelector("#autoBridgeFailoverNavBadge");
 const protectionNavBadge = document.querySelector("#protectionNavBadge");
 const changeBanner = document.querySelector("#changeBanner");
 const changeBannerMessage = document.querySelector("#changeBannerMessage");
@@ -42,7 +46,7 @@ const exitCountryOptionButtons = [...document.querySelectorAll("[data-exit-count
 const exitCountryCardNode = document.querySelector("#exitCountryCard");
 const exitCountryNoticeNode = document.querySelector("#exitCountryNotice");
 const exitCountryNavBadge = document.querySelector("#exitCountryNavBadge");
-let preferences = { mode: "snowflake", bridges: "", selectedBridge: "", disabledBridges: [], killSwitch: false, exitCountry: "" };
+let preferences = { mode: "snowflake", bridges: "", selectedBridge: "", disabledBridges: [], killSwitch: false, exitCountry: "", autoBridgeFailover: true, siteCheckIntervalMinutes: 5 };
 let selectedMode = "snowflake";
 let bridgeLines = [];
 let disabledBridgeLines = new Set();
@@ -61,6 +65,11 @@ let bridgeSaveRevision = 0;
 let copiedTimers = new Map();
 const t = (key, params) => (globalThis.torI18n?.t || ((s) => s))(key, params);
 const MAX_ENABLED_BRIDGES = 20;
+
+function normalizeSiteCheckInterval(value) {
+  const minutes = Number(value);
+  return Number.isInteger(minutes) && minutes >= 1 && minutes <= 60 ? minutes : 5;
+}
 
 function send(type, extra = {}) {
   return new Promise((resolve) => chrome.runtime.sendMessage({ type, ...extra }, resolve));
@@ -97,7 +106,9 @@ function readPreferences() {
         disabledBridges: [...disabledBridgeLines],
         selectedBridge: enabled.includes(saved.selectedBridge) ? saved.selectedBridge : enabled[0] || "",
         killSwitch: saved.killSwitch === true,
-        exitCountry: typeof saved.exitCountry === "string" ? saved.exitCountry : ""
+        exitCountry: typeof saved.exitCountry === "string" ? saved.exitCountry : "",
+        autoBridgeFailover: saved.autoBridgeFailover !== false,
+        siteCheckIntervalMinutes: normalizeSiteCheckInterval(saved.siteCheckIntervalMinutes)
       };
       selectedMode = preferences.mode;
       setMode(selectedMode);
@@ -106,6 +117,7 @@ function readPreferences() {
         showClipboardStatus(t("Up to {n} bridges may be enabled at a time. Disable one to enable another.", { n: MAX_ENABLED_BRIDGES }), "warning");
       }
       renderKillSwitch();
+      renderConnectionHealth();
       renderExitCountry();
       isDirty = false;
       markSaveState(t("All changes saved"));
@@ -600,6 +612,14 @@ function renderKillSwitch() {
   protectionNavBadge.textContent = on ? t("On") : t("Off");
 }
 
+function renderConnectionHealth() {
+  const failoverEnabled = preferences.autoBridgeFailover !== false;
+  autoBridgeFailoverToggle.setAttribute("aria-checked", String(failoverEnabled));
+  connectionHealthCard.dataset.on = String(failoverEnabled);
+  autoBridgeFailoverNavBadge.textContent = t(failoverEnabled ? "On" : "Off");
+  siteCheckIntervalInput.value = String(normalizeSiteCheckInterval(preferences.siteCheckIntervalMinutes));
+}
+
 function saveSettings() {
   if (allEnabledLines().length > MAX_ENABLED_BRIDGES) {
     const message = t("Up to {n} bridges may be enabled at a time. Disable one to enable another.", { n: MAX_ENABLED_BRIDGES });
@@ -988,7 +1008,43 @@ killSwitchToggle.addEventListener("click", () => {
   });
 });
 
-document.addEventListener("tor-language-changed", () => { renderBridgeList(); renderExitCountry(); renderKillSwitch(); loadDonationAddresses(); });
+autoBridgeFailoverToggle.addEventListener("click", () => {
+  const previous = preferences.autoBridgeFailover !== false;
+  preferences = { ...preferences, autoBridgeFailover: !previous };
+  renderConnectionHealth();
+  const nextPreferences = { ...preferences };
+  chrome.storage.local.set({ torConnectionPreferences: nextPreferences }, () => {
+    if (chrome.runtime.lastError) {
+      preferences = { ...preferences, autoBridgeFailover: previous };
+      renderConnectionHealth();
+      return;
+    }
+    preferences = nextPreferences;
+  });
+});
+
+siteCheckIntervalInput.addEventListener("change", () => {
+  const minutes = Number(siteCheckIntervalInput.value);
+  if (!Number.isInteger(minutes) || minutes < 1 || minutes > 60) {
+    siteCheckIntervalInput.value = String(normalizeSiteCheckInterval(preferences.siteCheckIntervalMinutes));
+    siteCheckIntervalInput.reportValidity();
+    return;
+  }
+  const previous = normalizeSiteCheckInterval(preferences.siteCheckIntervalMinutes);
+  preferences = { ...preferences, siteCheckIntervalMinutes: minutes };
+  renderConnectionHealth();
+  const nextPreferences = { ...preferences };
+  chrome.storage.local.set({ torConnectionPreferences: nextPreferences }, () => {
+    if (chrome.runtime.lastError) {
+      preferences = { ...preferences, siteCheckIntervalMinutes: previous };
+      renderConnectionHealth();
+      return;
+    }
+    preferences = nextPreferences;
+  });
+});
+
+document.addEventListener("tor-language-changed", () => { renderBridgeList(); renderExitCountry(); renderKillSwitch(); renderConnectionHealth(); loadDonationAddresses(); });
 
 chrome.storage.onChanged.addListener((changes, areaName) => {
   if (areaName !== "local" || !changes.torConnectionPreferences || isDirty) return;
@@ -1004,19 +1060,22 @@ chrome.storage.onChanged.addListener((changes, areaName) => {
     disabledBridges: [...disabledBridgeLines],
     selectedBridge: typeof saved.selectedBridge === "string" ? saved.selectedBridge : allEnabledLines()[0] || "",
     killSwitch: saved.killSwitch === true,
-    exitCountry: typeof saved.exitCountry === "string" ? saved.exitCountry : ""
+    exitCountry: typeof saved.exitCountry === "string" ? saved.exitCountry : "",
+    autoBridgeFailover: saved.autoBridgeFailover !== false,
+    siteCheckIntervalMinutes: normalizeSiteCheckInterval(saved.siteCheckIntervalMinutes)
 };
 selectedMode = preferences.mode;
 setMode(selectedMode);
 renderBridgeList();
 renderKillSwitch();
+renderConnectionHealth();
 renderExitCountry();
 });
 
 {
   let suppressUntil = 0;
   document.addEventListener("click", () => { suppressUntil = Date.now() + 400; }, { capture: true });
-  const sectionIds = ["method", "bridges", "exit-country", "protection", "appearance", "support", "community"];
+  const sectionIds = ["method", "bridges", "connection-health", "exit-country", "protection", "appearance", "support", "community"];
   const THRESHOLD = 160; // px from top of viewport — just below the sticky header
   const updateActiveSection = () => {
     if (Date.now() < suppressUntil) return;

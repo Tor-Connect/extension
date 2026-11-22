@@ -45,6 +45,7 @@
     <nav class="settings-nav" aria-label="Settings sections">
       <a class="active" href="#method" data-section-link="method" data-i18n="Connection method">Connection method</a>
       <a href="#bridges" data-section-link="bridges"><span data-i18n="Bridge lines">Bridge lines</span><span id="bridgeCount" class="nav-count">0</span></a>
+      <a href="#connection-health" data-section-link="connection-health"><span data-i18n="Connection health">Connection health</span><span id="autoBridgeFailoverNavBadge" class="nav-count">On</span></a>
       <a href="#exit-country" data-section-link="exit-country"><span data-i18n="Exit country">Exit country</span><span id="exitCountryNavBadge" class="nav-count" data-i18n>Auto</span></a>
       <a href="#protection" data-section-link="protection"><span data-i18n="Kill switch">Kill switch</span><span id="protectionNavBadge" class="nav-count">Off</span></a>
       <a href="#appearance" data-section-link="appearance" data-i18n="Appearance and language">Appearance and language</a>
@@ -147,6 +148,32 @@
         </div>
         <p id="clipboardStatus" class="clipboard-status" role="status" aria-live="polite"></p>
         <div id="bridgeList" class="settings-bridge-list" aria-live="polite"></div>
+        </div>
+      </section>
+
+      <section id="connection-health" class="settings-section" aria-labelledby="connectionHealthHeading">
+        <div class="section-heading">
+          <h2 id="connectionHealthHeading" data-i18n="Connection health">Connection health</h2>
+          <p data-i18n="Choose how often sites are checked and whether another bridge is tried after all connection checks fail.">Choose how often sites are checked and whether another bridge is tried after all connection checks fail.</p>
+        </div>
+        <div id="connectionHealthCard" class="connection-health-card" data-on="true">
+          <div class="connection-health-row">
+            <div class="connection-health-copy">
+              <strong data-i18n="Automatically try another bridge">Automatically try another bridge</strong>
+              <span data-i18n="Try another enabled bridge when all connection checks fail.">Try another enabled bridge when all connection checks fail.</span>
+            </div>
+            <button id="autoBridgeFailoverToggle" class="kill-switch-toggle" type="button" role="switch" aria-checked="true" aria-label="Automatically try another bridge" data-i18n-aria-label="Automatically try another bridge"></button>
+          </div>
+          <div class="connection-health-row connection-health-interval-row">
+            <label class="connection-health-copy" for="siteCheckIntervalMinutes">
+              <strong data-i18n="Check sites every">Check sites every</strong>
+              <span data-i18n="While connected, Tor Connect checks whether sites are reachable.">While connected, Tor Connect checks whether sites are reachable.</span>
+            </label>
+            <div class="connection-health-interval-control">
+              <input id="siteCheckIntervalMinutes" type="number" min="1" max="60" step="1" value="5" aria-describedby="siteCheckIntervalUnit">
+              <span id="siteCheckIntervalUnit" data-i18n="minutes">minutes</span>
+            </div>
+          </div>
         </div>
       </section>
 

@@ -28,8 +28,22 @@ let connectivityCheckPromise;
 let connectivitySiteResults = [];
 let connectivityCheckAttempt = 0;
 let connectivityCheckNextAt = 0;
+let connectivityCheckCompletedAt = 0;
 const CONNECTIVITY_CHECK_RETRY_DELAY_MS = 30_000;
-const CONNECTIVITY_CHECK_RECHECK_INTERVAL_MS = 5 * 60_000;
+const DEFAULT_SITE_CHECK_INTERVAL_MINUTES = 5;
+let connectivityCheckRecheckIntervalMs = DEFAULT_SITE_CHECK_INTERVAL_MINUTES * 60_000;
+
+function updateSiteCheckInterval(value) {
+  const minutes = Number(value);
+  const normalizedMinutes = Number.isInteger(minutes) && minutes >= 1 && minutes <= 60
+    ? minutes : DEFAULT_SITE_CHECK_INTERVAL_MINUTES;
+  const nextInterval = normalizedMinutes * 60_000;
+  if (nextInterval === connectivityCheckRecheckIntervalMs) return;
+  connectivityCheckRecheckIntervalMs = nextInterval;
+  if (connectivityCheckState === "passed" && connectivityCheckCompletedAt) {
+    connectivityCheckNextAt = connectivityCheckCompletedAt + nextInterval;
+  }
+}
 
 function resetConnectivityCheck() {
   connectivityGeneration += 1;
@@ -39,6 +53,7 @@ function resetConnectivityCheck() {
   connectivitySiteResults = [];
   connectivityCheckAttempt += 1;
   connectivityCheckNextAt = 0;
+  connectivityCheckCompletedAt = 0;
 }
 
 function trackConnectivityConnection(result) {
@@ -61,6 +76,7 @@ function trackConnectivityConnection(result) {
     connectivitySiteResults = [];
     connectivityCheckAttempt += 1;
     connectivityCheckNextAt = 0;
+    connectivityCheckCompletedAt = 0;
   }
   return connectivityGeneration;
 }
@@ -116,8 +132,9 @@ function checkConnectivityAfterConnect(result, generation, { force = false } = {
     if (connectivityCheckConnectionId === connectionId && connectivityCheckAttempt === attempt) {
       connectivitySiteResults = siteResults;
       connectivityCheckState = siteResults.every((site) => site.state === "passed") ? "passed" : "failed";
-      connectivityCheckNextAt = Date.now() + (connectivityCheckState === "passed"
-        ? CONNECTIVITY_CHECK_RECHECK_INTERVAL_MS
+      connectivityCheckCompletedAt = Date.now();
+      connectivityCheckNextAt = connectivityCheckCompletedAt + (connectivityCheckState === "passed"
+        ? connectivityCheckRecheckIntervalMs
         : CONNECTIVITY_CHECK_RETRY_DELAY_MS);
       connectivityCheckPromise = undefined;
     }
@@ -167,6 +184,7 @@ async function applyProxyForConnectedResult(result, generation, { forceCheck = f
     connectivityCheckState = "";
     connectivitySiteResults = [];
     connectivityCheckNextAt = 0;
+    connectivityCheckCompletedAt = 0;
   }
   if (generation === connectivityGeneration) {
     const check = checkConnectivityAfterConnect(result, generation, { force: forceCheck });
@@ -358,6 +376,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       const result = await request("start", {
         mode: message.mode,
         bridges: message.bridges,
+        bridgeIndices: message.bridgeIndices,
         selectedBridgeIndex: message.selectedBridgeIndex,
         exitCountry: message.exitCountry || ""
       });
@@ -393,8 +412,15 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 // keeps the proxy alive so traffic is blocked rather than leaking direct.
 chrome.storage.local.get("torConnectionPreferences", (stored) => {
   if (chrome.runtime.lastError) return;
-  const killSwitch = stored?.torConnectionPreferences?.killSwitch === true;
+  const preferences = stored?.torConnectionPreferences || {};
+  updateSiteCheckInterval(preferences.siteCheckIntervalMinutes);
+  const killSwitch = preferences.killSwitch === true;
   if (!killSwitch) clearProxy().catch(() => {});
+});
+
+chrome.storage.onChanged.addListener((changes, areaName) => {
+  if (areaName !== "local" || !changes.torConnectionPreferences) return;
+  updateSiteCheckInterval(changes.torConnectionPreferences.newValue?.siteCheckIntervalMinutes);
 });
 
 // Clear any leftover extension setting on first install. On browser restart,

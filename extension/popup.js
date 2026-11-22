@@ -129,7 +129,7 @@ function finishInitialLoadingSkeleton() {
 }
 
 startInitialLoadingSkeleton();
-let preferences = { mode: "snowflake", bridges: "", selectedBridge: "", disabledBridges: [], exitCountry: "" };
+let preferences = { mode: "snowflake", bridges: "", selectedBridge: "", disabledBridges: [], exitCountry: "", autoBridgeFailover: true, siteCheckIntervalMinutes: 5 };
 let currentState = "disconnected";
 let currentResult = {};
 let bridgeCountries = new Map();
@@ -169,6 +169,11 @@ let siteCheckFailoverPreviousConnectionId;
 let siteCheckFailoverPreviousCheckAt = 0;
 const t = (key, params) => (globalThis.torI18n?.t || ((s) => s))(key, params);
 const MAX_ENABLED_BRIDGES = 20;
+
+function normalizeSiteCheckIntervalMinutes(value) {
+  const minutes = Number(value);
+  return Number.isInteger(minutes) && minutes >= 1 && minutes <= 60 ? minutes : 5;
+}
 
 // Exit-country centers commonly returned by Tor relays. Coordinates are
 // latitude/longitude in degrees; the three design skins anchor the globe.
@@ -756,6 +761,7 @@ async function advanceToNextRoute({ automatic = false } = {}) {
   let automaticNextLine;
   let automaticNextPosition = -1;
   let automaticRemainingLines;
+  let automaticRemainingPositions;
   if (automatic) {
     if (preferences.mode !== "manual" || enabledEntries.length < 2) return;
     const signature = enabledEntries.join("\n");
@@ -788,6 +794,7 @@ async function advanceToNextRoute({ automatic = false } = {}) {
     automaticNextPosition = remainingPositions[0] ?? -1;
     if (automaticNextPosition < 0) return;
     automaticNextLine = enabledEntries[automaticNextPosition];
+    automaticRemainingPositions = remainingPositions;
     automaticRemainingLines = remainingPositions.map((index) => enabledEntries[index]);
   }
   if (automatic) {
@@ -820,13 +827,13 @@ async function advanceToNextRoute({ automatic = false } = {}) {
           siteCheckFailoverAwaitingCheck = false;
           siteCheckFailoverPreviousConnectionId = undefined;
           siteCheckFailoverPreviousCheckAt = 0;
-          renderSiteCheck(currentResult);
           return;
         }
         const request = automatic
           ? {
             mode: "manual",
             bridges: automaticRemainingLines.join("\n"),
+            bridgeIndices: automaticRemainingPositions.map((position) => position + 1),
             selectedBridgeIndex: null,
             exitCountry: preferences.exitCountry || ""
           }
@@ -1187,7 +1194,8 @@ function renderSiteCheck(result = {}) {
     row.append(icon, siteName, meta);
     return row;
   }));
-  if (connected && !pending && allSitesFailed && preferences.mode === "manual" && bridgeEntries().length > 1) {
+  if (connected && !pending && allSitesFailed && preferences.autoBridgeFailover !== false
+    && preferences.mode === "manual" && bridgeEntries().length > 1) {
     const failedResult = result;
     queueMicrotask(() => {
       if (currentResult !== failedResult) return;
@@ -1300,7 +1308,9 @@ function readPreferences() {
         bridges: typeof saved?.bridges === "string" ? saved.bridges : "",
         selectedBridge: typeof saved?.selectedBridge === "string" ? saved.selectedBridge : "",
         disabledBridges: Array.isArray(saved?.disabledBridges) ? saved.disabledBridges : [],
-        exitCountry: typeof saved?.exitCountry === "string" ? saved.exitCountry : ""
+        exitCountry: typeof saved?.exitCountry === "string" ? saved.exitCountry : "",
+        autoBridgeFailover: saved?.autoBridgeFailover !== false,
+        siteCheckIntervalMinutes: normalizeSiteCheckIntervalMinutes(saved?.siteCheckIntervalMinutes)
       };
       const entries = bridgeEntries();
       if (!entries.includes(preferences.selectedBridge)) preferences.selectedBridge = entries[0] || "";
@@ -1352,10 +1362,29 @@ function bridgeAddress(line) {
   return parts[addressIndex]?.toLowerCase() || "";
 }
 
+function bridgeFingerprint(line) {
+  const parts = line?.trim().split(/\s+/) || [];
+  const start = parts[0]?.toLowerCase() === "bridge" ? 1 : 0;
+  const first = parts[start]?.toLowerCase() || "";
+  const addressIndex = start + (BRIDGE_TRANSPORT_TYPES.has(first) ? 1 : 0);
+  const fingerprint = parts[addressIndex + 1]?.toLowerCase() || "";
+  return /^[\da-f]{40}$/.test(fingerprint) ? fingerprint : "";
+}
+
 function activeBridgePosition(result, entries = bridgeEntries()) {
   if (result?.bridgeAddress) {
     const address = String(result.bridgeAddress).toLowerCase();
-    return entries.findIndex((line) => bridgeAddress(line) === address);
+    const matchingPositions = entries.reduce((positions, line, index) => {
+      if (bridgeAddress(line) === address) positions.push(index);
+      return positions;
+    }, []);
+    if (matchingPositions.length === 1) return matchingPositions[0];
+    if (matchingPositions.length > 1 && result.bridgeFingerprint) {
+      const fingerprint = String(result.bridgeFingerprint).toLowerCase();
+      const fingerprintMatches = matchingPositions.filter((index) => bridgeFingerprint(entries[index]) === fingerprint);
+      if (fingerprintMatches.length === 1) return fingerprintMatches[0];
+    }
+    return -1;
   }
   const originalIndex = Number(result?.currentBridgeIndex) - 1;
   if (originalIndex < 0) return -1;
@@ -2176,13 +2205,17 @@ document.addEventListener("tor-language-changed", () => {
 chrome.storage.onChanged.addListener((changes, areaName) => {
   if (areaName !== "local" || !changes.torConnectionPreferences) return;
   const saved = changes.torConnectionPreferences.newValue || {};
+  const wasAutoBridgeFailover = preferences.autoBridgeFailover !== false;
   preferences = {
     mode: saved.mode === "manual" ? "manual" : "snowflake",
     bridges: typeof saved.bridges === "string" ? saved.bridges : "",
     selectedBridge: typeof saved.selectedBridge === "string" ? saved.selectedBridge : "",
     disabledBridges: Array.isArray(saved.disabledBridges) ? saved.disabledBridges : [],
-    exitCountry: typeof saved.exitCountry === "string" ? saved.exitCountry : ""
+    exitCountry: typeof saved.exitCountry === "string" ? saved.exitCountry : "",
+    autoBridgeFailover: saved.autoBridgeFailover !== false,
+    siteCheckIntervalMinutes: normalizeSiteCheckIntervalMinutes(saved.siteCheckIntervalMinutes)
   };
+  if (wasAutoBridgeFailover && !preferences.autoBridgeFailover) automaticFailoverCancellationToken += 1;
   if (!bridgeEntries().includes(preferences.selectedBridge)) preferences.selectedBridge = bridgeEntries()[0] || "";
   renderBridgeSelector();
   renderConnectionMethodSwitch();

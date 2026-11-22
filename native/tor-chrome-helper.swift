@@ -84,6 +84,7 @@ final class Helper {
                 mode: request["mode"] as? String ?? "",
                 bridges: request["bridges"] as? String ?? "",
                 selectedBridgeIndex: request["selectedBridgeIndex"] as? Int,
+                bridgeIndices: request["bridgeIndices"] as? [Int],
                 exitCountry: request["exitCountry"] as? String ?? ""
             )
         case "stop":
@@ -287,6 +288,7 @@ final class Helper {
     }
 
     private func start(mode: String, bridges: String, selectedBridgeIndex: Int?,
+                       bridgeIndices: [Int]? = nil,
                        recoveryBridges: [String]? = nil,
                        recoveryTried: Set<Int> = [],
                        exitCountry: String = "") -> [String: Any] {
@@ -320,7 +322,14 @@ final class Helper {
             }
             bridgeLines = parsed.map { $0.hasPrefix("Bridge ") ? $0 : "Bridge \($0)" }
         }
-        let configuredBridgeTargets = mode == "manual" ? parseBridgeTargets(from: bridgeLines, indexOffset: bridgeIndexOffset) : []
+        let validBridgeIndices = bridgeIndices.flatMap { indices -> [Int]? in
+            guard indices.count == bridgeLines.count,
+                  Set(indices).count == indices.count,
+                  indices.allSatisfy({ (1...20).contains($0) }) else { return nil }
+            return indices
+        }
+        let configuredBridgeTargets = mode == "manual"
+            ? parseBridgeTargets(from: bridgeLines, indexOffset: bridgeIndexOffset, indices: validBridgeIndices) : []
 
         do {
             try FileManager.default.createDirectory(at: appSupport, withIntermediateDirectories: true)
@@ -641,7 +650,7 @@ final class Helper {
         return nil
     }
 
-    private func parseBridgeTargets(from lines: [String], indexOffset: Int = 0) -> [BridgeTarget] {
+    private func parseBridgeTargets(from lines: [String], indexOffset: Int = 0, indices: [Int]? = nil) -> [BridgeTarget] {
         let knownTransports = ["obfs4", "webtunnel", "snowflake", "meek_lite"]
         return lines.enumerated().compactMap { offset, line in
             let parts = line.split(whereSeparator: \.isWhitespace)
@@ -659,7 +668,7 @@ final class Helper {
                 ? fingerprintCandidate
                 : nil
             return BridgeTarget(
-                index: offset + 1 + indexOffset,
+                index: indices.flatMap { $0.count == lines.count ? $0[offset] : nil } ?? (offset + 1 + indexOffset),
                 transport: transport,
                 address: address,
                 fingerprint: fingerprint
