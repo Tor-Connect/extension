@@ -2128,6 +2128,19 @@ body.popup-page .bridges-subtitle {
   line-height: 1.35;
   color: var(--pearl-muted);
 }
+body.popup-page .bridge-limit-notice {
+  flex: none;
+  margin: 6px 0 0;
+  padding: 8px 10px;
+  border: 1px solid color-mix(in srgb, var(--pearl-warning) 35%, transparent);
+  border-radius: 10px;
+  color: var(--pearl-warning);
+  background: var(--pearl-warning-soft);
+  font-size: 12px;
+  line-height: 1.35;
+  text-align: center;
+}
+body.popup-page .bridge-limit-notice[hidden] { display: none !important; }
 
 /* Bridge toggle rows */
 body.popup-page .bridge-rows {
@@ -2154,6 +2167,7 @@ body.popup-page .bridge-row {
   width: 100%;
   cursor: pointer;
 }
+body.popup-page .bridge-row:disabled { cursor: not-allowed; }
 body.popup-page .bridge-row-badge {
   flex: none;
   display: flex;

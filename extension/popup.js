@@ -89,6 +89,7 @@ const bridgesSheetNode = document.querySelector("#bridgesSheet");
 const bridgesBackdropNode = document.querySelector("#bridgesBackdrop");
 const closeBridgesNode = document.querySelector("#closeBridges");
 const bridgeRowsNode = document.querySelector("#bridgeRows");
+const bridgeLimitNoticeNode = document.querySelector("#bridgeLimitNotice");
 const addBridgesFromSheetButton = document.querySelector("#addBridgesFromSheet");
 let bridgesSheetOpen = false;
 let statsPollTimer;
@@ -1385,7 +1386,15 @@ async function refreshBridgeCountries() {
 function renderBridgeSelector() {
   const allEntries = allBridgeEntries();
   const disabled = new Set(preferences.disabledBridges);
+  const enabledCount = bridgeEntries().length;
+  const limitReached = enabledCount >= MAX_ENABLED_BRIDGES;
   if (!bridgeRowsNode) return;
+  if (bridgeLimitNoticeNode) {
+    bridgeLimitNoticeNode.textContent = limitReached
+      ? t("Up to {n} bridges may be enabled at a time. Disable one to enable another.", { n: MAX_ENABLED_BRIDGES })
+      : "";
+    bridgeLimitNoticeNode.hidden = !limitReached;
+  }
   const focusedBridgeLine = bridgeRowsNode.contains(document.activeElement)
     ? document.activeElement.closest(".bridge-row")?.dataset.bridgeLine
     : undefined;
@@ -1405,6 +1414,8 @@ function renderBridgeSelector() {
     btn.role = "switch";
     btn.setAttribute("role", "switch");
     btn.setAttribute("aria-checked", String(on));
+    btn.disabled = !on && limitReached;
+    if (btn.disabled) btn.setAttribute("aria-describedby", "bridgeLimitNotice");
     btn.className = "bridge-row";
     btn.dataset.bridgeLine = line;
     const countryName = /^[A-Z]{2}$/.test(countryCode)
@@ -1448,7 +1459,19 @@ function renderBridgeSelector() {
 
     btn.addEventListener("click", () => {
       const d = new Set(preferences.disabledBridges);
-      if (d.has(line)) d.delete(line); else d.add(line);
+      if (on) {
+        d.add(line);
+      } else {
+        if (bridgeEntries().length >= MAX_ENABLED_BRIDGES) {
+          bridgeLimitNoticeNode.textContent = t(
+            "Up to {n} bridges may be enabled at a time. Disable one to enable another.",
+            { n: MAX_ENABLED_BRIDGES }
+          );
+          bridgeLimitNoticeNode.hidden = false;
+          return;
+        }
+        d.delete(line);
+      }
       preferences.disabledBridges = [...d];
       chrome.storage.local.set({ torConnectionPreferences: preferences });
       renderBridgeSelector();
