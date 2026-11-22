@@ -720,12 +720,16 @@ async function advanceToNextRoute({ automatic = false } = {}) {
   if (automatic) {
     if (preferences.mode !== "manual" || enabledEntries.length < 2) return;
     const signature = enabledEntries.join("\n");
-    if (signature !== siteCheckFailoverBridgeSignature) {
+    const bridgeListChanged = signature !== siteCheckFailoverBridgeSignature;
+    if (bridgeListChanged) {
       siteCheckFailoverBridgeSignature = signature;
       siteCheckFailoverTriedPositions.clear();
     }
-    const active = activeBridgePosition(currentResult, enabledEntries);
-    if (active < 0) return;
+    const resolvedActive = activeBridgePosition(currentResult, enabledEntries);
+    const lastTried = [...siteCheckFailoverTriedPositions].at(-1);
+    const active = resolvedActive >= 0 ? resolvedActive
+      : lastTried ?? (!bridgeListChanged && lastShownPosition >= 0 && lastShownPosition < enabledEntries.length
+        ? lastShownPosition : selectedBridgePosition(enabledEntries));
     siteCheckFailoverTriedPositions.add(active);
     const remainingPositions = Array.from({ length: enabledEntries.length }, (_, offset) =>
       (active + offset + 1) % enabledEntries.length
