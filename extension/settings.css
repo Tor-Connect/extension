@@ -206,7 +206,7 @@ html[data-theme="light"] .picker-code-badge { background: var(--pearl-accent-sof
 .bridge-row-action.is-copied { border-color: var(--pearl-accent-border); color: var(--pearl-accent); background: var(--pearl-accent-soft); }
 .bridge-list-empty { margin: 0; padding: 24px; border: 1px dashed var(--pearl-border); border-radius: 16px; color: var(--pearl-muted); text-align: center; }
 .clipboard-status { min-height: 20px; margin: 0; color: var(--pearl-muted); font-size: 13px; }
-.clipboard-status:empty { display: none; }
+.clipboard-status:empty { position: absolute; width: 1px; height: 1px; min-height: 0; padding: 0; overflow: hidden; clip: rect(0, 0, 0, 0); clip-path: inset(50%); white-space: nowrap; }
 .clipboard-status[data-kind="success"] { color: var(--pearl-accent); }
 .clipboard-status[data-kind="error"] { color: #ffaaa4; }
 .clipboard-status[data-kind="warning"] { color: #f5a623; }
