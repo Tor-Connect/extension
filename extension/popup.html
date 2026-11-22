@@ -369,7 +369,10 @@
         </button>
         <div id="siteCheckRows" class="site-check-rows"></div>
         <div class="site-check-actions">
-          <button id="retestSites" class="site-check-retest" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 0 0-14-4.5L4 9M4 4v5h5M4 13a8 8 0 0 0 14 4.5L20 15M20 20v-5h-5"/></svg><span data-i18n>Retest</span></button>
+          <div class="site-check-retest-wrap">
+            <button id="retestSites" class="site-check-retest" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 0 0-14-4.5L4 9M4 4v5h5M4 13a8 8 0 0 0 14 4.5L20 15M20 20v-5h-5"/></svg><span data-i18n>Retest</span></button>
+            <span id="retestCountdown" class="site-check-countdown" hidden></span>
+          </div>
           <button id="nextRoute" class="site-check-next" type="button" data-i18n>Next bridge</button>
         </div>
       </section>

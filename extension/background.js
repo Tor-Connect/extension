@@ -27,8 +27,9 @@ let connectivityCheckState = "";
 let connectivityCheckPromise;
 let connectivitySiteResults = [];
 let connectivityCheckAttempt = 0;
-let connectivityCheckRetryAt = 0;
+let connectivityCheckNextAt = 0;
 const CONNECTIVITY_CHECK_RETRY_DELAY_MS = 30_000;
+const CONNECTIVITY_CHECK_RECHECK_INTERVAL_MS = 5 * 60_000;
 
 function resetConnectivityCheck() {
   connectivityGeneration += 1;
@@ -37,7 +38,7 @@ function resetConnectivityCheck() {
   connectivityCheckPromise = undefined;
   connectivitySiteResults = [];
   connectivityCheckAttempt += 1;
-  connectivityCheckRetryAt = 0;
+  connectivityCheckNextAt = 0;
 }
 
 function trackConnectivityConnection(result) {
@@ -59,7 +60,7 @@ function trackConnectivityConnection(result) {
     connectivityCheckPromise = undefined;
     connectivitySiteResults = [];
     connectivityCheckAttempt += 1;
-    connectivityCheckRetryAt = 0;
+    connectivityCheckNextAt = 0;
   }
   return connectivityGeneration;
 }
@@ -106,18 +107,18 @@ function checkConnectivityAfterConnect(result, generation, { force = false } = {
 
   const connectionId = result.connectedAt || "connected";
   if (connectivityCheckConnectionId !== connectionId) return;
-  if (connectivityCheckConnectionId === connectionId) {
-    if ((!force && connectivityCheckState === "passed") || connectivityCheckPromise) return;
-    if (connectivityCheckState === "failed" && Date.now() < connectivityCheckRetryAt) return;
-  }
+  if (connectivityCheckPromise) return;
+  if (!force && Date.now() < connectivityCheckNextAt) return;
   connectivityCheckConnectionId = connectionId;
   const attempt = ++connectivityCheckAttempt;
-  if (connectivityCheckState !== "failed") connectivityCheckState = "pending";
+  connectivityCheckState = "pending";
   connectivityCheckPromise = checkSitesReachability().then((siteResults) => {
     if (connectivityCheckConnectionId === connectionId && connectivityCheckAttempt === attempt) {
       connectivitySiteResults = siteResults;
       connectivityCheckState = siteResults.every((site) => site.state === "passed") ? "passed" : "failed";
-      connectivityCheckRetryAt = connectivityCheckState === "passed" ? 0 : Date.now() + CONNECTIVITY_CHECK_RETRY_DELAY_MS;
+      connectivityCheckNextAt = Date.now() + (connectivityCheckState === "passed"
+        ? CONNECTIVITY_CHECK_RECHECK_INTERVAL_MS
+        : CONNECTIVITY_CHECK_RETRY_DELAY_MS);
       connectivityCheckPromise = undefined;
     }
   });
@@ -127,12 +128,15 @@ function checkConnectivityAfterConnect(result, generation, { force = false } = {
 function addConnectivityCheck(result, { checkHelperVersion = false } = {}) {
   if (result?.ok && result.state === "connected") {
     const connectionId = result.connectedAt || "connected";
-    result.connectivityCheck = connectivityCheckConnectionId === connectionId
+    const hasCurrentCheck = connectivityCheckConnectionId === connectionId;
+    const checkIsPending = hasCurrentCheck && Boolean(connectivityCheckPromise);
+    result.connectivityCheck = hasCurrentCheck && !checkIsPending
       ? connectivityCheckState || "pending"
       : "pending";
-    result.siteChecks = connectivityCheckConnectionId === connectionId && connectivitySiteResults.length
+    result.siteChecks = hasCurrentCheck && !checkIsPending && connectivitySiteResults.length
       ? connectivitySiteResults
       : CONNECTIVITY_SITES.map(({ site }) => ({ site, state: "pending", latencyMs: null }));
+    result.connectivityCheckNextAt = connectivityCheckNextAt;
   }
   if (checkHelperVersion && result?.state && isHelperOutdated(result)) result.helperOutdated = true;
   return result;
@@ -162,7 +166,7 @@ async function applyProxyForConnectedResult(result, generation, { forceCheck = f
   if (forceCheck) {
     connectivityCheckState = "";
     connectivitySiteResults = [];
-    connectivityCheckRetryAt = 0;
+    connectivityCheckNextAt = 0;
   }
   if (generation === connectivityGeneration) {
     const check = checkConnectivityAfterConnect(result, generation, { force: forceCheck });

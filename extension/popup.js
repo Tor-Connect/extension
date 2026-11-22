@@ -81,6 +81,7 @@ const siteCheckBadgeNode = document.querySelector("#siteCheckBadge");
 const siteCheckSummaryNode = document.querySelector("#siteCheckSummary");
 const siteCheckRowsNode = document.querySelector("#siteCheckRows");
 const siteCheckCountNode = document.querySelector("#siteCheckCount");
+const retestCountdownNode = document.querySelector("#retestCountdown");
 const nextRouteNode = document.querySelector("#nextRoute");
 // Bridges sheet
 const bridgesSheetNode = document.querySelector("#bridgesSheet");
@@ -125,6 +126,9 @@ let globeOrientationExitCode = "";
 let globeRotationPlayed = false;
 let siteCheckBadgeHideTimer;
 let siteCheckBadgeState = "";
+let siteCheckFailoverBridgeSignature = "";
+let siteCheckFailoverTriedPositions = new Set();
+let siteCheckFailoverInProgress = false;
 const t = (key, params) => (globalThis.torI18n?.t || ((s) => s))(key, params);
 const MAX_ENABLED_BRIDGES = 20;
 
@@ -707,32 +711,78 @@ document.querySelector("#retestSites").addEventListener("click", async (event) =
     renderResult(result);
   } finally { button.disabled = false; }
 });
-nextRouteNode.addEventListener("click", async () => {
+async function advanceToNextRoute({ automatic = false } = {}) {
+  if (siteCheckFailoverInProgress) return;
+  const entries = preferences.mode === "manual" ? allBridgeEntries() : [];
+  const enabledEntries = preferences.mode === "manual" ? bridgeEntries() : [];
+  let automaticNextLine;
+  let automaticRemainingLines;
+  if (automatic) {
+    if (preferences.mode !== "manual" || enabledEntries.length < 2) return;
+    const signature = enabledEntries.join("\n");
+    if (signature !== siteCheckFailoverBridgeSignature) {
+      siteCheckFailoverBridgeSignature = signature;
+      siteCheckFailoverTriedPositions.clear();
+    }
+    const active = activeBridgePosition(currentResult, enabledEntries);
+    if (active < 0) return;
+    siteCheckFailoverTriedPositions.add(active);
+    const remainingPositions = Array.from({ length: enabledEntries.length }, (_, offset) =>
+      (active + offset + 1) % enabledEntries.length
+    ).filter((index) => !siteCheckFailoverTriedPositions.has(index));
+    const nextPosition = remainingPositions[0] ?? -1;
+    if (nextPosition < 0) return;
+    automaticNextLine = enabledEntries[nextPosition];
+    automaticRemainingLines = remainingPositions.map((index) => enabledEntries[index]);
+  }
+  siteCheckFailoverInProgress = true;
   nextRouteNode.disabled = true;
   // Focus the toggle before closing the sheet so the popup does not lose focus
   // (Chrome closes the popup the moment focus leaves the window).
   connectionToggle.focus();
   closeSiteCheck();
   setStatus(t("Connecting…"), "starting");
-  if (preferences.mode === "manual") {
-    const entries = allBridgeEntries();
-    if (entries.length > 1) {
-      const enabledEntries = bridgeEntries();
-      const active = activeBridgePosition(currentResult, enabledEntries);
-      const nextLine = enabledEntries[(active + 1 + enabledEntries.length) % enabledEntries.length] || entries[(selectedBridgePosition(entries) + 1) % entries.length];
-      const next = entries.indexOf(nextLine);
-      await send("disconnect");
-      renderResult(await send("connect", { mode: "manual", bridges: entries[next], selectedBridgeIndex: next + 1 }));
-    } else if (entries.length === 1) {
-      await send("disconnect");
-      renderResult(await connectWithSavedPreferences());
+  try {
+    if (preferences.mode === "manual") {
+      let nextLine;
+      if (automatic) {
+        nextLine = automaticNextLine;
+      } else if (entries.length > 1) {
+        const active = activeBridgePosition(currentResult, enabledEntries);
+        nextLine = enabledEntries[(active + 1 + enabledEntries.length) % enabledEntries.length]
+          || entries[(selectedBridgePosition(entries) + 1) % entries.length];
+      }
+      if (nextLine) {
+        const next = entries.indexOf(nextLine);
+        if (!(await stopTorBeforeRouteChange())) return;
+        const request = automatic
+          ? { mode: "manual", bridges: automaticRemainingLines.join("\n"), selectedBridgeIndex: null }
+          : { mode: "manual", bridges: entries[next], selectedBridgeIndex: next + 1 };
+        renderResult(await send("connect", request));
+      } else if (!automatic && entries.length === 1) {
+        if (!(await stopTorBeforeRouteChange())) return;
+        renderResult(await connectWithSavedPreferences());
+      }
+    } else if (!automatic) {
+      if (!(await stopTorBeforeRouteChange())) return;
+      renderResult(await send("connect", { mode: "snowflake", bridges: "" }));
     }
-  } else {
-    await send("disconnect");
-    renderResult(await send("connect", { mode: "snowflake", bridges: "" }));
+  } finally {
+    nextRouteNode.disabled = false;
+    siteCheckFailoverInProgress = false;
   }
-  nextRouteNode.disabled = false;
-});
+}
+
+nextRouteNode.addEventListener("click", () => advanceToNextRoute());
+
+async function stopTorBeforeRouteChange() {
+  // Stopping Tor can take longer than the normal popup message timeout. Do not
+  // start the selected route until the helper confirms the old process stopped.
+  const result = await send("disconnect", {}, 20000);
+  if (result?.ok && result.state === "disconnected") return true;
+  if (result) renderResult(result);
+  return false;
+}
 
 siteCheckSheetNode.addEventListener("keydown", (event) => {
   if (event.key === "Escape") {
@@ -959,8 +1009,13 @@ function renderSiteCheck(result = {}) {
     && ["pending", "passed", "failed"].includes(result.connectivityCheck);
   const failures = sites.filter((site) => site.state === "failed").length;
   const pending = result.connectivityCheck === "pending" || sites.some((site) => site.state === "pending");
+  renderSiteCheckCountdown(result, connected && !pending);
   const siteCheckFailed = failures > 0 || result.connectivityCheck === "failed";
   const allSitesFailed = failures >= total;
+  if (connected && !pending && !siteCheckFailed) {
+    siteCheckFailoverTriedPositions.clear();
+    siteCheckFailoverBridgeSignature = bridgeEntries().join("\n");
+  }
   const checkSummary = pending ? t("Checking your connection")
     : allSitesFailed ? t("Connected, but sites aren't loading")
       : siteCheckFailed ? t("Connected · some sites may be limited")
@@ -1036,8 +1091,43 @@ function renderSiteCheck(result = {}) {
     row.append(icon, siteName, meta);
     return row;
   }));
+  if (connected && !pending && allSitesFailed && preferences.mode === "manual" && bridgeEntries().length > 1) {
+    const failedResult = result;
+    queueMicrotask(() => {
+      if (currentResult !== failedResult) return;
+      const latestSites = Array.isArray(currentResult.siteChecks) ? currentResult.siteChecks : [];
+      if (currentResult.connectivityCheck === "failed"
+        && latestSites.length >= SITE_CHECK_NAMES.length
+        && latestSites.every((site) => site.state === "failed")) {
+        advanceToNextRoute({ automatic: true });
+      }
+    });
+  }
   if (result.state !== "connected" && !siteCheckSheetNode.hidden) closeSiteCheck();
 }
+
+function renderSiteCheckCountdown(result = currentResult, isSettled = false) {
+  const nextCheckAt = Number(result.connectivityCheckNextAt);
+  const secondsRemaining = Math.ceil((nextCheckAt - Date.now()) / 1000);
+  if (!isSettled || !Number.isFinite(nextCheckAt) || secondsRemaining <= 0) {
+    retestCountdownNode.hidden = true;
+    return;
+  }
+  const minutes = Math.floor(secondsRemaining / 60);
+  const seconds = String(secondsRemaining % 60).padStart(2, "0");
+  retestCountdownNode.textContent = t("Next automatic check in {time}", { time: `${minutes}:${seconds}` });
+  retestCountdownNode.hidden = false;
+}
+
+window.setInterval(() => {
+  const result = currentResult;
+  const sites = Array.isArray(result.siteChecks) ? result.siteChecks : [];
+  const settled = result.state === "connected"
+    && !["trying", "failed", "closed"].includes(result.bridgeActivity)
+    && ["passed", "failed"].includes(result.connectivityCheck)
+    && !sites.some((site) => site.state === "pending");
+  renderSiteCheckCountdown(result, settled);
+}, 1000);
 
 const query = new URLSearchParams(location.search);
 const isTabView = query.get("view") === "tab";
