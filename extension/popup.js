@@ -161,6 +161,9 @@ let siteCheckBadgeState = "";
 let siteCheckFailoverBridgeSignature = "";
 let siteCheckFailoverTriedPositions = new Set();
 let siteCheckFailoverInProgress = false;
+let siteCheckFailoverAwaitingCheck = false;
+let siteCheckFailoverPreviousConnectionId;
+let siteCheckFailoverPreviousCheckAt = 0;
 const t = (key, params) => (globalThis.torI18n?.t || ((s) => s))(key, params);
 const MAX_ENABLED_BRIDGES = 20;
 
@@ -771,6 +774,11 @@ async function advanceToNextRoute({ automatic = false } = {}) {
     automaticNextLine = enabledEntries[nextPosition];
     automaticRemainingLines = remainingPositions.map((index) => enabledEntries[index]);
   }
+  if (automatic) {
+    siteCheckFailoverAwaitingCheck = true;
+    siteCheckFailoverPreviousConnectionId = currentResult.connectedAt;
+    siteCheckFailoverPreviousCheckAt = Number(currentResult.connectivityCheckNextAt) || 0;
+  }
   siteCheckFailoverInProgress = true;
   nextRouteNode.disabled = true;
   // Focus the toggle before closing the sheet so the popup does not lose focus
@@ -1045,19 +1053,40 @@ const SITE_CHECK_NAMES = ["torproject.org", "tor-connect.github.io"];
 function renderSiteCheck(result = {}) {
   const sites = Array.isArray(result.siteChecks) ? result.siteChecks : [];
   const total = SITE_CHECK_NAMES.length;
+  const replacementConnected = result.state === "connected"
+    && !["trying", "failed", "closed"].includes(result.bridgeActivity);
+  const hasNewConnection = replacementConnected && result.connectedAt
+    && result.connectedAt !== siteCheckFailoverPreviousConnectionId;
+  const replacementCheckStarted = replacementConnected
+    && (hasNewConnection || result.connectivityCheck === "pending" || sites.some((site) => site.state === "pending"));
+  const replacementCheckSettled = replacementConnected
+    && ["passed", "failed"].includes(result.connectivityCheck)
+    && Number(result.connectivityCheckNextAt) > siteCheckFailoverPreviousCheckAt;
+  if (siteCheckFailoverAwaitingCheck && (replacementCheckStarted
+    || replacementCheckSettled
+    || result.state === "failed"
+    || (result.state === "disconnected" && !siteCheckFailoverInProgress))) {
+    siteCheckFailoverAwaitingCheck = false;
+    siteCheckFailoverPreviousConnectionId = undefined;
+    siteCheckFailoverPreviousCheckAt = 0;
+  }
+  const failoverAwaitingCheck = siteCheckFailoverAwaitingCheck;
   const connected = result.state === "connected"
     && !["trying", "failed", "closed"].includes(result.bridgeActivity)
     && ["pending", "passed", "failed"].includes(result.connectivityCheck);
   const failures = sites.filter((site) => site.state === "failed").length;
-  const pending = result.connectivityCheck === "pending" || sites.some((site) => site.state === "pending");
+  const pending = !failoverAwaitingCheck
+    && (result.connectivityCheck === "pending" || sites.some((site) => site.state === "pending"));
   renderSiteCheckCountdown(result, connected && !pending);
-  const siteCheckFailed = failures > 0 || result.connectivityCheck === "failed";
-  const allSitesFailed = failures >= total;
+  const siteCheckFailed = failoverAwaitingCheck || failures > 0 || result.connectivityCheck === "failed";
+  const allSitesFailed = failoverAwaitingCheck || failures >= total;
   if (connected && !pending && !siteCheckFailed) {
     siteCheckFailoverTriedPositions.clear();
     siteCheckFailoverBridgeSignature = bridgeEntries().join("\n");
   }
-  const checkSummary = pending ? t("Checking your connection")
+  const checkSummary = failoverAwaitingCheck
+    ? t("Sites aren't loading · trying another bridge")
+    : pending ? t("Checking your connection")
     : allSitesFailed ? t("Connected, but sites aren't loading")
       : siteCheckFailed ? t("Connected · some sites may be limited")
         : t("Connection verified");
@@ -1080,7 +1109,7 @@ function renderSiteCheck(result = {}) {
       }, 3200);
     }
   }
-  siteCheckSummaryNode.hidden = !connected;
+  siteCheckSummaryNode.hidden = !connected && !failoverAwaitingCheck;
   siteCheckBadgeNode.setAttribute("aria-label", t("Review site check: {summary}", { summary: checkSummary }));
   siteCheckSummaryNode.setAttribute("aria-label", t("Review site check: {summary}", { summary: checkSummary }));
   siteCheckBadgeNode.innerHTML = pending
@@ -1947,8 +1976,9 @@ function renderResult(result) {
           ? t("Add bridge lines in Settings to connect this way")
           : t("Tap the center to connect")
         : "";
+  const visibleDetail = siteCheckFailoverAwaitingCheck ? "" : detail;
   setStatus(preferences.mode === "manual" && !bridgeEntries().length && visualResult.state === "disconnected"
-    ? t("No bridges yet") : explain(visualResult), statusKind, detail);
+    ? t("No bridges yet") : explain(visualResult), statusKind, visibleDetail);
   setToggleState(currentResult.state || "disconnected", currentResult.bridgeActivity, visualResult.state);
   if (currentResult.state === "starting" || currentResult.state === "connected") pollForProgress();
   else if (pollTimer) { clearTimeout(pollTimer); pollTimer = undefined; }
