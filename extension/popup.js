@@ -767,9 +767,18 @@ async function advanceToNextRoute({ automatic = false } = {}) {
       : lastTried ?? (!bridgeListChanged && lastShownPosition >= 0 && lastShownPosition < enabledEntries.length
         ? lastShownPosition : selectedBridgePosition(enabledEntries));
     siteCheckFailoverTriedPositions.add(active);
-    const remainingPositions = Array.from({ length: enabledEntries.length }, (_, offset) =>
+    let remainingPositions = Array.from({ length: enabledEntries.length }, (_, offset) =>
       (active + offset + 1) % enabledEntries.length
     ).filter((index) => !siteCheckFailoverTriedPositions.has(index));
+    if (!remainingPositions.length && siteCheckFailoverTriedPositions.size >= enabledEntries.length) {
+      // Keep cycling through enabled bridges on later failed checks instead of
+      // pinning the UI to the final attempted bridge until the user reconnects.
+      siteCheckFailoverTriedPositions.clear();
+      siteCheckFailoverTriedPositions.add(active);
+      remainingPositions = Array.from({ length: enabledEntries.length }, (_, offset) =>
+        (active + offset + 1) % enabledEntries.length
+      );
+    }
     const nextPosition = remainingPositions[0] ?? -1;
     if (nextPosition < 0) return;
     automaticNextLine = enabledEntries[nextPosition];
