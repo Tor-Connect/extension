@@ -52,6 +52,7 @@ const copyBridgeButton = document.querySelector("#copyBridge");
 const connectionToggle = document.querySelector("#connectionToggle");
 const connectionProgress = document.querySelector("#connectionProgress");
 const popupMainNode = document.querySelector(".popup-main");
+const initialLoadingSkeletonNode = document.querySelector("#initialLoadingSkeleton");
 const setupPanelNode = document.querySelector("#setupPanel");
 const setupDescriptionNode = document.querySelector("#setupDescription");
 const outdatedPanelNode = document.querySelector("#outdatedPanel");
@@ -96,6 +97,37 @@ let pollTimer;
 let outdatedPollGeneration = 0;
 let initialStatusPending = true;
 let initialStatusRetries = 0;
+let initialSkeletonShowTimer;
+let initialSkeletonShownAt = 0;
+let initialSkeletonHideTimer;
+function startInitialLoadingSkeleton() {
+  initialSkeletonShowTimer = window.setTimeout(() => {
+    if (!initialStatusPending || !initialLoadingSkeletonNode) return;
+    initialLoadingSkeletonNode.hidden = false;
+    initialSkeletonShownAt = Date.now();
+    requestAnimationFrame(() => initialLoadingSkeletonNode.classList.add("is-visible"));
+  }, 150);
+}
+
+function finishInitialLoadingSkeleton() {
+  if (initialSkeletonShowTimer) {
+    clearTimeout(initialSkeletonShowTimer);
+    initialSkeletonShowTimer = undefined;
+  }
+  if (!initialLoadingSkeletonNode || initialLoadingSkeletonNode.hidden) return;
+  const visibleFor = Date.now() - initialSkeletonShownAt;
+  const holdFor = Math.max(0, 400 - visibleFor);
+  clearTimeout(initialSkeletonHideTimer);
+  initialSkeletonHideTimer = window.setTimeout(() => {
+    initialLoadingSkeletonNode.classList.remove("is-visible");
+    initialSkeletonHideTimer = window.setTimeout(() => {
+      initialLoadingSkeletonNode.hidden = true;
+      initialSkeletonHideTimer = undefined;
+    }, 350);
+  }, holdFor);
+}
+
+startInitialLoadingSkeleton();
 let preferences = { mode: "snowflake", bridges: "", selectedBridge: "", disabledBridges: [], exitCountry: "" };
 let currentState = "disconnected";
 let currentResult = {};
@@ -1805,6 +1837,7 @@ function renderResult(result) {
   const currentError = currentResult.error || currentResult.message || "";
   if (isFirefoxExtension && /proxy\.settings requires private browsing permission|private browsing permission/i.test(currentError)) {
     initialStatusPending = false;
+    finishInitialLoadingSkeleton();
     renderErrorDetails(currentResult);
     syncBridgeAttemptTimer(currentResult.state);
     syncConnectedDuration(currentResult);
@@ -1837,6 +1870,7 @@ function renderResult(result) {
     return;
   }
   initialStatusPending = false;
+  finishInitialLoadingSkeleton();
   renderErrorDetails(currentResult);
   syncBridgeAttemptTimer(currentResult.state);
   syncConnectedDuration(visualResult);
