@@ -161,7 +161,9 @@ let siteCheckBadgeHideTimer;
 let siteCheckBadgeState = "";
 let siteCheckFailoverBridgeSignature = "";
 let siteCheckFailoverTriedPositions = new Set();
+let siteCheckFailoverExpectedPosition = null;
 let siteCheckFailoverInProgress = false;
+let automaticFailoverCancellationToken = 0;
 let siteCheckFailoverAwaitingCheck = false;
 let siteCheckFailoverPreviousConnectionId;
 let siteCheckFailoverPreviousCheckAt = 0;
@@ -752,6 +754,7 @@ async function advanceToNextRoute({ automatic = false } = {}) {
   const entries = preferences.mode === "manual" ? allBridgeEntries() : [];
   const enabledEntries = preferences.mode === "manual" ? bridgeEntries() : [];
   let automaticNextLine;
+  let automaticNextPosition = -1;
   let automaticRemainingLines;
   if (automatic) {
     if (preferences.mode !== "manual" || enabledEntries.length < 2) return;
@@ -760,12 +763,15 @@ async function advanceToNextRoute({ automatic = false } = {}) {
     if (bridgeListChanged) {
       siteCheckFailoverBridgeSignature = signature;
       siteCheckFailoverTriedPositions.clear();
+      siteCheckFailoverExpectedPosition = null;
     }
     const resolvedActive = activeBridgePosition(currentResult, enabledEntries);
     const lastTried = [...siteCheckFailoverTriedPositions].at(-1);
-    const active = resolvedActive >= 0 ? resolvedActive
-      : lastTried ?? (!bridgeListChanged && lastShownPosition >= 0 && lastShownPosition < enabledEntries.length
-        ? lastShownPosition : selectedBridgePosition(enabledEntries));
+    const hasBridgeAddress = Boolean(String(currentResult.bridgeAddress || "").trim());
+    const active = hasBridgeAddress && resolvedActive >= 0 ? resolvedActive
+      : siteCheckFailoverExpectedPosition ?? (resolvedActive >= 0 ? resolvedActive
+        : lastTried ?? (!bridgeListChanged && lastShownPosition >= 0 && lastShownPosition < enabledEntries.length
+          ? lastShownPosition : selectedBridgePosition(enabledEntries)));
     siteCheckFailoverTriedPositions.add(active);
     let remainingPositions = Array.from({ length: enabledEntries.length }, (_, offset) =>
       (active + offset + 1) % enabledEntries.length
@@ -779,9 +785,9 @@ async function advanceToNextRoute({ automatic = false } = {}) {
         (active + offset + 1) % enabledEntries.length
       );
     }
-    const nextPosition = remainingPositions[0] ?? -1;
-    if (nextPosition < 0) return;
-    automaticNextLine = enabledEntries[nextPosition];
+    automaticNextPosition = remainingPositions[0] ?? -1;
+    if (automaticNextPosition < 0) return;
+    automaticNextLine = enabledEntries[automaticNextPosition];
     automaticRemainingLines = remainingPositions.map((index) => enabledEntries[index]);
   }
   if (automatic) {
@@ -808,7 +814,15 @@ async function advanceToNextRoute({ automatic = false } = {}) {
       }
       if (nextLine) {
         const next = entries.indexOf(nextLine);
+        const cancellationToken = automaticFailoverCancellationToken;
         if (!(await stopTorBeforeRouteChange())) return;
+        if (automatic && cancellationToken !== automaticFailoverCancellationToken) {
+          siteCheckFailoverAwaitingCheck = false;
+          siteCheckFailoverPreviousConnectionId = undefined;
+          siteCheckFailoverPreviousCheckAt = 0;
+          renderSiteCheck(currentResult);
+          return;
+        }
         const request = automatic
           ? {
             mode: "manual",
@@ -817,6 +831,8 @@ async function advanceToNextRoute({ automatic = false } = {}) {
             exitCountry: preferences.exitCountry || ""
           }
           : { mode: "manual", bridges: entries[next], selectedBridgeIndex: next + 1 };
+        if (automatic) siteCheckFailoverExpectedPosition = automaticNextPosition;
+        else siteCheckFailoverExpectedPosition = null;
         renderResult(await send("connect", request));
       } else if (!automatic && entries.length === 1) {
         if (!(await stopTorBeforeRouteChange())) return;
@@ -1515,6 +1531,7 @@ async function selectConnectionMethod(mode) {
   if (!["snowflake", "manual"].includes(mode) || mode === preferences.mode) return;
   if (currentState === "connected" || currentState === "starting") {
     methodButtons.forEach((button) => { button.disabled = true; });
+    automaticFailoverCancellationToken += 1;
     const stopped = await send("disconnect");
     if (!stopped?.ok) {
       methodButtons.forEach((button) => { button.disabled = false; });
@@ -2073,6 +2090,7 @@ function pollForProgress() {
 }
 
 async function connectWithSavedPreferences() {
+  siteCheckFailoverExpectedPosition = null;
   const saved = await readPreferences();
   const entries = bridgeEntries();
   if (saved.mode === "manual" && entries.length > MAX_ENABLED_BRIDGES) {
@@ -2102,6 +2120,7 @@ connectionToggle.addEventListener("click", async () => {
     clearTimeout(globeEntryRetryAnimationTimer);
     globeEntryRetryAnimationTimer = undefined;
     setStatus(t("Disconnecting…"), "starting");
+    automaticFailoverCancellationToken += 1;
     renderResult(await send("disconnect"));
     return;
   }

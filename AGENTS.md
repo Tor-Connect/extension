@@ -19,6 +19,12 @@
 - Do not add unrequested logic, fallbacks, error handling, or behaviour changes while implementing something else. Every line written must trace directly to an explicit request.
 - If a decision made earlier in a task turns out to be wrong or incomplete, surface the problem and ask how to fix it rather than silently patching it in a way that changes behaviour.
 
+## Syntax and lint checks
+
+- Before reporting a code change as done, run the applicable syntax check and lint command for the changed code. Do not rely on visual inspection or `git diff --check` as a substitute.
+- If a relevant checker is unavailable or cannot run, say so explicitly and do not claim that syntax or lint passed.
+- In the completion summary, state which checks ran and whether they passed.
+
 ## Native helper platform matrix
 
 - `native/tor-chrome-helper.py` is the source for **all three platforms**: deployed as a script on Linux and macOS, and compiled into `tor-chrome-helper.exe` via PyInstaller for Windows (see `installer/windows/build-installer.ps1`).
