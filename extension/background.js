@@ -107,7 +107,7 @@ function checkConnectivityAfterConnect(result, generation, { force = false } = {
 
   const connectionId = result.connectedAt || "connected";
   if (connectivityCheckConnectionId !== connectionId) return;
-  if (connectivityCheckPromise) return;
+  if (connectivityCheckPromise) return connectivityCheckPromise;
   if (!force && Date.now() < connectivityCheckNextAt) return;
   connectivityCheckConnectionId = connectionId;
   const attempt = ++connectivityCheckAttempt;
@@ -375,8 +375,8 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       sendResponse(addConnectivityCheck(result));
       return;
     }
-    if (message.type === "disconnect") {
-      await clearProxy();
+    if (message.type === "disconnect" || message.type === "stopTorForRouteChange") {
+      if (message.type === "disconnect") await clearProxy();
       await setActionConnected(false);
       const result = await request("stop");
       logHelperResult("stop", result);

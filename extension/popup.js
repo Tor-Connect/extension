@@ -792,7 +792,12 @@ async function advanceToNextRoute({ automatic = false } = {}) {
         const next = entries.indexOf(nextLine);
         if (!(await stopTorBeforeRouteChange())) return;
         const request = automatic
-          ? { mode: "manual", bridges: automaticRemainingLines.join("\n"), selectedBridgeIndex: null }
+          ? {
+            mode: "manual",
+            bridges: automaticRemainingLines.join("\n"),
+            selectedBridgeIndex: null,
+            exitCountry: preferences.exitCountry || ""
+          }
           : { mode: "manual", bridges: entries[next], selectedBridgeIndex: next + 1 };
         renderResult(await send("connect", request));
       } else if (!automatic && entries.length === 1) {
@@ -814,7 +819,7 @@ nextRouteNode.addEventListener("click", () => advanceToNextRoute());
 async function stopTorBeforeRouteChange() {
   // Stopping Tor can take longer than the normal popup message timeout. Do not
   // start the selected route until the helper confirms the old process stopped.
-  const result = await send("disconnect", {}, 20000);
+  const result = await send("stopTorForRouteChange", {}, 20000);
   if (result?.ok && result.state === "disconnected") return true;
   if (result) renderResult(result);
   return false;
