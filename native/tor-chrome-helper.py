@@ -110,6 +110,7 @@ class Helper:
         self.exit_relay_candidates: set[str] = set()
         self.reconnect_since: float | None = None
         self.auto_recovery_bridges: list[str] = []
+        self.auto_recovery_indices: list[int] = []
         self.auto_recovery_tried: set[int] = set()
         self.auto_recovery_in_progress = False
         self.recovery_attempt_since: float | None = None
@@ -293,7 +294,8 @@ class Helper:
               recovery_bridges: list[str] | None = None,
               recovery_tried: set[int] | None = None,
               exit_country: str = "",
-              bridge_indices: list[int] | None = None) -> dict:
+              bridge_indices: list[int] | None = None,
+              recovery_indices: list[int] | None = None) -> dict:
         with self.lock:
             if self.process and self.process.poll() is None:
                 return self.status_payload(True)
@@ -322,6 +324,13 @@ class Helper:
                 and len(set(bridge_indices)) == len(bridge_indices)
             ):
                 bridge_indices = None
+            if recovery_bridges is not None and recovery_indices is not None and not (
+                isinstance(recovery_indices, list)
+                and len(recovery_indices) == len(recovery_bridges)
+                and all(type(index) is int and 1 <= index <= 20 for index in recovery_indices)
+                and len(set(recovery_indices)) == len(recovery_indices)
+            ):
+                recovery_indices = None
             bridge_lines = ["Bridge " + (line[7:].strip() if line.startswith("Bridge ") else line) for line in parsed]
 
         targets = self.parse_targets(bridge_lines, offset, bridge_indices) if mode == "manual" else []
@@ -365,6 +374,12 @@ class Helper:
                 self.exit_relay_ip = ""; self.exit_relay_country = ""; self.exit_relay_circuit_id = ""
                 self.exit_country = exit_country
                 self.auto_recovery_bridges = list(recovery_bridges) if recovery_bridges is not None else (auto_bridges if mode == "manual" and selected_index is None else [])
+                if recovery_bridges is not None:
+                    self.auto_recovery_indices = list(recovery_indices) if recovery_indices is not None else list(range(1, len(recovery_bridges) + 1))
+                elif self.auto_recovery_bridges:
+                    self.auto_recovery_indices = list(bridge_indices) if bridge_indices is not None else list(range(offset + 1, offset + len(auto_bridges) + 1))
+                else:
+                    self.auto_recovery_indices = []
                 self.auto_recovery_tried = set(recovery_tried or ())
                 self.auto_recovery_in_progress = (recovery_bridges is not None or
                     (mode == "manual" and selected_index is None and bool(auto_bridges)))
@@ -866,7 +881,8 @@ class Helper:
             if not self.auto_recovery_bridges or not (recovery_attempt_due or outage_due):
                 return False
             count = len(self.auto_recovery_bridges)
-            current = (self.current_index - 1) if self.current_index else -1
+            current = next((position for position, bridge_index in enumerate(self.auto_recovery_indices)
+                            if bridge_index == self.current_index), -1)
             candidate = next(((current + step) % count for step in range(1, count + 1)
                               if (current + step) % count not in self.auto_recovery_tried), None)
             if candidate is None:
@@ -882,6 +898,7 @@ class Helper:
                 tried = set(self.auto_recovery_tried)
             else:
                 bridges = list(self.auto_recovery_bridges)
+                indices = list(self.auto_recovery_indices)
                 tried = set(self.auto_recovery_tried)
                 tried.add(candidate)
                 self.message = f"Trying saved bridge {candidate + 1}…"
@@ -894,9 +911,10 @@ class Helper:
                 self.last_error = self.message
             return True
         self.stop(preserve_auto_recovery=True)
-        result = self.start("manual", bridges[candidate], candidate + 1,
+        result = self.start("manual", bridges[candidate], indices[candidate],
                             recovery_bridges=bridges, recovery_tried=tried,
-                            exit_country=self.exit_country)
+                            exit_country=self.exit_country,
+                            recovery_indices=indices)
         if not result.get("ok"):
             with self.lock:
                 self.state = "failed"
@@ -915,6 +933,7 @@ class Helper:
         with self.lock:
             process = self.process; self.stopping = True
             auto_bridges = list(self.auto_recovery_bridges) if preserve_auto_recovery else []
+            recovery_indices = list(self.auto_recovery_indices) if preserve_auto_recovery else []
             auto_tried = set(self.auto_recovery_tried) if preserve_auto_recovery else set()
             recovery_in_progress = self.auto_recovery_in_progress if preserve_auto_recovery else False
             recovery_attempt_since = self.recovery_attempt_since if preserve_auto_recovery else None
@@ -930,6 +949,7 @@ class Helper:
             self.bridge_activity = None; self.built_circuits = {}; self.exit_relay_candidates = set(); self.reconnect_since = None
             self.exit_relay_ip = ""; self.exit_relay_country = ""; self.exit_relay_circuit_id = ""
             self.auto_recovery_bridges = auto_bridges; self.auto_recovery_tried = auto_tried
+            self.auto_recovery_indices = recovery_indices
             self.auto_recovery_in_progress = recovery_in_progress; self.recovery_attempt_since = recovery_attempt_since
             self.recovery_stable_since = stable_since
             self.connected_at = None; self.stopping = False

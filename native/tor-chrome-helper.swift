@@ -29,6 +29,7 @@ final class Helper {
     private var exitRelayCandidates: Set<String> = []
     private var reconnectSince: Date?
     private var autoRecoveryBridges: [String] = []
+    private var autoRecoveryIndices: [Int] = []
     private var autoRecoveryTried: Set<Int> = []
     private var autoRecoveryInProgress = false
     private var recoveryAttemptSince: Date?
@@ -290,6 +291,7 @@ final class Helper {
     private func start(mode: String, bridges: String, selectedBridgeIndex: Int?,
                        bridgeIndices: [Int]? = nil,
                        recoveryBridges: [String]? = nil,
+                       recoveryIndices: [Int]? = nil,
                        recoveryTried: Set<Int> = [],
                        exitCountry: String = "") -> [String: Any] {
         lock.lock(); let alreadyRunning = tor?.isRunning == true; lock.unlock()
@@ -324,6 +326,13 @@ final class Helper {
         }
         let validBridgeIndices = bridgeIndices.flatMap { indices -> [Int]? in
             guard indices.count == bridgeLines.count,
+                  Set(indices).count == indices.count,
+                  indices.allSatisfy({ (1...20).contains($0) }) else { return nil }
+            return indices
+        }
+        let validRecoveryIndices = recoveryIndices.flatMap { indices -> [Int]? in
+            guard let recoveryBridges,
+                  indices.count == recoveryBridges.count,
                   Set(indices).count == indices.count,
                   indices.allSatisfy({ (1...20).contains($0) }) else { return nil }
             return indices
@@ -446,6 +455,13 @@ final class Helper {
             exitRelayIp = ""; exitRelayCountry = ""; exitRelayCircuitId = ""
             reconnectSince = nil
             autoRecoveryBridges = recoveryBridges ?? ((mode == "manual" && selectedBridgeIndex == nil) ? autoBridges : [])
+            if let recoveryBridges {
+                autoRecoveryIndices = validRecoveryIndices ?? Array(1..<(recoveryBridges.count + 1))
+            } else if !autoRecoveryBridges.isEmpty {
+                autoRecoveryIndices = validBridgeIndices ?? Array((bridgeIndexOffset + 1)...(bridgeIndexOffset + autoBridges.count))
+            } else {
+                autoRecoveryIndices = []
+            }
             autoRecoveryTried = recoveryTried
             autoRecoveryInProgress = recoveryBridges != nil || (mode == "manual" && selectedBridgeIndex == nil && !autoBridges.isEmpty)
             recoveryAttemptSince = autoRecoveryInProgress ? Date() : nil
@@ -1064,7 +1080,7 @@ final class Helper {
             return false
         }
         let count = autoRecoveryBridges.count
-        let current = (currentBridgeIndex ?? 0) - 1
+        let current = autoRecoveryIndices.firstIndex(of: currentBridgeIndex ?? -1) ?? -1
         guard let candidate = (1...count).map({ (current + $0) % count }).first(where: { !autoRecoveryTried.contains($0) }) else {
             bridgeActivity = "failed"
             self.reconnectSince = nil
@@ -1080,6 +1096,7 @@ final class Helper {
             return true
         }
         let bridges = autoRecoveryBridges
+        let indices = autoRecoveryIndices
         var tried = autoRecoveryTried
         tried.insert(candidate)
         message = "Trying saved bridge \(candidate + 1)…"
@@ -1088,8 +1105,8 @@ final class Helper {
         lock.unlock()
 
         stop(preserveAutoRecovery: true)
-        let result = start(mode: "manual", bridges: bridges[candidate], selectedBridgeIndex: candidate + 1,
-                           recoveryBridges: bridges, recoveryTried: tried,
+        let result = start(mode: "manual", bridges: bridges[candidate], selectedBridgeIndex: indices[candidate],
+                           recoveryBridges: bridges, recoveryIndices: indices, recoveryTried: tried,
                            exitCountry: exitCountry)
         if (result["ok"] as? Bool) != true {
             lock.lock()
@@ -1141,13 +1158,14 @@ final class Helper {
         lock.unlock()
         lock.lock()
         let savedRecoveryBridges = preserveAutoRecovery ? autoRecoveryBridges : []
+        let savedRecoveryIndices = preserveAutoRecovery ? autoRecoveryIndices : []
         let savedRecoveryTried = preserveAutoRecovery ? autoRecoveryTried : []
         let savedRecoveryInProgress = preserveAutoRecovery ? autoRecoveryInProgress : false
         let savedRecoveryAttemptSince = preserveAutoRecovery ? recoveryAttemptSince : nil
         let savedRecoveryStableSince = preserveAutoRecovery ? recoveryStableSince : nil
         lock.unlock()
         if let process, process.isRunning { process.terminate(); process.waitUntilExit() }
-        lock.lock(); tor = nil; state = "disconnected"; message = "Tor stopped."; lastError = nil; bridgeTargets = []; currentBridgeIndex = nil; bridgeActivity = nil; builtCircuits = [:]; exitRelayCandidates = []; exitRelayIp = ""; exitRelayCountry = ""; exitRelayCircuitId = ""; reconnectSince = nil; autoRecoveryBridges = savedRecoveryBridges; autoRecoveryTried = savedRecoveryTried; autoRecoveryInProgress = savedRecoveryInProgress; recoveryAttemptSince = savedRecoveryAttemptSince; recoveryStableSince = savedRecoveryStableSince; connectedAt = nil; stopping = false; lock.unlock()
+        lock.lock(); tor = nil; state = "disconnected"; message = "Tor stopped."; lastError = nil; bridgeTargets = []; currentBridgeIndex = nil; bridgeActivity = nil; builtCircuits = [:]; exitRelayCandidates = []; exitRelayIp = ""; exitRelayCountry = ""; exitRelayCircuitId = ""; reconnectSince = nil; autoRecoveryBridges = savedRecoveryBridges; autoRecoveryIndices = savedRecoveryIndices; autoRecoveryTried = savedRecoveryTried; autoRecoveryInProgress = savedRecoveryInProgress; recoveryAttemptSince = savedRecoveryAttemptSince; recoveryStableSince = savedRecoveryStableSince; connectedAt = nil; stopping = false; lock.unlock()
     }
 
     private func executable(named name: String) -> URL? {

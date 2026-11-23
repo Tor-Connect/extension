@@ -63,6 +63,7 @@ let isConnected = false;
 let pollTimer;
 let bridgeSaveRevision = 0;
 let copiedTimers = new Map();
+let preferenceWriteQueue = Promise.resolve();
 const t = (key, params) => (globalThis.torI18n?.t || ((s) => s))(key, params);
 const MAX_ENABLED_BRIDGES = 20;
 
@@ -77,6 +78,28 @@ function send(type, extra = {}) {
 
 function allEnabledLines(lines = bridgeLines) {
   return lines.filter((line) => !disabledBridgeLines.has(line) && isBridgeLineValid(line));
+}
+
+function savePreferenceField(field, value, onComplete) {
+  preferenceWriteQueue = preferenceWriteQueue.then(() => new Promise((resolve) => {
+    const finish = (saved) => {
+      try {
+        onComplete(saved);
+      } finally {
+        resolve();
+      }
+    };
+    chrome.storage.local.get("torConnectionPreferences", (stored) => {
+      if (chrome.runtime.lastError) {
+        finish(false);
+        return;
+      }
+      const savedPreferences = { ...(stored?.torConnectionPreferences || {}) };
+      chrome.storage.local.set({
+        torConnectionPreferences: { ...savedPreferences, [field]: value }
+      }, () => finish(!chrome.runtime.lastError));
+    });
+  }));
 }
 
 function markSaveState(message, kind = "") {
@@ -585,16 +608,12 @@ exitCountryOptionButtons.forEach((btn) => {
     const prevCode = preferences.exitCountry;
     preferences.exitCountry = code;
     renderExitCountry();
-    // Base the write on the last persisted record (preferences), not storedPreferences(),
-    // so pending unsaved bridge/mode edits are not silently committed with this picker change.
-    const nextPreferences = { ...preferences, exitCountry: code };
-    chrome.storage.local.set({ torConnectionPreferences: nextPreferences }, () => {
-      if (chrome.runtime.lastError) {
-        preferences.exitCountry = prevCode;
+    savePreferenceField("exitCountry", code, (saved) => {
+      if (!saved) {
+        if (preferences.exitCountry === code) preferences = { ...preferences, exitCountry: prevCode };
         renderExitCountry();
         return;
       }
-      preferences = nextPreferences;
       if (isConnected) showChangeBanner(t("Exit country changed. Reconnect now to apply it."));
     });
   });
@@ -995,31 +1014,28 @@ sectionLinks.forEach((link) => {
 });
 
 killSwitchToggle.addEventListener("click", () => {
-  preferences.killSwitch = !preferences.killSwitch;
+  const previous = preferences.killSwitch === true;
+  const next = !previous;
+  preferences = { ...preferences, killSwitch: next };
   renderKillSwitch();
-  const nextPreferences = { ...preferences };
-  chrome.storage.local.set({ torConnectionPreferences: nextPreferences }, () => {
-    if (chrome.runtime.lastError) {
-      preferences.killSwitch = !preferences.killSwitch;
+  savePreferenceField("killSwitch", next, (saved) => {
+    if (!saved && preferences.killSwitch === next) {
+      preferences = { ...preferences, killSwitch: previous };
       renderKillSwitch();
-      return;
     }
-    preferences = nextPreferences;
   });
 });
 
 autoBridgeFailoverToggle.addEventListener("click", () => {
   const previous = preferences.autoBridgeFailover !== false;
-  preferences = { ...preferences, autoBridgeFailover: !previous };
+  const next = !previous;
+  preferences = { ...preferences, autoBridgeFailover: next };
   renderConnectionHealth();
-  const nextPreferences = { ...preferences };
-  chrome.storage.local.set({ torConnectionPreferences: nextPreferences }, () => {
-    if (chrome.runtime.lastError) {
+  savePreferenceField("autoBridgeFailover", next, (saved) => {
+    if (!saved && preferences.autoBridgeFailover === next) {
       preferences = { ...preferences, autoBridgeFailover: previous };
       renderConnectionHealth();
-      return;
     }
-    preferences = nextPreferences;
   });
 });
 
@@ -1033,14 +1049,11 @@ siteCheckIntervalInput.addEventListener("change", () => {
   const previous = normalizeSiteCheckInterval(preferences.siteCheckIntervalMinutes);
   preferences = { ...preferences, siteCheckIntervalMinutes: minutes };
   renderConnectionHealth();
-  const nextPreferences = { ...preferences };
-  chrome.storage.local.set({ torConnectionPreferences: nextPreferences }, () => {
-    if (chrome.runtime.lastError) {
+  savePreferenceField("siteCheckIntervalMinutes", minutes, (saved) => {
+    if (!saved && preferences.siteCheckIntervalMinutes === minutes) {
       preferences = { ...preferences, siteCheckIntervalMinutes: previous };
       renderConnectionHealth();
-      return;
     }
-    preferences = nextPreferences;
   });
 });
 
