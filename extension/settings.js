@@ -47,6 +47,7 @@ const exitCountryCardNode = document.querySelector("#exitCountryCard");
 const exitCountryNoticeNode = document.querySelector("#exitCountryNotice");
 const exitCountryNavBadge = document.querySelector("#exitCountryNavBadge");
 let preferences = { mode: "snowflake", bridges: "", selectedBridge: "", disabledBridges: [], killSwitch: false, exitCountry: "", autoBridgeFailover: true, siteCheckIntervalMinutes: 5 };
+let confirmedKillSwitch = false;
 let selectedMode = "snowflake";
 let bridgeLines = [];
 let disabledBridgeLines = new Set();
@@ -80,11 +81,14 @@ function allEnabledLines(lines = bridgeLines) {
   return lines.filter((line) => !disabledBridgeLines.has(line) && isBridgeLineValid(line));
 }
 
-function savePreferenceField(field, value, onComplete) {
+function savePreferences(update, onComplete) {
   preferenceWriteQueue = preferenceWriteQueue.then(() => new Promise((resolve) => {
-    const finish = (saved) => {
+    const finish = (saved, nextPreferences) => {
       try {
-        onComplete(saved);
+        if (saved && typeof nextPreferences?.killSwitch === "boolean") {
+          confirmedKillSwitch = nextPreferences.killSwitch;
+        }
+        onComplete?.(saved, nextPreferences);
       } finally {
         resolve();
       }
@@ -95,11 +99,16 @@ function savePreferenceField(field, value, onComplete) {
         return;
       }
       const savedPreferences = { ...(stored?.torConnectionPreferences || {}) };
+      const nextPreferences = { ...savedPreferences, ...update };
       chrome.storage.local.set({
-        torConnectionPreferences: { ...savedPreferences, [field]: value }
-      }, () => finish(!chrome.runtime.lastError));
+        torConnectionPreferences: nextPreferences
+      }, () => finish(!chrome.runtime.lastError, nextPreferences));
     });
   }));
+}
+
+function savePreferenceField(field, value, onComplete) {
+  savePreferences({ [field]: value }, onComplete);
 }
 
 function markSaveState(message, kind = "") {
@@ -133,6 +142,7 @@ function readPreferences() {
         autoBridgeFailover: saved.autoBridgeFailover !== false,
         siteCheckIntervalMinutes: normalizeSiteCheckInterval(saved.siteCheckIntervalMinutes)
       };
+      confirmedKillSwitch = preferences.killSwitch;
       selectedMode = preferences.mode;
       setMode(selectedMode);
       renderBridgeList();
@@ -653,15 +663,15 @@ function saveSettings() {
   markSaveState(t("Saving changes…"));
   saveButton.disabled = true;
   const nextPreferences = storedPreferences();
-  chrome.storage.local.set({ torConnectionPreferences: nextPreferences }, () => {
-    if (chrome.runtime.lastError) {
+  savePreferences(nextPreferences, (saved, savedPreferences) => {
+    if (!saved) {
       saveButton.disabled = false;
       isDirty = true;
       markSaveState(t("Could not save settings. Try again."), "error");
       return;
     }
     saveButton.disabled = false;
-    preferences = nextPreferences;
+    preferences = savedPreferences;
     isDirty = false;
     markSaveState(t("All changes saved"));
     if (isConnected) showChangeBanner(t("Settings saved. Reconnect now to apply them."));
@@ -679,15 +689,15 @@ function saveBridgeList(successMessage, kind = "success") {
   }
   const revision = ++bridgeSaveRevision;
   const nextPreferences = storedPreferences();
-  chrome.storage.local.set({ torConnectionPreferences: nextPreferences }, () => {
+  savePreferences(nextPreferences, (saved, savedPreferences) => {
     if (revision !== bridgeSaveRevision) return;
-    if (chrome.runtime.lastError) {
+    if (!saved) {
       isDirty = true;
       markSaveState(t("Could not save settings. Try again."), "error");
       showClipboardStatus(t("Could not save bridge changes."), "error");
       return;
     }
-    preferences = nextPreferences;
+    preferences = savedPreferences;
     isDirty = false;
     markSaveState(t("All changes saved"));
     showClipboardStatus(successMessage, kind);
@@ -1014,13 +1024,12 @@ sectionLinks.forEach((link) => {
 });
 
 killSwitchToggle.addEventListener("click", () => {
-  const previous = preferences.killSwitch === true;
-  const next = !previous;
+  const next = !(preferences.killSwitch === true);
   preferences = { ...preferences, killSwitch: next };
   renderKillSwitch();
   savePreferenceField("killSwitch", next, (saved) => {
     if (!saved && preferences.killSwitch === next) {
-      preferences = { ...preferences, killSwitch: previous };
+      preferences = { ...preferences, killSwitch: confirmedKillSwitch };
       renderKillSwitch();
     }
   });
@@ -1060,8 +1069,10 @@ siteCheckIntervalInput.addEventListener("change", () => {
 document.addEventListener("tor-language-changed", () => { renderBridgeList(); renderExitCountry(); renderKillSwitch(); renderConnectionHealth(); loadDonationAddresses(); });
 
 chrome.storage.onChanged.addListener((changes, areaName) => {
-  if (areaName !== "local" || !changes.torConnectionPreferences || isDirty) return;
+  if (areaName !== "local" || !changes.torConnectionPreferences) return;
   const saved = { ...(changes.torConnectionPreferences.newValue || {}) };
+  confirmedKillSwitch = saved.killSwitch === true;
+  if (isDirty) return;
   delete saved.autoBridgeSelection;
   bridgeLines = typeof saved.bridges === "string" ? saved.bridges.split(/\r?\n/).map((line) => line.trim()).filter(Boolean) : [];
   disabledBridgeLines = new Set(Array.isArray(saved.disabledBridges)
