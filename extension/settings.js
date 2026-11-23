@@ -56,6 +56,7 @@ const exitCountryNoticeNode = document.querySelector("#exitCountryNotice");
 const exitCountryNavBadge = document.querySelector("#exitCountryNavBadge");
 let preferences = { mode: "snowflake", bridges: "", selectedBridge: "", disabledBridges: [], killSwitch: false, exitCountry: "", autoBridgeFailover: true, siteCheckIntervalMinutes: 5 };
 let confirmedKillSwitch = false;
+let confirmedSiteCheckInterval = 5;
 let selectedMode = "snowflake";
 let bridgeLines = [];
 let disabledBridgeLines = new Set();
@@ -100,6 +101,7 @@ function savePreferences(update, onComplete) {
         if (saved && typeof nextPreferences?.killSwitch === "boolean") {
           confirmedKillSwitch = nextPreferences.killSwitch;
         }
+        if (saved) confirmedSiteCheckInterval = normalizeSiteCheckInterval(nextPreferences?.siteCheckIntervalMinutes);
         onComplete?.(saved, nextPreferences);
       } finally {
         resolve();
@@ -155,6 +157,7 @@ function readPreferences() {
         siteCheckIntervalMinutes: normalizeSiteCheckInterval(saved.siteCheckIntervalMinutes)
       };
       confirmedKillSwitch = preferences.killSwitch;
+      confirmedSiteCheckInterval = preferences.siteCheckIntervalMinutes;
       selectedMode = preferences.mode;
       setMode(selectedMode);
       renderBridgeList();
@@ -765,7 +768,7 @@ function changeSiteCheckInterval(delta) {
   renderConnectionHealth();
   savePreferenceField("siteCheckIntervalMinutes", minutes, (saved) => {
     if (!saved && preferences.siteCheckIntervalMinutes === minutes) {
-      preferences = { ...preferences, siteCheckIntervalMinutes: previous };
+      preferences = { ...preferences, siteCheckIntervalMinutes: confirmedSiteCheckInterval };
       renderConnectionHealth();
     }
   });
@@ -1195,6 +1198,7 @@ chrome.storage.onChanged.addListener((changes, areaName) => {
   if (areaName !== "local" || !changes.torConnectionPreferences) return;
   const saved = { ...(changes.torConnectionPreferences.newValue || {}) };
   confirmedKillSwitch = saved.killSwitch === true;
+  confirmedSiteCheckInterval = normalizeSiteCheckInterval(saved.siteCheckIntervalMinutes);
   if (isDirty) return;
   delete saved.autoBridgeSelection;
   bridgeLines = typeof saved.bridges === "string" ? saved.bridges.split(/\r?\n/).map((line) => line.trim()).filter(Boolean) : [];
