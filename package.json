@@ -4,6 +4,11 @@
   "scripts": {
     "build:i18n": "node scripts/build-i18n.js",
     "check:i18n": "node scripts/check-i18n.js",
-    "extract:i18n": "node scripts/extract-i18n.js"
+    "extract:i18n": "node scripts/extract-i18n.js",
+    "lint": "eslint \"extension/**/*.js\" \"scripts/**/*.js\""
+  },
+  "devDependencies": {
+    "eslint": "^10.15.0",
+    "globals": "^17.14.0"
   }
 }
