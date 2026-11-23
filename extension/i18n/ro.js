@@ -195,7 +195,7 @@ module.exports = {
       "Choose how often sites are checked and whether another bridge is tried after all connection checks fail.": "Alege cât de des sunt verificate site-urile și dacă se încearcă altă punte când toate verificările conexiunii eșuează.",
       "Automatically try another bridge": "Încearcă automat altă punte",
       "Try another enabled bridge when all connection checks fail.": "Încearcă altă punte activată dacă toate verificările conexiunii eșuează.",
-      "Check sites every": "Verifică site-urile la fiecare",
+      "Verify connection every": "Verifică conexiunea la fiecare",
       "Applies to bridge connections only. Switch to Bridge lines to use it.": "Se aplică doar conexiunilor prin bridge-uri. Treci la linii de bridge pentru a folosi această opțiune.",
       "Check now": "Verifică acum",
       "Decrease interval": "Micșorează intervalul",

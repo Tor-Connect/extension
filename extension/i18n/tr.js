@@ -195,7 +195,7 @@ module.exports = {
       "Choose how often sites are checked and whether another bridge is tried after all connection checks fail.": "Sitelerin ne sıklıkta denetleneceğini ve tüm bağlantı denetimleri başarısız olduğunda başka bir köprünün denenip denenmeyeceğini seçin.",
       "Automatically try another bridge": "Otomatik olarak başka bir köprü dene",
       "Try another enabled bridge when all connection checks fail.": "Tüm bağlantı denetimleri başarısız olduğunda etkin başka bir köprüyü dene.",
-      "Check sites every": "Siteleri her",
+      "Verify connection every": "Bağlantıyı her",
       "Applies to bridge connections only. Switch to Bridge lines to use it.": "Yalnızca köprü bağlantıları için geçerlidir. Kullanmak için Köprü satırlarına geçin.",
       "Check now": "Şimdi kontrol et",
       "Decrease interval": "Aralığı azalt",

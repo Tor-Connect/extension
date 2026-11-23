@@ -195,7 +195,7 @@ module.exports = {
       "Choose how often sites are checked and whether another bridge is tried after all connection checks fail.": "بازهٔ بررسی سایت‌ها و اینکه پس از ناموفق بودن همهٔ بررسی‌های اتصال، پل دیگری امتحان شود یا نه.",
       "Automatically try another bridge": "تلاش خودکار برای پل بعدی",
       "Try another enabled bridge when all connection checks fail.": "اگر همهٔ بررسی‌های اتصال ناموفق باشند، یک پل فعال دیگر را امتحان کنید.",
-      "Check sites every": "بررسی سایت‌ها هر",
+      "Verify connection every": "بررسی اتصال هر",
       "Applies to bridge connections only. Switch to Bridge lines to use it.": "این گزینه فقط برای اتصال با پل‌ها کاربرد دارد. برای استفاده، «خطوط پل» را انتخاب کنید.",
       "Check now": "بررسی کن",
       "Decrease interval": "کاهش فاصلهٔ بررسی",
