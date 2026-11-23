@@ -52,6 +52,7 @@ const copyBridgeButton = document.querySelector("#copyBridge");
 const connectionToggle = document.querySelector("#connectionToggle");
 const connectionProgress = document.querySelector("#connectionProgress");
 const popupMainNode = document.querySelector(".popup-main");
+const initialLoadingSkeletonNode = document.querySelector("#initialLoadingSkeleton");
 const setupPanelNode = document.querySelector("#setupPanel");
 const setupDescriptionNode = document.querySelector("#setupDescription");
 const outdatedPanelNode = document.querySelector("#outdatedPanel");
@@ -81,12 +82,14 @@ const siteCheckBadgeNode = document.querySelector("#siteCheckBadge");
 const siteCheckSummaryNode = document.querySelector("#siteCheckSummary");
 const siteCheckRowsNode = document.querySelector("#siteCheckRows");
 const siteCheckCountNode = document.querySelector("#siteCheckCount");
+const retestCountdownNode = document.querySelector("#retestCountdown");
 const nextRouteNode = document.querySelector("#nextRoute");
 // Bridges sheet
 const bridgesSheetNode = document.querySelector("#bridgesSheet");
 const bridgesBackdropNode = document.querySelector("#bridgesBackdrop");
 const closeBridgesNode = document.querySelector("#closeBridges");
 const bridgeRowsNode = document.querySelector("#bridgeRows");
+const bridgeLimitNoticeNode = document.querySelector("#bridgeLimitNotice");
 const addBridgesFromSheetButton = document.querySelector("#addBridgesFromSheet");
 let bridgesSheetOpen = false;
 let statsPollTimer;
@@ -95,7 +98,38 @@ let pollTimer;
 let outdatedPollGeneration = 0;
 let initialStatusPending = true;
 let initialStatusRetries = 0;
-let preferences = { mode: "snowflake", bridges: "", selectedBridge: "", disabledBridges: [], exitCountry: "" };
+let initialSkeletonShowTimer;
+let initialSkeletonShownAt = 0;
+let initialSkeletonHideTimer;
+function startInitialLoadingSkeleton() {
+  initialSkeletonShowTimer = window.setTimeout(() => {
+    if (!initialStatusPending || !initialLoadingSkeletonNode) return;
+    initialLoadingSkeletonNode.hidden = false;
+    initialSkeletonShownAt = Date.now();
+    requestAnimationFrame(() => initialLoadingSkeletonNode.classList.add("is-visible"));
+  }, 150);
+}
+
+function finishInitialLoadingSkeleton() {
+  if (initialSkeletonShowTimer) {
+    clearTimeout(initialSkeletonShowTimer);
+    initialSkeletonShowTimer = undefined;
+  }
+  if (!initialLoadingSkeletonNode || initialLoadingSkeletonNode.hidden) return;
+  const visibleFor = Date.now() - initialSkeletonShownAt;
+  const holdFor = Math.max(0, 400 - visibleFor);
+  clearTimeout(initialSkeletonHideTimer);
+  initialSkeletonHideTimer = window.setTimeout(() => {
+    initialLoadingSkeletonNode.classList.remove("is-visible");
+    initialSkeletonHideTimer = window.setTimeout(() => {
+      initialLoadingSkeletonNode.hidden = true;
+      initialSkeletonHideTimer = undefined;
+    }, 350);
+  }, holdFor);
+}
+
+startInitialLoadingSkeleton();
+let preferences = { mode: "snowflake", bridges: "", selectedBridge: "", disabledBridges: [], exitCountry: "", autoBridgeFailover: true, siteCheckIntervalMinutes: 5 };
 let currentState = "disconnected";
 let currentResult = {};
 let bridgeCountries = new Map();
@@ -125,8 +159,21 @@ let globeOrientationExitCode = "";
 let globeRotationPlayed = false;
 let siteCheckBadgeHideTimer;
 let siteCheckBadgeState = "";
+let siteCheckFailoverBridgeSignature = "";
+let siteCheckFailoverTriedPositions = new Set();
+let siteCheckFailoverExpectedPosition = null;
+let siteCheckFailoverInProgress = false;
+let automaticFailoverCancellationToken = 0;
+let siteCheckFailoverAwaitingCheck = false;
+let siteCheckFailoverPreviousConnectionId;
+let siteCheckFailoverPreviousCheckAt = 0;
 const t = (key, params) => (globalThis.torI18n?.t || ((s) => s))(key, params);
 const MAX_ENABLED_BRIDGES = 20;
+
+function normalizeSiteCheckIntervalMinutes(value) {
+  const minutes = Number(value);
+  return Number.isInteger(minutes) && minutes >= 1 && minutes <= 60 ? minutes : 5;
+}
 
 // Exit-country centers commonly returned by Tor relays. Coordinates are
 // latitude/longitude in degrees; the three design skins anchor the globe.
@@ -707,32 +754,117 @@ document.querySelector("#retestSites").addEventListener("click", async (event) =
     renderResult(result);
   } finally { button.disabled = false; }
 });
-nextRouteNode.addEventListener("click", async () => {
+async function advanceToNextRoute({ automatic = false } = {}) {
+  if (siteCheckFailoverInProgress) return;
+  const entries = preferences.mode === "manual" ? allBridgeEntries() : [];
+  const enabledEntries = preferences.mode === "manual" ? bridgeEntries() : [];
+  let automaticNextLine;
+  let automaticNextPosition = -1;
+  let automaticRemainingLines;
+  let automaticRemainingPositions;
+  if (automatic) {
+    if (preferences.mode !== "manual" || enabledEntries.length < 2) return;
+    const signature = enabledEntries.join("\n");
+    const bridgeListChanged = signature !== siteCheckFailoverBridgeSignature;
+    if (bridgeListChanged) {
+      siteCheckFailoverBridgeSignature = signature;
+      siteCheckFailoverTriedPositions.clear();
+      siteCheckFailoverExpectedPosition = null;
+    }
+    const resolvedActive = activeBridgePosition(currentResult, enabledEntries);
+    const lastTried = [...siteCheckFailoverTriedPositions].at(-1);
+    const hasBridgeAddress = Boolean(String(currentResult.bridgeAddress || "").trim());
+    const active = hasBridgeAddress && resolvedActive >= 0 ? resolvedActive
+      : siteCheckFailoverExpectedPosition ?? (resolvedActive >= 0 ? resolvedActive
+        : lastTried ?? (!bridgeListChanged && lastShownPosition >= 0 && lastShownPosition < enabledEntries.length
+          ? lastShownPosition : selectedBridgePosition(enabledEntries)));
+    siteCheckFailoverTriedPositions.add(active);
+    let remainingPositions = Array.from({ length: enabledEntries.length }, (_, offset) =>
+      (active + offset + 1) % enabledEntries.length
+    ).filter((index) => !siteCheckFailoverTriedPositions.has(index));
+    if (!remainingPositions.length && siteCheckFailoverTriedPositions.size >= enabledEntries.length) {
+      // Keep cycling through enabled bridges on later failed checks instead of
+      // pinning the UI to the final attempted bridge until the user reconnects.
+      siteCheckFailoverTriedPositions.clear();
+      siteCheckFailoverTriedPositions.add(active);
+      remainingPositions = Array.from({ length: enabledEntries.length }, (_, offset) =>
+        (active + offset + 1) % enabledEntries.length
+      );
+    }
+    automaticNextPosition = remainingPositions[0] ?? -1;
+    if (automaticNextPosition < 0) return;
+    automaticNextLine = enabledEntries[automaticNextPosition];
+    automaticRemainingPositions = remainingPositions;
+    automaticRemainingLines = remainingPositions.map((index) => enabledEntries[index]);
+  }
+  if (automatic) {
+    siteCheckFailoverAwaitingCheck = true;
+    siteCheckFailoverPreviousConnectionId = currentResult.connectedAt;
+    siteCheckFailoverPreviousCheckAt = Number(currentResult.connectivityCheckNextAt) || 0;
+  }
+  siteCheckFailoverInProgress = true;
   nextRouteNode.disabled = true;
   // Focus the toggle before closing the sheet so the popup does not lose focus
   // (Chrome closes the popup the moment focus leaves the window).
   connectionToggle.focus();
   closeSiteCheck();
   setStatus(t("Connecting…"), "starting");
-  if (preferences.mode === "manual") {
-    const entries = allBridgeEntries();
-    if (entries.length > 1) {
-      const enabledEntries = bridgeEntries();
-      const active = activeBridgePosition(currentResult, enabledEntries);
-      const nextLine = enabledEntries[(active + 1 + enabledEntries.length) % enabledEntries.length] || entries[(selectedBridgePosition(entries) + 1) % entries.length];
-      const next = entries.indexOf(nextLine);
-      await send("disconnect");
-      renderResult(await send("connect", { mode: "manual", bridges: entries[next], selectedBridgeIndex: next + 1 }));
-    } else if (entries.length === 1) {
-      await send("disconnect");
-      renderResult(await connectWithSavedPreferences());
+  try {
+    if (preferences.mode === "manual") {
+      let nextLine;
+      if (automatic) {
+        nextLine = automaticNextLine;
+      } else if (entries.length > 1) {
+        const active = activeBridgePosition(currentResult, enabledEntries);
+        nextLine = enabledEntries[(active + 1 + enabledEntries.length) % enabledEntries.length]
+          || entries[(selectedBridgePosition(entries) + 1) % entries.length];
+      }
+      if (nextLine) {
+        const next = entries.indexOf(nextLine);
+        const cancellationToken = automaticFailoverCancellationToken;
+        if (!(await stopTorBeforeRouteChange())) return;
+        if (automatic && cancellationToken !== automaticFailoverCancellationToken) {
+          siteCheckFailoverAwaitingCheck = false;
+          siteCheckFailoverPreviousConnectionId = undefined;
+          siteCheckFailoverPreviousCheckAt = 0;
+          return;
+        }
+        const request = automatic
+          ? {
+            mode: "manual",
+            bridges: automaticRemainingLines.join("\n"),
+            bridgeIndices: automaticRemainingPositions.map((position) => position + 1),
+            selectedBridgeIndex: null,
+            exitCountry: preferences.exitCountry || ""
+          }
+          : { mode: "manual", bridges: entries[next], selectedBridgeIndex: next + 1 };
+        if (automatic) siteCheckFailoverExpectedPosition = automaticNextPosition;
+        else siteCheckFailoverExpectedPosition = null;
+        renderResult(await send("connect", request));
+      } else if (!automatic && entries.length === 1) {
+        if (!(await stopTorBeforeRouteChange())) return;
+        renderResult(await connectWithSavedPreferences());
+      }
+    } else if (!automatic) {
+      if (!(await stopTorBeforeRouteChange())) return;
+      renderResult(await send("connect", { mode: "snowflake", bridges: "" }));
     }
-  } else {
-    await send("disconnect");
-    renderResult(await send("connect", { mode: "snowflake", bridges: "" }));
+  } finally {
+    nextRouteNode.disabled = false;
+    siteCheckFailoverInProgress = false;
   }
-  nextRouteNode.disabled = false;
-});
+}
+
+nextRouteNode.addEventListener("click", () => advanceToNextRoute());
+
+async function stopTorBeforeRouteChange() {
+  // Stopping Tor can take longer than the normal popup message timeout. Do not
+  // start the selected route until the helper confirms the old process stopped.
+  const result = await send("stopTorForRouteChange", {}, 20000);
+  if (result?.ok && result.state === "disconnected") return true;
+  if (result) renderResult(result);
+  return false;
+}
 
 siteCheckSheetNode.addEventListener("keydown", (event) => {
   if (event.key === "Escape") {
@@ -954,14 +1086,40 @@ const SITE_CHECK_NAMES = ["torproject.org", "tor-connect.github.io"];
 function renderSiteCheck(result = {}) {
   const sites = Array.isArray(result.siteChecks) ? result.siteChecks : [];
   const total = SITE_CHECK_NAMES.length;
+  const replacementConnected = result.state === "connected"
+    && !["trying", "failed", "closed"].includes(result.bridgeActivity);
+  const hasNewConnection = replacementConnected && result.connectedAt
+    && result.connectedAt !== siteCheckFailoverPreviousConnectionId;
+  const replacementCheckStarted = replacementConnected
+    && (hasNewConnection || result.connectivityCheck === "pending" || sites.some((site) => site.state === "pending"));
+  const replacementCheckSettled = replacementConnected
+    && ["passed", "failed"].includes(result.connectivityCheck)
+    && Number(result.connectivityCheckNextAt) > siteCheckFailoverPreviousCheckAt;
+  if (siteCheckFailoverAwaitingCheck && (replacementCheckStarted
+    || replacementCheckSettled
+    || result.state === "failed"
+    || (result.state === "disconnected" && !siteCheckFailoverInProgress))) {
+    siteCheckFailoverAwaitingCheck = false;
+    siteCheckFailoverPreviousConnectionId = undefined;
+    siteCheckFailoverPreviousCheckAt = 0;
+  }
+  const failoverAwaitingCheck = siteCheckFailoverAwaitingCheck;
   const connected = result.state === "connected"
     && !["trying", "failed", "closed"].includes(result.bridgeActivity)
     && ["pending", "passed", "failed"].includes(result.connectivityCheck);
   const failures = sites.filter((site) => site.state === "failed").length;
-  const pending = result.connectivityCheck === "pending" || sites.some((site) => site.state === "pending");
-  const siteCheckFailed = failures > 0 || result.connectivityCheck === "failed";
-  const allSitesFailed = failures >= total;
-  const checkSummary = pending ? t("Checking your connection")
+  const pending = !failoverAwaitingCheck
+    && (result.connectivityCheck === "pending" || sites.some((site) => site.state === "pending"));
+  renderSiteCheckCountdown(result, connected && !pending);
+  const siteCheckFailed = failoverAwaitingCheck || failures > 0 || result.connectivityCheck === "failed";
+  const allSitesFailed = failoverAwaitingCheck || failures >= total;
+  if (connected && !pending && !siteCheckFailed) {
+    siteCheckFailoverTriedPositions.clear();
+    siteCheckFailoverBridgeSignature = bridgeEntries().join("\n");
+  }
+  const checkSummary = failoverAwaitingCheck
+    ? t("Sites aren't loading · trying another bridge")
+    : pending ? t("Checking your connection")
     : allSitesFailed ? t("Connected, but sites aren't loading")
       : siteCheckFailed ? t("Connected · some sites may be limited")
         : t("Connection verified");
@@ -984,7 +1142,7 @@ function renderSiteCheck(result = {}) {
       }, 3200);
     }
   }
-  siteCheckSummaryNode.hidden = !connected;
+  siteCheckSummaryNode.hidden = !connected && !failoverAwaitingCheck;
   siteCheckBadgeNode.setAttribute("aria-label", t("Review site check: {summary}", { summary: checkSummary }));
   siteCheckSummaryNode.setAttribute("aria-label", t("Review site check: {summary}", { summary: checkSummary }));
   siteCheckBadgeNode.innerHTML = pending
@@ -1036,8 +1194,44 @@ function renderSiteCheck(result = {}) {
     row.append(icon, siteName, meta);
     return row;
   }));
+  if (connected && !pending && allSitesFailed && preferences.autoBridgeFailover !== false
+    && preferences.mode === "manual" && bridgeEntries().length > 1) {
+    const failedResult = result;
+    queueMicrotask(() => {
+      if (currentResult !== failedResult) return;
+      const latestSites = Array.isArray(currentResult.siteChecks) ? currentResult.siteChecks : [];
+      if (currentResult.connectivityCheck === "failed"
+        && latestSites.length >= SITE_CHECK_NAMES.length
+        && latestSites.every((site) => site.state === "failed")) {
+        advanceToNextRoute({ automatic: true });
+      }
+    });
+  }
   if (result.state !== "connected" && !siteCheckSheetNode.hidden) closeSiteCheck();
 }
+
+function renderSiteCheckCountdown(result = currentResult, isSettled = false) {
+  const nextCheckAt = Number(result.connectivityCheckNextAt);
+  const secondsRemaining = Math.ceil((nextCheckAt - Date.now()) / 1000);
+  if (!isSettled || !Number.isFinite(nextCheckAt) || secondsRemaining <= 0) {
+    retestCountdownNode.hidden = true;
+    return;
+  }
+  const minutes = Math.floor(secondsRemaining / 60);
+  const seconds = String(secondsRemaining % 60).padStart(2, "0");
+  retestCountdownNode.textContent = t("Next automatic check in {time}", { time: `${minutes}:${seconds}` });
+  retestCountdownNode.hidden = false;
+}
+
+window.setInterval(() => {
+  const result = currentResult;
+  const sites = Array.isArray(result.siteChecks) ? result.siteChecks : [];
+  const settled = result.state === "connected"
+    && !["trying", "failed", "closed"].includes(result.bridgeActivity)
+    && ["passed", "failed"].includes(result.connectivityCheck)
+    && !sites.some((site) => site.state === "pending");
+  renderSiteCheckCountdown(result, settled);
+}, 1000);
 
 const query = new URLSearchParams(location.search);
 const isTabView = query.get("view") === "tab";
@@ -1114,7 +1308,9 @@ function readPreferences() {
         bridges: typeof saved?.bridges === "string" ? saved.bridges : "",
         selectedBridge: typeof saved?.selectedBridge === "string" ? saved.selectedBridge : "",
         disabledBridges: Array.isArray(saved?.disabledBridges) ? saved.disabledBridges : [],
-        exitCountry: typeof saved?.exitCountry === "string" ? saved.exitCountry : ""
+        exitCountry: typeof saved?.exitCountry === "string" ? saved.exitCountry : "",
+        autoBridgeFailover: saved?.autoBridgeFailover !== false,
+        siteCheckIntervalMinutes: normalizeSiteCheckIntervalMinutes(saved?.siteCheckIntervalMinutes)
       };
       const entries = bridgeEntries();
       if (!entries.includes(preferences.selectedBridge)) preferences.selectedBridge = entries[0] || "";
@@ -1166,10 +1362,29 @@ function bridgeAddress(line) {
   return parts[addressIndex]?.toLowerCase() || "";
 }
 
+function bridgeFingerprint(line) {
+  const parts = line?.trim().split(/\s+/) || [];
+  const start = parts[0]?.toLowerCase() === "bridge" ? 1 : 0;
+  const first = parts[start]?.toLowerCase() || "";
+  const addressIndex = start + (BRIDGE_TRANSPORT_TYPES.has(first) ? 1 : 0);
+  const fingerprint = parts[addressIndex + 1]?.toLowerCase() || "";
+  return /^[\da-f]{40}$/.test(fingerprint) ? fingerprint : "";
+}
+
 function activeBridgePosition(result, entries = bridgeEntries()) {
   if (result?.bridgeAddress) {
     const address = String(result.bridgeAddress).toLowerCase();
-    return entries.findIndex((line) => bridgeAddress(line) === address);
+    const matchingPositions = entries.reduce((positions, line, index) => {
+      if (bridgeAddress(line) === address) positions.push(index);
+      return positions;
+    }, []);
+    if (matchingPositions.length === 1) return matchingPositions[0];
+    if (matchingPositions.length > 1 && result.bridgeFingerprint) {
+      const fingerprint = String(result.bridgeFingerprint).toLowerCase();
+      const fingerprintMatches = matchingPositions.filter((index) => bridgeFingerprint(entries[index]) === fingerprint);
+      if (fingerprintMatches.length === 1) return fingerprintMatches[0];
+    }
+    return -1;
   }
   const originalIndex = Number(result?.currentBridgeIndex) - 1;
   if (originalIndex < 0) return -1;
@@ -1225,7 +1440,15 @@ async function refreshBridgeCountries() {
 function renderBridgeSelector() {
   const allEntries = allBridgeEntries();
   const disabled = new Set(preferences.disabledBridges);
+  const enabledCount = bridgeEntries().length;
+  const limitReached = enabledCount >= MAX_ENABLED_BRIDGES;
   if (!bridgeRowsNode) return;
+  if (bridgeLimitNoticeNode) {
+    bridgeLimitNoticeNode.textContent = limitReached
+      ? t("Up to {n} bridges may be enabled at a time. Disable one to enable another.", { n: MAX_ENABLED_BRIDGES })
+      : "";
+    bridgeLimitNoticeNode.hidden = !limitReached;
+  }
   const focusedBridgeLine = bridgeRowsNode.contains(document.activeElement)
     ? document.activeElement.closest(".bridge-row")?.dataset.bridgeLine
     : undefined;
@@ -1245,6 +1468,8 @@ function renderBridgeSelector() {
     btn.role = "switch";
     btn.setAttribute("role", "switch");
     btn.setAttribute("aria-checked", String(on));
+    btn.disabled = !on && limitReached;
+    if (btn.disabled) btn.setAttribute("aria-describedby", "bridgeLimitNotice");
     btn.className = "bridge-row";
     btn.dataset.bridgeLine = line;
     const countryName = /^[A-Z]{2}$/.test(countryCode)
@@ -1288,7 +1513,19 @@ function renderBridgeSelector() {
 
     btn.addEventListener("click", () => {
       const d = new Set(preferences.disabledBridges);
-      if (d.has(line)) d.delete(line); else d.add(line);
+      if (on) {
+        d.add(line);
+      } else {
+        if (bridgeEntries().length >= MAX_ENABLED_BRIDGES) {
+          bridgeLimitNoticeNode.textContent = t(
+            "Up to {n} bridges may be enabled at a time. Disable one to enable another.",
+            { n: MAX_ENABLED_BRIDGES }
+          );
+          bridgeLimitNoticeNode.hidden = false;
+          return;
+        }
+        d.delete(line);
+      }
       preferences.disabledBridges = [...d];
       chrome.storage.local.set({ torConnectionPreferences: preferences });
       renderBridgeSelector();
@@ -1323,6 +1560,7 @@ async function selectConnectionMethod(mode) {
   if (!["snowflake", "manual"].includes(mode) || mode === preferences.mode) return;
   if (currentState === "connected" || currentState === "starting") {
     methodButtons.forEach((button) => { button.disabled = true; });
+    automaticFailoverCancellationToken += 1;
     const stopped = await send("disconnect");
     if (!stopped?.ok) {
       methodButtons.forEach((button) => { button.disabled = false; });
@@ -1711,6 +1949,7 @@ function renderResult(result) {
   const currentError = currentResult.error || currentResult.message || "";
   if (isFirefoxExtension && /proxy\.settings requires private browsing permission|private browsing permission/i.test(currentError)) {
     initialStatusPending = false;
+    finishInitialLoadingSkeleton();
     renderErrorDetails(currentResult);
     syncBridgeAttemptTimer(currentResult.state);
     syncConnectedDuration(currentResult);
@@ -1743,6 +1982,7 @@ function renderResult(result) {
     return;
   }
   initialStatusPending = false;
+  finishInitialLoadingSkeleton();
   renderErrorDetails(currentResult);
   syncBridgeAttemptTimer(currentResult.state);
   syncConnectedDuration(visualResult);
@@ -1814,8 +2054,9 @@ function renderResult(result) {
           ? t("Add bridge lines in Settings to connect this way")
           : t("Tap the center to connect")
         : "";
+  const visibleDetail = siteCheckFailoverAwaitingCheck ? "" : detail;
   setStatus(preferences.mode === "manual" && !bridgeEntries().length && visualResult.state === "disconnected"
-    ? t("No bridges yet") : explain(visualResult), statusKind, detail);
+    ? t("No bridges yet") : explain(visualResult), statusKind, visibleDetail);
   setToggleState(currentResult.state || "disconnected", currentResult.bridgeActivity, visualResult.state);
   if (currentResult.state === "starting" || currentResult.state === "connected") pollForProgress();
   else if (pollTimer) { clearTimeout(pollTimer); pollTimer = undefined; }
@@ -1878,6 +2119,7 @@ function pollForProgress() {
 }
 
 async function connectWithSavedPreferences() {
+  siteCheckFailoverExpectedPosition = null;
   const saved = await readPreferences();
   const entries = bridgeEntries();
   if (saved.mode === "manual" && entries.length > MAX_ENABLED_BRIDGES) {
@@ -1907,6 +2149,7 @@ connectionToggle.addEventListener("click", async () => {
     clearTimeout(globeEntryRetryAnimationTimer);
     globeEntryRetryAnimationTimer = undefined;
     setStatus(t("Disconnecting…"), "starting");
+    automaticFailoverCancellationToken += 1;
     renderResult(await send("disconnect"));
     return;
   }
@@ -1962,13 +2205,17 @@ document.addEventListener("tor-language-changed", () => {
 chrome.storage.onChanged.addListener((changes, areaName) => {
   if (areaName !== "local" || !changes.torConnectionPreferences) return;
   const saved = changes.torConnectionPreferences.newValue || {};
+  const wasAutoBridgeFailover = preferences.autoBridgeFailover !== false;
   preferences = {
     mode: saved.mode === "manual" ? "manual" : "snowflake",
     bridges: typeof saved.bridges === "string" ? saved.bridges : "",
     selectedBridge: typeof saved.selectedBridge === "string" ? saved.selectedBridge : "",
     disabledBridges: Array.isArray(saved.disabledBridges) ? saved.disabledBridges : [],
-    exitCountry: typeof saved.exitCountry === "string" ? saved.exitCountry : ""
+    exitCountry: typeof saved.exitCountry === "string" ? saved.exitCountry : "",
+    autoBridgeFailover: saved.autoBridgeFailover !== false,
+    siteCheckIntervalMinutes: normalizeSiteCheckIntervalMinutes(saved.siteCheckIntervalMinutes)
   };
+  if (wasAutoBridgeFailover && !preferences.autoBridgeFailover) automaticFailoverCancellationToken += 1;
   if (!bridgeEntries().includes(preferences.selectedBridge)) preferences.selectedBridge = bridgeEntries()[0] || "";
   renderBridgeSelector();
   renderConnectionMethodSwitch();

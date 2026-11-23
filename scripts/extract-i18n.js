@@ -23,10 +23,10 @@ const OUTPUT_FILE = "extension/i18n/en.js";
 function extractFromJs(src) {
   const keys = new Set();
   // Match t("...") or t('...') — single-level string literals only
-  const re = /\bt\(\s*(["'])((?:[^"'\\]|\\.)*?)\1/g;
+  const re = /\bt\(\s*(?:"((?:[^"\\]|\\.)*)"|'((?:[^'\\]|\\.)*)')/g;
   let m;
   while ((m = re.exec(src)) !== null) {
-    const key = m[2].replace(/\\(["'\\])/g, "$1");
+    const key = (m[1] ?? m[2]).replace(/\\(["'\\])/g, "$1");
     if (key.trim()) keys.add(key);
   }
   return keys;

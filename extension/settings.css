@@ -2,7 +2,7 @@
   font-family: "Space Grotesk";
   src: url("fonts/space-grotesk/SpaceGrotesk-latin.woff2") format("woff2");
   font-style: normal;
-  font-weight: 500 600;
+  font-weight: 300 700;
   font-display: swap;
 }
 @font-face {
@@ -22,7 +22,7 @@
 :root { color-scheme: dark; font: 14px/1.5 "Space Grotesk", Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
-body { min-width: 320px; min-height: 100vh; margin: 0; color: var(--pearl-text); background: var(--pearl-page); }
+body.settings-page { min-width: 320px; min-height: 100vh; margin: 0; color: var(--pearl-text); background: var(--pearl-page); font-family: "Space Grotesk", Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
 button, a { font: inherit; }
 button { cursor: pointer; }
 a { color: inherit; text-decoration: none; }
@@ -238,6 +238,42 @@ html[data-theme="light"] .picker-code-badge { background: var(--pearl-accent-sof
 .kill-switch-protected svg { width: 18px; height: 18px; flex: 0 0 18px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 2.6; }
 .kill-switch-warning { display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px; border: 1px solid var(--pearl-warning); border-radius: 12px; background: var(--pearl-warning-soft); font-size: 13px; line-height: 1.5; color: var(--pearl-warning); }
 .kill-switch-warning svg { width: 18px; height: 18px; flex: 0 0 18px; margin-top: 1px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 2.2; }
+.connection-health-card { border: 1.5px solid var(--pearl-border); border-radius: 20px; background: var(--pearl-surface); overflow: hidden; transition: border-color .25s ease, background .25s ease; }
+.connection-health-card[data-on="true"] { border-color: var(--pearl-accent-border); background: var(--pearl-accent-soft); }
+.connection-health-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 20px; }
+.connection-health-failover-row + .connection-health-row, .connection-health-row + .connection-health-check-row { border-top: 1px solid var(--pearl-border); }
+.connection-health-icon { display: grid; width: 48px; height: 48px; flex: 0 0 48px; place-items: center; border-radius: 14px; color: var(--pearl-secondary); background: var(--pearl-surface); transition: background .25s ease, color .25s ease; }
+.connection-health-icon svg { width: 26px; height: 26px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 2; }
+.connection-health-card[data-on="true"] .connection-health-failover-row .connection-health-icon { color: var(--pearl-accent); background: var(--pearl-accent-soft); }
+.connection-health-copy { display: flex; min-width: 0; flex-direction: column; gap: 6px; }
+.connection-health-copy strong { color: var(--pearl-text); font-size: 17px; font-weight: 600; }
+.connection-health-copy span { color: var(--pearl-secondary); font-size: 14px; line-height: 1.55; }
+.connection-health-failover-row[data-disabled="true"] .connection-health-row { opacity: .5; }
+.connection-health-failover-row .connection-health-copy { flex: 1; }
+.connection-health-interval-row .connection-health-copy { flex: 1; }
+.connection-health-hint { margin: 0; padding: 0 20px 16px; padding-inline-start: 84px; color: var(--pearl-muted); font-size: 13px; line-height: 1.5; }
+.connection-health-hint[hidden] { display: none !important; }
+.connection-health-interval-control { display: inline-flex; flex: 0 0 auto; align-items: center; gap: 6px; color: var(--pearl-secondary); font-size: 14px; }
+.connection-health-interval-control button { display: grid; width: 44px; height: 44px; flex: 0 0 44px; place-items: center; padding: 0; border: 1px solid var(--pearl-border); border-radius: 12px; color: var(--pearl-text); background: #151518; font-size: 22px; line-height: 1; transition: border-color .2s ease, background .2s ease, opacity .2s ease; }
+.connection-health-interval-control button:hover:not(:disabled), .connection-health-check-button:hover:not(:disabled) { border-color: var(--pearl-accent-border); background: var(--pearl-accent-soft); }
+.connection-health-interval-control button:disabled { cursor: not-allowed; opacity: .4; }
+.connection-health-interval-control output { display: grid; min-width: 64px; height: 44px; place-items: center; border-radius: 12px; color: var(--pearl-text); background: var(--pearl-page); font: 600 20px/1 "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace; }
+.connection-health-interval-control > span { min-width: 58px; margin-inline-start: 6px; }
+.connection-health-check-row { display: flex; min-height: 68px; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 20px; border-top: 1px solid var(--pearl-border); }
+.connection-health-check-status { display: inline-flex; min-width: 0; align-items: center; gap: 10px; color: var(--pearl-muted); font-size: 14px; line-height: 1.45; }
+.connection-health-check-status > span { min-width: 0; }
+.connection-health-check-status svg { width: 16px; height: 16px; flex: 0 0 16px; fill: none; stroke: var(--pearl-accent); stroke-linecap: round; stroke-linejoin: round; stroke-width: 2.4; }
+.connection-health-check-status .health-failed-icon, .connection-health-check-status .health-pending-icon { display: none; }
+.connection-health-check-status[data-state="passed"] { color: var(--pearl-muted); }
+.connection-health-check-status[data-state="failed"] { color: var(--pearl-error); }
+.connection-health-check-status[data-state="failed"] svg { stroke: var(--pearl-error); }
+.connection-health-check-status[data-state="failed"] .health-check-icon, .connection-health-check-status[data-state="checking"] .health-check-icon { display: none; }
+.connection-health-check-status[data-state="failed"] .health-failed-icon, .connection-health-check-status[data-state="checking"] .health-pending-icon { display: block; }
+.connection-health-check-status[data-state="checking"] .health-pending-icon { animation: health-check-spin 1s linear infinite; }
+.connection-health-check-status[data-state="idle"] .health-check-icon, .connection-health-check-status[data-state="idle"] .health-failed-icon, .connection-health-check-status[data-state="idle"] .health-pending-icon { display: none; }
+.connection-health-check-button { box-sizing: border-box; min-height: 40px; flex: 0 0 auto; padding: 0 18px; border: 1px solid var(--pearl-border); border-radius: 12px; color: var(--pearl-text); background: #151518; font-size: 14px; font-weight: 600; transition: border-color .2s ease, background .2s ease, opacity .2s ease; }
+.connection-health-check-button:disabled { cursor: wait; opacity: .6; }
+@keyframes health-check-spin { to { transform: rotate(360deg); } }
 .privacy-card { display: flex; gap: 16px; padding: 20px; border: 1px solid var(--pearl-border); border-radius: 20px; background: var(--pearl-surface); align-items: flex-start; }
 .privacy-icon { display: grid; width: 44px; height: 44px; flex: 0 0 44px; place-items: center; border-radius: 12px; color: var(--pearl-secondary); background: var(--pearl-surface); }
 .privacy-icon svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 2; }
@@ -376,6 +412,14 @@ html[data-theme="light"] .theme-options button { color: var(--pearl-secondary); 
 html[data-theme="light"] .theme-options button[aria-pressed="true"] { border-color: var(--pearl-accent); color: var(--pearl-text); background: #fff; }
 html[data-theme="light"] .kill-switch-card { border-color: var(--pearl-border); background: #fff; }
 html[data-theme="light"] .kill-switch-card[data-on="true"] { border-color: var(--pearl-accent-border); background: var(--pearl-accent-soft); }
+html[data-theme="light"] .connection-health-card { border-color: var(--pearl-border); background: #fff; }
+html[data-theme="light"] .connection-health-card[data-on="true"] { border-color: var(--pearl-accent-border); background: var(--pearl-accent-soft); }
+html[data-theme="light"] .connection-health-icon { color: var(--pearl-secondary); background: var(--pearl-surface); }
+html[data-theme="light"] .connection-health-card[data-on="true"] .connection-health-failover-row .connection-health-icon { color: var(--pearl-accent); background: var(--pearl-accent-soft); }
+html[data-theme="light"] .connection-health-interval-control button, html[data-theme="light"] .connection-health-check-button { border-color: var(--pearl-border); color: var(--pearl-text); background: var(--pearl-surface); }
+html[data-theme="light"] .connection-health-interval-control output { color: var(--pearl-text); background: var(--pearl-surface); }
+html[data-theme="light"] .connection-health-check-status[data-state="passed"] { color: var(--pearl-muted); }
+html[data-theme="light"] .connection-health-check-status[data-state="failed"] { color: var(--pearl-error); }
 html[data-theme="light"] .kill-switch-icon { color: var(--pearl-secondary); background: var(--pearl-accent-soft); }
 html[data-theme="light"] .kill-switch-card[data-on="true"] .kill-switch-icon { color: var(--pearl-accent); background: var(--pearl-accent-soft); }
 html[data-theme="light"] .kill-switch-copy span { color: var(--pearl-secondary); }
@@ -446,6 +490,11 @@ html[data-theme="light"] .connection-details-body pre { color: var(--pearl-secon
   .change-banner { padding: 12px 16px; text-align: center; }
   .donation-card { padding: 16px; }
   .donation-card-header { flex-wrap: wrap; gap: 10px; }
+  .connection-health-interval-row { flex-wrap: wrap; }
+  .connection-health-interval-row .connection-health-copy { flex: 1 1 calc(100% - 64px); }
+  .connection-health-interval-control { margin-inline-start: 64px; }
+  .connection-health-check-row { flex-wrap: wrap; }
+  .connection-health-check-status { flex: 1 1 210px; }
 }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } *, *::before, *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; } }
 
@@ -624,6 +673,14 @@ html[data-theme="dim"] .exit-country-notice { border-color: var(--pearl-border);
 html[data-theme="dim"] .picker-code-badge { background: var(--pearl-surface); color: var(--pearl-accent); }
 html[data-theme="dim"] .kill-switch-card { border-color: var(--pearl-border); background: var(--pearl-surface); }
 html[data-theme="dim"] .kill-switch-card[data-on="true"] { border-color: var(--pearl-accent-border); background: var(--pearl-accent-soft); }
+html[data-theme="dim"] .connection-health-card { border-color: var(--pearl-border); background: var(--pearl-surface); }
+html[data-theme="dim"] .connection-health-card[data-on="true"] { border-color: var(--pearl-accent-border); background: var(--pearl-accent-soft); }
+html[data-theme="dim"] .connection-health-icon { color: var(--pearl-secondary); background: var(--pearl-surface); }
+html[data-theme="dim"] .connection-health-card[data-on="true"] .connection-health-failover-row .connection-health-icon { color: var(--pearl-accent); background: var(--pearl-accent-soft); }
+html[data-theme="dim"] .connection-health-interval-control button, html[data-theme="dim"] .connection-health-check-button { border-color: var(--pearl-border); color: var(--pearl-text); background: #292930; }
+html[data-theme="dim"] .connection-health-interval-control output { color: var(--pearl-text); background: var(--pearl-page); }
+html[data-theme="dim"] .connection-health-check-status[data-state="passed"] { color: var(--pearl-muted); }
+html[data-theme="dim"] .connection-health-check-status[data-state="failed"] { color: var(--pearl-error); }
 html[data-theme="dim"] .kill-switch-icon { color: var(--pearl-secondary); background: var(--pearl-surface); }
 html[data-theme="dim"] .kill-switch-card[data-on="true"] .kill-switch-icon { color: var(--pearl-accent); background: var(--pearl-accent-soft); }
 html[data-theme="dim"] .kill-switch-copy span { color: var(--pearl-secondary); }

@@ -29,6 +29,18 @@ const donationStatusNode = document.querySelector("#donationStatus");
 const killSwitchToggle = document.querySelector("#killSwitchToggle");
 const killSwitchCard = document.querySelector("#killSwitchCard");
 const killSwitchActivePanel = document.querySelector("#killSwitchActivePanel");
+const connectionHealthCard = document.querySelector("#connectionHealthCard");
+const autoBridgeFailoverToggle = document.querySelector("#autoBridgeFailoverToggle");
+const autoBridgeFailoverRow = document.querySelector(".connection-health-failover-row");
+const autoBridgeFailoverHint = document.querySelector("#autoBridgeFailoverHint");
+const siteCheckIntervalValue = document.querySelector("#siteCheckIntervalValue");
+const decreaseSiteCheckIntervalButton = document.querySelector("#decreaseSiteCheckInterval");
+const increaseSiteCheckIntervalButton = document.querySelector("#increaseSiteCheckInterval");
+const siteCheckIntervalUnit = document.querySelector("#siteCheckIntervalUnit");
+const siteCheckStatusNode = document.querySelector("#siteCheckStatus");
+const siteCheckStatusTextNode = document.querySelector("#siteCheckStatusText");
+const checkSitesNowButton = document.querySelector("#checkSitesNow");
+const autoBridgeFailoverNavBadge = document.querySelector("#autoBridgeFailoverNavBadge");
 const protectionNavBadge = document.querySelector("#protectionNavBadge");
 const changeBanner = document.querySelector("#changeBanner");
 const changeBannerMessage = document.querySelector("#changeBannerMessage");
@@ -42,7 +54,9 @@ const exitCountryOptionButtons = [...document.querySelectorAll("[data-exit-count
 const exitCountryCardNode = document.querySelector("#exitCountryCard");
 const exitCountryNoticeNode = document.querySelector("#exitCountryNotice");
 const exitCountryNavBadge = document.querySelector("#exitCountryNavBadge");
-let preferences = { mode: "snowflake", bridges: "", selectedBridge: "", disabledBridges: [], killSwitch: false, exitCountry: "" };
+let preferences = { mode: "snowflake", bridges: "", selectedBridge: "", disabledBridges: [], killSwitch: false, exitCountry: "", autoBridgeFailover: true, siteCheckIntervalMinutes: 5 };
+let confirmedKillSwitch = false;
+let confirmedSiteCheckInterval = 5;
 let selectedMode = "snowflake";
 let bridgeLines = [];
 let disabledBridgeLines = new Set();
@@ -56,11 +70,21 @@ let connectedBridgeAddress = "";
 let connectedBridgeFingerprint = "";
 let isDirty = false;
 let isConnected = false;
+let siteCheckState = "";
+let siteCheckCompletedAt = 0;
+let manualSiteCheckPending = false;
 let pollTimer;
 let bridgeSaveRevision = 0;
 let copiedTimers = new Map();
+let preferenceWriteQueue = Promise.resolve();
 const t = (key, params) => (globalThis.torI18n?.t || ((s) => s))(key, params);
 const MAX_ENABLED_BRIDGES = 20;
+const ACTIVE_SETTINGS_SECTION_KEY = "torConnectSettingsActiveSection";
+
+function normalizeSiteCheckInterval(value) {
+  const minutes = Number(value);
+  return Number.isInteger(minutes) && minutes >= 1 && minutes <= 60 ? minutes : 5;
+}
 
 function send(type, extra = {}) {
   return new Promise((resolve) => chrome.runtime.sendMessage({ type, ...extra }, resolve));
@@ -68,6 +92,37 @@ function send(type, extra = {}) {
 
 function allEnabledLines(lines = bridgeLines) {
   return lines.filter((line) => !disabledBridgeLines.has(line) && isBridgeLineValid(line));
+}
+
+function savePreferences(update, onComplete) {
+  preferenceWriteQueue = preferenceWriteQueue.then(() => new Promise((resolve) => {
+    const finish = (saved, nextPreferences) => {
+      try {
+        if (saved && typeof nextPreferences?.killSwitch === "boolean") {
+          confirmedKillSwitch = nextPreferences.killSwitch;
+        }
+        if (saved) confirmedSiteCheckInterval = normalizeSiteCheckInterval(nextPreferences?.siteCheckIntervalMinutes);
+        onComplete?.(saved, nextPreferences);
+      } finally {
+        resolve();
+      }
+    };
+    chrome.storage.local.get("torConnectionPreferences", (stored) => {
+      if (chrome.runtime.lastError) {
+        finish(false);
+        return;
+      }
+      const savedPreferences = { ...(stored?.torConnectionPreferences || {}) };
+      const nextPreferences = { ...savedPreferences, ...update };
+      chrome.storage.local.set({
+        torConnectionPreferences: nextPreferences
+      }, () => finish(!chrome.runtime.lastError, nextPreferences));
+    });
+  }));
+}
+
+function savePreferenceField(field, value, onComplete) {
+  savePreferences({ [field]: value }, onComplete);
 }
 
 function markSaveState(message, kind = "") {
@@ -97,8 +152,12 @@ function readPreferences() {
         disabledBridges: [...disabledBridgeLines],
         selectedBridge: enabled.includes(saved.selectedBridge) ? saved.selectedBridge : enabled[0] || "",
         killSwitch: saved.killSwitch === true,
-        exitCountry: typeof saved.exitCountry === "string" ? saved.exitCountry : ""
+        exitCountry: typeof saved.exitCountry === "string" ? saved.exitCountry : "",
+        autoBridgeFailover: saved.autoBridgeFailover !== false,
+        siteCheckIntervalMinutes: normalizeSiteCheckInterval(saved.siteCheckIntervalMinutes)
       };
+      confirmedKillSwitch = preferences.killSwitch;
+      confirmedSiteCheckInterval = preferences.siteCheckIntervalMinutes;
       selectedMode = preferences.mode;
       setMode(selectedMode);
       renderBridgeList();
@@ -106,9 +165,15 @@ function readPreferences() {
         showClipboardStatus(t("Up to {n} bridges may be enabled at a time. Disable one to enable another.", { n: MAX_ENABLED_BRIDGES }), "warning");
       }
       renderKillSwitch();
+      renderConnectionHealth();
       renderExitCountry();
       isDirty = false;
       markSaveState(t("All changes saved"));
+      const savedSection = sessionStorage.getItem(ACTIVE_SETTINGS_SECTION_KEY);
+      if (savedSection && document.getElementById(savedSection)?.matches(".settings-section")) {
+        setActiveSection(savedSection);
+        requestAnimationFrame(() => document.getElementById(savedSection)?.scrollIntoView({ block: "start" }));
+      }
       resolve();
     });
   });
@@ -124,6 +189,7 @@ function setMode(mode) {
     button.setAttribute("aria-checked", String(selected));
     button.tabIndex = selected ? 0 : -1;
   });
+  renderConnectionHealth();
 }
 
 function markDirty() {
@@ -535,6 +601,29 @@ function storedPreferences() {
   };
 }
 
+function fullRecordPreferences() {
+  const nextPreferences = storedPreferences();
+  // These settings are saved immediately by their own controls. Keep a full
+  // bridge/mode save from persisting a stale optimistic value for them.
+  delete nextPreferences.killSwitch;
+  delete nextPreferences.autoBridgeFailover;
+  delete nextPreferences.siteCheckIntervalMinutes;
+  return nextPreferences;
+}
+
+function adoptSavedPreferences(savedPreferences) {
+  preferences = {
+    ...savedPreferences,
+    // A field save may be queued behind this full-record save. Preserve its
+    // current optimistic value until that field save confirms or rolls back.
+    killSwitch: preferences.killSwitch,
+    autoBridgeFailover: preferences.autoBridgeFailover,
+    siteCheckIntervalMinutes: preferences.siteCheckIntervalMinutes
+  };
+  renderKillSwitch();
+  renderConnectionHealth();
+}
+
 function renderExitCountry() {
   const code = preferences.exitCountry || "";
   exitCountryOptionButtons.forEach((btn) => {
@@ -573,16 +662,12 @@ exitCountryOptionButtons.forEach((btn) => {
     const prevCode = preferences.exitCountry;
     preferences.exitCountry = code;
     renderExitCountry();
-    // Base the write on the last persisted record (preferences), not storedPreferences(),
-    // so pending unsaved bridge/mode edits are not silently committed with this picker change.
-    const nextPreferences = { ...preferences, exitCountry: code };
-    chrome.storage.local.set({ torConnectionPreferences: nextPreferences }, () => {
-      if (chrome.runtime.lastError) {
-        preferences.exitCountry = prevCode;
+    savePreferenceField("exitCountry", code, (saved) => {
+      if (!saved) {
+        if (preferences.exitCountry === code) preferences = { ...preferences, exitCountry: prevCode };
         renderExitCountry();
         return;
       }
-      preferences = nextPreferences;
       if (isConnected) showChangeBanner(t("Exit country changed. Reconnect now to apply it."));
     });
   });
@@ -600,6 +685,104 @@ function renderKillSwitch() {
   protectionNavBadge.textContent = on ? t("On") : t("Off");
 }
 
+function renderConnectionHealth() {
+  const failoverEnabled = preferences.autoBridgeFailover !== false;
+  const bridgeMode = selectedMode === "manual";
+  autoBridgeFailoverToggle.setAttribute("aria-checked", String(failoverEnabled));
+  autoBridgeFailoverToggle.disabled = !bridgeMode;
+  autoBridgeFailoverToggle.setAttribute("aria-disabled", String(!bridgeMode));
+  autoBridgeFailoverRow.dataset.disabled = String(!bridgeMode);
+  autoBridgeFailoverHint.hidden = bridgeMode;
+  connectionHealthCard.dataset.on = String(failoverEnabled && bridgeMode);
+  autoBridgeFailoverNavBadge.textContent = t(failoverEnabled ? "On" : "Off");
+  const interval = normalizeSiteCheckInterval(preferences.siteCheckIntervalMinutes);
+  siteCheckIntervalValue.textContent = String(interval);
+  siteCheckIntervalValue.setAttribute("aria-valuenow", String(interval));
+  siteCheckIntervalUnit.textContent = t(interval === 1 ? "minute" : "minutes");
+  decreaseSiteCheckIntervalButton.disabled = interval <= 1;
+  increaseSiteCheckIntervalButton.disabled = interval >= 60;
+  renderConnectionHealthStatus();
+}
+
+function relativeCheckTime(timestamp) {
+  if (!timestamp) return "";
+  const elapsedSeconds = Math.max(0, Math.floor((Date.now() - timestamp) / 1000));
+  const unit = elapsedSeconds < 60 ? "second" : elapsedSeconds < 3600 ? "minute" : elapsedSeconds < 86400 ? "hour" : "day";
+  const value = unit === "second" ? elapsedSeconds
+    : unit === "minute" ? Math.floor(elapsedSeconds / 60)
+      : unit === "hour" ? Math.floor(elapsedSeconds / 3600) : Math.floor(elapsedSeconds / 86400);
+  const locale = globalThis.torI18n?.language || navigator.language || "en";
+  return new Intl.RelativeTimeFormat(locale, { numeric: "auto" }).format(-value, unit);
+}
+
+function renderConnectionHealthStatus() {
+  checkSitesNowButton.disabled = manualSiteCheckPending;
+  checkSitesNowButton.textContent = t(manualSiteCheckPending ? "Checking…" : "Check now");
+  let label;
+  let state;
+  if (manualSiteCheckPending || siteCheckState === "pending" || isConnected && !siteCheckState) {
+    label = t("Checking sites…");
+    state = "checking";
+  } else if (siteCheckState === "unavailable") {
+    label = t("Connection unavailable");
+    state = "failed";
+  } else if (!isConnected) {
+    label = t("Not connected");
+    state = "idle";
+  } else if (siteCheckState === "passed" || siteCheckState === "failed") {
+    const status = t(siteCheckState === "passed" ? "Connection verified" : "Connected, but sites aren't loading");
+    const time = relativeCheckTime(siteCheckCompletedAt);
+    label = time ? `${t("Last check {time}", { time })} · ${status}` : status;
+    state = siteCheckState;
+  } else {
+    label = t("Checking sites…");
+    state = "checking";
+  }
+  siteCheckStatusNode.dataset.state = state;
+  siteCheckStatusTextNode.textContent = label;
+}
+
+function updateConnectionHealthStatus(result) {
+  isConnected = result?.state === "connected";
+  if (!result) {
+    siteCheckState = "unavailable";
+    siteCheckCompletedAt = 0;
+  } else if (result.state === "connected") {
+    siteCheckState = result.connectivityCheck || "pending";
+    siteCheckCompletedAt = Number(result.connectivityCheckCompletedAt) || 0;
+  } else if (result.state === "starting" || result.bridgeActivity === "trying") {
+    siteCheckState = "pending";
+    siteCheckCompletedAt = 0;
+  } else {
+    siteCheckState = "";
+    siteCheckCompletedAt = 0;
+  }
+  renderConnectionHealthStatus();
+}
+
+function changeSiteCheckInterval(delta) {
+  const previous = normalizeSiteCheckInterval(preferences.siteCheckIntervalMinutes);
+  const minutes = Math.max(1, Math.min(60, previous + delta));
+  if (minutes === previous) return;
+  preferences = { ...preferences, siteCheckIntervalMinutes: minutes };
+  renderConnectionHealth();
+  savePreferenceField("siteCheckIntervalMinutes", minutes, (saved) => {
+    if (!saved && preferences.siteCheckIntervalMinutes === minutes) {
+      preferences = { ...preferences, siteCheckIntervalMinutes: confirmedSiteCheckInterval };
+      renderConnectionHealth();
+    }
+  });
+}
+
+async function checkSitesNow() {
+  if (manualSiteCheckPending) return;
+  manualSiteCheckPending = true;
+  renderConnectionHealthStatus();
+  const result = await send("retestSites");
+  manualSiteCheckPending = false;
+  updateConnectionHealthStatus(result);
+}
+
 function saveSettings() {
   if (allEnabledLines().length > MAX_ENABLED_BRIDGES) {
     const message = t("Up to {n} bridges may be enabled at a time. Disable one to enable another.", { n: MAX_ENABLED_BRIDGES });
@@ -613,16 +796,16 @@ function saveSettings() {
   }
   markSaveState(t("Saving changes…"));
   saveButton.disabled = true;
-  const nextPreferences = storedPreferences();
-  chrome.storage.local.set({ torConnectionPreferences: nextPreferences }, () => {
-    if (chrome.runtime.lastError) {
+  const nextPreferences = fullRecordPreferences();
+  savePreferences(nextPreferences, (saved, savedPreferences) => {
+    if (!saved) {
       saveButton.disabled = false;
       isDirty = true;
       markSaveState(t("Could not save settings. Try again."), "error");
       return;
     }
     saveButton.disabled = false;
-    preferences = nextPreferences;
+    adoptSavedPreferences(savedPreferences);
     isDirty = false;
     markSaveState(t("All changes saved"));
     if (isConnected) showChangeBanner(t("Settings saved. Reconnect now to apply them."));
@@ -639,16 +822,16 @@ function saveBridgeList(successMessage, kind = "success") {
     return;
   }
   const revision = ++bridgeSaveRevision;
-  const nextPreferences = storedPreferences();
-  chrome.storage.local.set({ torConnectionPreferences: nextPreferences }, () => {
+  const nextPreferences = fullRecordPreferences();
+  savePreferences(nextPreferences, (saved, savedPreferences) => {
     if (revision !== bridgeSaveRevision) return;
-    if (chrome.runtime.lastError) {
+    if (!saved) {
       isDirty = true;
       markSaveState(t("Could not save settings. Try again."), "error");
       showClipboardStatus(t("Could not save bridge changes."), "error");
       return;
     }
-    preferences = nextPreferences;
+    adoptSavedPreferences(savedPreferences);
     isDirty = false;
     markSaveState(t("All changes saved"));
     showClipboardStatus(successMessage, kind);
@@ -859,6 +1042,7 @@ function sendStatus() {
   chrome.runtime.sendMessage({ type: "status" }, (result) => {
     if (chrome.runtime.lastError) {
       isConnected = false;
+      updateConnectionHealthStatus(null);
       setConnectionBadge(t("Connection unavailable"), "error", t("Could not check the Tor connection. Restart your browser and check the helper installation."));
       diagnosticTextNode.textContent = chrome.runtime.lastError.message;
       hideChangeBanner();
@@ -881,6 +1065,7 @@ function sendStatus() {
       connectedBridgeIndex = null;
     }
     isConnected = result?.state === "connected";
+    updateConnectionHealthStatus(result);
     renderBridgeList();
     diagnosticTextNode.textContent = diagnosticLines.length ? diagnosticLines.join("\n")
       : result?.error || result?.message || t("No additional Tor diagnostics are available.");
@@ -971,28 +1156,50 @@ async function reconnectUsingSavedSettings() {
 reconnectNowButton.addEventListener("click", reconnectUsingSavedSettings);
 
 sectionLinks.forEach((link) => {
-  link.addEventListener("click", () => setActiveSection(link.dataset.sectionLink));
-});
-
-killSwitchToggle.addEventListener("click", () => {
-  preferences.killSwitch = !preferences.killSwitch;
-  renderKillSwitch();
-  const nextPreferences = { ...preferences };
-  chrome.storage.local.set({ torConnectionPreferences: nextPreferences }, () => {
-    if (chrome.runtime.lastError) {
-      preferences.killSwitch = !preferences.killSwitch;
-      renderKillSwitch();
-      return;
-    }
-    preferences = nextPreferences;
+  link.addEventListener("click", () => {
+    const sectionId = link.dataset.sectionLink;
+    setActiveSection(sectionId);
+    sessionStorage.setItem(ACTIVE_SETTINGS_SECTION_KEY, sectionId);
   });
 });
 
-document.addEventListener("tor-language-changed", () => { renderBridgeList(); renderExitCountry(); renderKillSwitch(); loadDonationAddresses(); });
+killSwitchToggle.addEventListener("click", () => {
+  const next = !(preferences.killSwitch === true);
+  preferences = { ...preferences, killSwitch: next };
+  renderKillSwitch();
+  savePreferenceField("killSwitch", next, (saved) => {
+    if (!saved && preferences.killSwitch === next) {
+      preferences = { ...preferences, killSwitch: confirmedKillSwitch };
+      renderKillSwitch();
+    }
+  });
+});
+
+autoBridgeFailoverToggle.addEventListener("click", () => {
+  const previous = preferences.autoBridgeFailover !== false;
+  const next = !previous;
+  preferences = { ...preferences, autoBridgeFailover: next };
+  renderConnectionHealth();
+  savePreferenceField("autoBridgeFailover", next, (saved) => {
+    if (!saved && preferences.autoBridgeFailover === next) {
+      preferences = { ...preferences, autoBridgeFailover: previous };
+      renderConnectionHealth();
+    }
+  });
+});
+
+decreaseSiteCheckIntervalButton.addEventListener("click", () => changeSiteCheckInterval(-1));
+increaseSiteCheckIntervalButton.addEventListener("click", () => changeSiteCheckInterval(1));
+checkSitesNowButton.addEventListener("click", checkSitesNow);
+
+document.addEventListener("tor-language-changed", () => { renderBridgeList(); renderExitCountry(); renderKillSwitch(); renderConnectionHealth(); loadDonationAddresses(); });
 
 chrome.storage.onChanged.addListener((changes, areaName) => {
-  if (areaName !== "local" || !changes.torConnectionPreferences || isDirty) return;
+  if (areaName !== "local" || !changes.torConnectionPreferences) return;
   const saved = { ...(changes.torConnectionPreferences.newValue || {}) };
+  confirmedKillSwitch = saved.killSwitch === true;
+  confirmedSiteCheckInterval = normalizeSiteCheckInterval(saved.siteCheckIntervalMinutes);
+  if (isDirty) return;
   delete saved.autoBridgeSelection;
   bridgeLines = typeof saved.bridges === "string" ? saved.bridges.split(/\r?\n/).map((line) => line.trim()).filter(Boolean) : [];
   disabledBridgeLines = new Set(Array.isArray(saved.disabledBridges)
@@ -1004,35 +1211,43 @@ chrome.storage.onChanged.addListener((changes, areaName) => {
     disabledBridges: [...disabledBridgeLines],
     selectedBridge: typeof saved.selectedBridge === "string" ? saved.selectedBridge : allEnabledLines()[0] || "",
     killSwitch: saved.killSwitch === true,
-    exitCountry: typeof saved.exitCountry === "string" ? saved.exitCountry : ""
+    exitCountry: typeof saved.exitCountry === "string" ? saved.exitCountry : "",
+    autoBridgeFailover: saved.autoBridgeFailover !== false,
+    siteCheckIntervalMinutes: normalizeSiteCheckInterval(saved.siteCheckIntervalMinutes)
 };
 selectedMode = preferences.mode;
 setMode(selectedMode);
 renderBridgeList();
 renderKillSwitch();
+renderConnectionHealth();
 renderExitCountry();
 });
 
 {
   let suppressUntil = 0;
   document.addEventListener("click", () => { suppressUntil = Date.now() + 400; }, { capture: true });
-  const sectionIds = ["method", "bridges", "exit-country", "protection", "appearance", "support", "community"];
-  const THRESHOLD = 160; // px from top of viewport — just below the sticky header
+  const sectionIds = ["method", "bridges", "connection-health", "exit-country", "protection", "appearance", "support", "community"];
   const updateActiveSection = () => {
     if (Date.now() < suppressUntil) return;
-    // Find the last section whose top edge has scrolled above THRESHOLD.
-    // That's the section the user is currently reading.
+    // Track the section crossing the upper reading area, including after the
+    // browser restores the scroll position during a page refresh.
+    const markerY = Math.min(window.innerHeight - 1, Math.max(160, window.innerHeight * 0.35));
     let active = sectionIds[0];
     for (const id of sectionIds) {
       const el = document.getElementById(id);
       if (!el) continue;
-      if (el.getBoundingClientRect().top <= THRESHOLD) active = id;
+      if (el.getBoundingClientRect().top <= markerY) active = id;
     }
     setActiveSection(active);
   };
   window.addEventListener("scroll", updateActiveSection, { passive: true });
-  // Set correct active section on initial load (e.g. page loaded mid-scroll or hash in URL).
-  updateActiveSection();
+  if ("ResizeObserver" in window) {
+    const content = document.querySelector(".settings-content");
+    if (content) new ResizeObserver(() => requestAnimationFrame(updateActiveSection)).observe(content);
+  }
+  window.addEventListener("pageshow", updateActiveSection);
+  // Recheck after layout and browser scroll restoration have settled.
+  requestAnimationFrame(updateActiveSection);
 }
 
 loadDonationAddresses();
