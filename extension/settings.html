@@ -157,22 +157,42 @@
           <p data-i18n="Choose how often sites are checked and whether another bridge is tried after all connection checks fail.">Choose how often sites are checked and whether another bridge is tried after all connection checks fail.</p>
         </div>
         <div id="connectionHealthCard" class="connection-health-card" data-on="true">
-          <div class="connection-health-row">
-            <div class="connection-health-copy">
-              <strong data-i18n="Automatically try another bridge">Automatically try another bridge</strong>
-              <span data-i18n="Try another enabled bridge when all connection checks fail.">Try another enabled bridge when all connection checks fail.</span>
+          <div class="connection-health-failover-row">
+            <div class="connection-health-row">
+              <span class="connection-health-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path d="m17 2 4 4-4 4M3 11v-1a4 4 0 0 1 4-4h14M7 22l-4-4 4-4m14-1v1a4 4 0 0 1-4 4H3"/></svg>
+              </span>
+              <div class="connection-health-copy">
+                <strong data-i18n="Automatically try another bridge">Automatically try another bridge</strong>
+                <span data-i18n="Try another enabled bridge when all connection checks fail.">Try another enabled bridge when all connection checks fail.</span>
+              </div>
+              <button id="autoBridgeFailoverToggle" class="kill-switch-toggle" type="button" role="switch" aria-checked="true" aria-label="Automatically try another bridge" data-i18n-aria-label="Automatically try another bridge"></button>
             </div>
-            <button id="autoBridgeFailoverToggle" class="kill-switch-toggle" type="button" role="switch" aria-checked="true" aria-label="Automatically try another bridge" data-i18n-aria-label="Automatically try another bridge"></button>
+            <p id="autoBridgeFailoverHint" class="connection-health-hint" data-i18n="Applies to bridge connections only. Switch to Bridge lines to use it." hidden>Applies to bridge connections only. Switch to Bridge lines to use it.</p>
           </div>
           <div class="connection-health-row connection-health-interval-row">
-            <label class="connection-health-copy" for="siteCheckIntervalMinutes">
+            <span class="connection-health-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+            </span>
+            <div class="connection-health-copy">
               <strong data-i18n="Check sites every">Check sites every</strong>
               <span data-i18n="While connected, Tor Connect checks whether sites are reachable.">While connected, Tor Connect checks whether sites are reachable.</span>
-            </label>
-            <div class="connection-health-interval-control">
-              <input id="siteCheckIntervalMinutes" type="number" min="1" max="60" step="1" value="5" aria-describedby="siteCheckIntervalUnit">
+            </div>
+            <div class="connection-health-interval-control" role="group" aria-label="Check sites every" data-i18n-aria-label="Check sites every">
+              <button id="decreaseSiteCheckInterval" type="button" aria-label="Decrease interval" data-i18n-aria-label="Decrease interval">−</button>
+              <output id="siteCheckIntervalValue" aria-live="polite" aria-valuemin="1" aria-valuemax="60" aria-valuenow="5">5</output>
+              <button id="increaseSiteCheckInterval" type="button" aria-label="Increase interval" data-i18n-aria-label="Increase interval">+</button>
               <span id="siteCheckIntervalUnit" data-i18n="minutes">minutes</span>
             </div>
+          </div>
+          <div class="connection-health-check-row">
+            <span id="siteCheckStatus" class="connection-health-check-status" data-state="checking" role="status" aria-live="polite">
+              <svg class="health-check-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>
+              <svg class="health-failed-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg>
+              <svg class="health-pending-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/></svg>
+              <span id="siteCheckStatusText" data-i18n="Checking sites…">Checking sites…</span>
+            </span>
+            <button id="checkSitesNow" class="connection-health-check-button" type="button" data-i18n="Check now">Check now</button>
           </div>
         </div>
       </section>

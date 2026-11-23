@@ -150,6 +150,9 @@ function addConnectivityCheck(result, { checkHelperVersion = false } = {}) {
     result.connectivityCheck = hasCurrentCheck && !checkIsPending
       ? connectivityCheckState || "pending"
       : "pending";
+    result.connectivityCheckCompletedAt = hasCurrentCheck && !checkIsPending
+      ? connectivityCheckCompletedAt
+      : 0;
     result.siteChecks = hasCurrentCheck && !checkIsPending && connectivitySiteResults.length
       ? connectivitySiteResults
       : CONNECTIVITY_SITES.map(({ site }) => ({ site, state: "pending", latencyMs: null }));

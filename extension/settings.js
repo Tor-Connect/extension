@@ -31,7 +31,15 @@ const killSwitchCard = document.querySelector("#killSwitchCard");
 const killSwitchActivePanel = document.querySelector("#killSwitchActivePanel");
 const connectionHealthCard = document.querySelector("#connectionHealthCard");
 const autoBridgeFailoverToggle = document.querySelector("#autoBridgeFailoverToggle");
-const siteCheckIntervalInput = document.querySelector("#siteCheckIntervalMinutes");
+const autoBridgeFailoverRow = document.querySelector(".connection-health-failover-row");
+const autoBridgeFailoverHint = document.querySelector("#autoBridgeFailoverHint");
+const siteCheckIntervalValue = document.querySelector("#siteCheckIntervalValue");
+const decreaseSiteCheckIntervalButton = document.querySelector("#decreaseSiteCheckInterval");
+const increaseSiteCheckIntervalButton = document.querySelector("#increaseSiteCheckInterval");
+const siteCheckIntervalUnit = document.querySelector("#siteCheckIntervalUnit");
+const siteCheckStatusNode = document.querySelector("#siteCheckStatus");
+const siteCheckStatusTextNode = document.querySelector("#siteCheckStatusText");
+const checkSitesNowButton = document.querySelector("#checkSitesNow");
 const autoBridgeFailoverNavBadge = document.querySelector("#autoBridgeFailoverNavBadge");
 const protectionNavBadge = document.querySelector("#protectionNavBadge");
 const changeBanner = document.querySelector("#changeBanner");
@@ -61,12 +69,16 @@ let connectedBridgeAddress = "";
 let connectedBridgeFingerprint = "";
 let isDirty = false;
 let isConnected = false;
+let siteCheckState = "";
+let siteCheckCompletedAt = 0;
+let manualSiteCheckPending = false;
 let pollTimer;
 let bridgeSaveRevision = 0;
 let copiedTimers = new Map();
 let preferenceWriteQueue = Promise.resolve();
 const t = (key, params) => (globalThis.torI18n?.t || ((s) => s))(key, params);
 const MAX_ENABLED_BRIDGES = 20;
+const ACTIVE_SETTINGS_SECTION_KEY = "torConnectSettingsActiveSection";
 
 function normalizeSiteCheckInterval(value) {
   const minutes = Number(value);
@@ -154,6 +166,11 @@ function readPreferences() {
       renderExitCountry();
       isDirty = false;
       markSaveState(t("All changes saved"));
+      const savedSection = sessionStorage.getItem(ACTIVE_SETTINGS_SECTION_KEY);
+      if (savedSection && document.getElementById(savedSection)?.matches(".settings-section")) {
+        setActiveSection(savedSection);
+        requestAnimationFrame(() => document.getElementById(savedSection)?.scrollIntoView({ block: "start" }));
+      }
       resolve();
     });
   });
@@ -169,6 +186,7 @@ function setMode(mode) {
     button.setAttribute("aria-checked", String(selected));
     button.tabIndex = selected ? 0 : -1;
   });
+  renderConnectionHealth();
 }
 
 function markDirty() {
@@ -580,6 +598,29 @@ function storedPreferences() {
   };
 }
 
+function fullRecordPreferences() {
+  const nextPreferences = storedPreferences();
+  // These settings are saved immediately by their own controls. Keep a full
+  // bridge/mode save from persisting a stale optimistic value for them.
+  delete nextPreferences.killSwitch;
+  delete nextPreferences.autoBridgeFailover;
+  delete nextPreferences.siteCheckIntervalMinutes;
+  return nextPreferences;
+}
+
+function adoptSavedPreferences(savedPreferences) {
+  preferences = {
+    ...savedPreferences,
+    // A field save may be queued behind this full-record save. Preserve its
+    // current optimistic value until that field save confirms or rolls back.
+    killSwitch: preferences.killSwitch,
+    autoBridgeFailover: preferences.autoBridgeFailover,
+    siteCheckIntervalMinutes: preferences.siteCheckIntervalMinutes
+  };
+  renderKillSwitch();
+  renderConnectionHealth();
+}
+
 function renderExitCountry() {
   const code = preferences.exitCountry || "";
   exitCountryOptionButtons.forEach((btn) => {
@@ -643,10 +684,100 @@ function renderKillSwitch() {
 
 function renderConnectionHealth() {
   const failoverEnabled = preferences.autoBridgeFailover !== false;
+  const bridgeMode = selectedMode === "manual";
   autoBridgeFailoverToggle.setAttribute("aria-checked", String(failoverEnabled));
-  connectionHealthCard.dataset.on = String(failoverEnabled);
+  autoBridgeFailoverToggle.disabled = !bridgeMode;
+  autoBridgeFailoverToggle.setAttribute("aria-disabled", String(!bridgeMode));
+  autoBridgeFailoverRow.dataset.disabled = String(!bridgeMode);
+  autoBridgeFailoverHint.hidden = bridgeMode;
+  connectionHealthCard.dataset.on = String(failoverEnabled && bridgeMode);
   autoBridgeFailoverNavBadge.textContent = t(failoverEnabled ? "On" : "Off");
-  siteCheckIntervalInput.value = String(normalizeSiteCheckInterval(preferences.siteCheckIntervalMinutes));
+  const interval = normalizeSiteCheckInterval(preferences.siteCheckIntervalMinutes);
+  siteCheckIntervalValue.textContent = String(interval);
+  siteCheckIntervalValue.setAttribute("aria-valuenow", String(interval));
+  siteCheckIntervalUnit.textContent = t(interval === 1 ? "minute" : "minutes");
+  decreaseSiteCheckIntervalButton.disabled = interval <= 1;
+  increaseSiteCheckIntervalButton.disabled = interval >= 60;
+  renderConnectionHealthStatus();
+}
+
+function relativeCheckTime(timestamp) {
+  if (!timestamp) return "";
+  const elapsedSeconds = Math.max(0, Math.floor((Date.now() - timestamp) / 1000));
+  const unit = elapsedSeconds < 60 ? "second" : elapsedSeconds < 3600 ? "minute" : elapsedSeconds < 86400 ? "hour" : "day";
+  const value = unit === "second" ? elapsedSeconds
+    : unit === "minute" ? Math.floor(elapsedSeconds / 60)
+      : unit === "hour" ? Math.floor(elapsedSeconds / 3600) : Math.floor(elapsedSeconds / 86400);
+  const locale = globalThis.torI18n?.language || navigator.language || "en";
+  return new Intl.RelativeTimeFormat(locale, { numeric: "auto" }).format(-value, unit);
+}
+
+function renderConnectionHealthStatus() {
+  checkSitesNowButton.disabled = manualSiteCheckPending;
+  checkSitesNowButton.textContent = t(manualSiteCheckPending ? "Checking…" : "Check now");
+  let label;
+  let state;
+  if (manualSiteCheckPending || siteCheckState === "pending" || isConnected && !siteCheckState) {
+    label = t("Checking sites…");
+    state = "checking";
+  } else if (siteCheckState === "unavailable") {
+    label = t("Connection unavailable");
+    state = "failed";
+  } else if (!isConnected) {
+    label = t("Not connected");
+    state = "idle";
+  } else if (siteCheckState === "passed" || siteCheckState === "failed") {
+    const status = t(siteCheckState === "passed" ? "Connection verified" : "Connected, but sites aren't loading");
+    const time = relativeCheckTime(siteCheckCompletedAt);
+    label = time ? `${t("Last check {time}", { time })} · ${status}` : status;
+    state = siteCheckState;
+  } else {
+    label = t("Checking sites…");
+    state = "checking";
+  }
+  siteCheckStatusNode.dataset.state = state;
+  siteCheckStatusTextNode.textContent = label;
+}
+
+function updateConnectionHealthStatus(result) {
+  isConnected = result?.state === "connected";
+  if (!result) {
+    siteCheckState = "unavailable";
+    siteCheckCompletedAt = 0;
+  } else if (result.state === "connected") {
+    siteCheckState = result.connectivityCheck || "pending";
+    siteCheckCompletedAt = Number(result.connectivityCheckCompletedAt) || 0;
+  } else if (result.state === "starting" || result.bridgeActivity === "trying") {
+    siteCheckState = "pending";
+    siteCheckCompletedAt = 0;
+  } else {
+    siteCheckState = "";
+    siteCheckCompletedAt = 0;
+  }
+  renderConnectionHealthStatus();
+}
+
+function changeSiteCheckInterval(delta) {
+  const previous = normalizeSiteCheckInterval(preferences.siteCheckIntervalMinutes);
+  const minutes = Math.max(1, Math.min(60, previous + delta));
+  if (minutes === previous) return;
+  preferences = { ...preferences, siteCheckIntervalMinutes: minutes };
+  renderConnectionHealth();
+  savePreferenceField("siteCheckIntervalMinutes", minutes, (saved) => {
+    if (!saved && preferences.siteCheckIntervalMinutes === minutes) {
+      preferences = { ...preferences, siteCheckIntervalMinutes: previous };
+      renderConnectionHealth();
+    }
+  });
+}
+
+async function checkSitesNow() {
+  if (manualSiteCheckPending) return;
+  manualSiteCheckPending = true;
+  renderConnectionHealthStatus();
+  const result = await send("retestSites");
+  manualSiteCheckPending = false;
+  updateConnectionHealthStatus(result);
 }
 
 function saveSettings() {
@@ -662,7 +793,7 @@ function saveSettings() {
   }
   markSaveState(t("Saving changes…"));
   saveButton.disabled = true;
-  const nextPreferences = storedPreferences();
+  const nextPreferences = fullRecordPreferences();
   savePreferences(nextPreferences, (saved, savedPreferences) => {
     if (!saved) {
       saveButton.disabled = false;
@@ -671,7 +802,7 @@ function saveSettings() {
       return;
     }
     saveButton.disabled = false;
-    preferences = savedPreferences;
+    adoptSavedPreferences(savedPreferences);
     isDirty = false;
     markSaveState(t("All changes saved"));
     if (isConnected) showChangeBanner(t("Settings saved. Reconnect now to apply them."));
@@ -688,7 +819,7 @@ function saveBridgeList(successMessage, kind = "success") {
     return;
   }
   const revision = ++bridgeSaveRevision;
-  const nextPreferences = storedPreferences();
+  const nextPreferences = fullRecordPreferences();
   savePreferences(nextPreferences, (saved, savedPreferences) => {
     if (revision !== bridgeSaveRevision) return;
     if (!saved) {
@@ -697,7 +828,7 @@ function saveBridgeList(successMessage, kind = "success") {
       showClipboardStatus(t("Could not save bridge changes."), "error");
       return;
     }
-    preferences = savedPreferences;
+    adoptSavedPreferences(savedPreferences);
     isDirty = false;
     markSaveState(t("All changes saved"));
     showClipboardStatus(successMessage, kind);
@@ -908,6 +1039,7 @@ function sendStatus() {
   chrome.runtime.sendMessage({ type: "status" }, (result) => {
     if (chrome.runtime.lastError) {
       isConnected = false;
+      updateConnectionHealthStatus(null);
       setConnectionBadge(t("Connection unavailable"), "error", t("Could not check the Tor connection. Restart your browser and check the helper installation."));
       diagnosticTextNode.textContent = chrome.runtime.lastError.message;
       hideChangeBanner();
@@ -930,6 +1062,7 @@ function sendStatus() {
       connectedBridgeIndex = null;
     }
     isConnected = result?.state === "connected";
+    updateConnectionHealthStatus(result);
     renderBridgeList();
     diagnosticTextNode.textContent = diagnosticLines.length ? diagnosticLines.join("\n")
       : result?.error || result?.message || t("No additional Tor diagnostics are available.");
@@ -1020,7 +1153,11 @@ async function reconnectUsingSavedSettings() {
 reconnectNowButton.addEventListener("click", reconnectUsingSavedSettings);
 
 sectionLinks.forEach((link) => {
-  link.addEventListener("click", () => setActiveSection(link.dataset.sectionLink));
+  link.addEventListener("click", () => {
+    const sectionId = link.dataset.sectionLink;
+    setActiveSection(sectionId);
+    sessionStorage.setItem(ACTIVE_SETTINGS_SECTION_KEY, sectionId);
+  });
 });
 
 killSwitchToggle.addEventListener("click", () => {
@@ -1048,23 +1185,9 @@ autoBridgeFailoverToggle.addEventListener("click", () => {
   });
 });
 
-siteCheckIntervalInput.addEventListener("change", () => {
-  const minutes = Number(siteCheckIntervalInput.value);
-  if (!Number.isInteger(minutes) || minutes < 1 || minutes > 60) {
-    siteCheckIntervalInput.value = String(normalizeSiteCheckInterval(preferences.siteCheckIntervalMinutes));
-    siteCheckIntervalInput.reportValidity();
-    return;
-  }
-  const previous = normalizeSiteCheckInterval(preferences.siteCheckIntervalMinutes);
-  preferences = { ...preferences, siteCheckIntervalMinutes: minutes };
-  renderConnectionHealth();
-  savePreferenceField("siteCheckIntervalMinutes", minutes, (saved) => {
-    if (!saved && preferences.siteCheckIntervalMinutes === minutes) {
-      preferences = { ...preferences, siteCheckIntervalMinutes: previous };
-      renderConnectionHealth();
-    }
-  });
-});
+decreaseSiteCheckIntervalButton.addEventListener("click", () => changeSiteCheckInterval(-1));
+increaseSiteCheckIntervalButton.addEventListener("click", () => changeSiteCheckInterval(1));
+checkSitesNowButton.addEventListener("click", checkSitesNow);
 
 document.addEventListener("tor-language-changed", () => { renderBridgeList(); renderExitCountry(); renderKillSwitch(); renderConnectionHealth(); loadDonationAddresses(); });
 
@@ -1100,22 +1223,27 @@ renderExitCountry();
   let suppressUntil = 0;
   document.addEventListener("click", () => { suppressUntil = Date.now() + 400; }, { capture: true });
   const sectionIds = ["method", "bridges", "connection-health", "exit-country", "protection", "appearance", "support", "community"];
-  const THRESHOLD = 160; // px from top of viewport — just below the sticky header
   const updateActiveSection = () => {
     if (Date.now() < suppressUntil) return;
-    // Find the last section whose top edge has scrolled above THRESHOLD.
-    // That's the section the user is currently reading.
+    // Track the section crossing the upper reading area, including after the
+    // browser restores the scroll position during a page refresh.
+    const markerY = Math.min(window.innerHeight - 1, Math.max(160, window.innerHeight * 0.35));
     let active = sectionIds[0];
     for (const id of sectionIds) {
       const el = document.getElementById(id);
       if (!el) continue;
-      if (el.getBoundingClientRect().top <= THRESHOLD) active = id;
+      if (el.getBoundingClientRect().top <= markerY) active = id;
     }
     setActiveSection(active);
   };
   window.addEventListener("scroll", updateActiveSection, { passive: true });
-  // Set correct active section on initial load (e.g. page loaded mid-scroll or hash in URL).
-  updateActiveSection();
+  if ("ResizeObserver" in window) {
+    const content = document.querySelector(".settings-content");
+    if (content) new ResizeObserver(() => requestAnimationFrame(updateActiveSection)).observe(content);
+  }
+  window.addEventListener("pageshow", updateActiveSection);
+  // Recheck after layout and browser scroll restoration have settled.
+  requestAnimationFrame(updateActiveSection);
 }
 
 loadDonationAddresses();
