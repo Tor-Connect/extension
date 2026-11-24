@@ -195,7 +195,7 @@ module.exports = {
       "Choose how often sites are checked and whether another bridge is tried after all connection checks fail.": "ဝဘ်ဆိုက်များကို စစ်ဆေးမည့် အကြိမ်ရေနှင့် ချိတ်ဆက်မှုစစ်ဆေးမှုအားလုံး မအောင်မြင်ပါက တံတားတစ်ခုကို ထပ်မံကြိုးစားမည်၊ မကြိုးစားမည်ကို ရွေးပါ။",
       "Automatically try another bridge": "အခြားတံတားကို အလိုအလျောက် စမ်းပါ",
       "Try another enabled bridge when all connection checks fail.": "ချိတ်ဆက်မှုစစ်ဆေးမှုအားလုံး မအောင်မြင်ပါက ဖွင့်ထားသော အခြားတံတားတစ်ခုကို စမ်းပါ။",
-      "Verify connection every": "ချိတ်ဆက်မှုကို စစ်ဆေးရန်",
+      "Verify connection every": "ချိတ်ဆက်မှု စစ်ဆေးသည့် ကြားကာလ",
       "Applies to bridge connections only. Switch to Bridge lines to use it.": "Bridge ချိတ်ဆက်မှုများအတွက်သာ သက်ဆိုင်သည်။ အသုံးပြုရန် Bridge lines သို့ ပြောင်းပါ။",
       "Check now": "ယခုစစ်ဆေးရန်",
       "Decrease interval": "ကြားကာလလျှော့ရန်",

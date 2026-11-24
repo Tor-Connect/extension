@@ -195,7 +195,7 @@ module.exports = {
       "Choose how often sites are checked and whether another bridge is tried after all connection checks fail.": "Lege fest, wie oft Websites geprüft werden und ob nach fehlgeschlagenen Verbindungsprüfungen eine weitere Bridge versucht wird.",
       "Automatically try another bridge": "Automatisch eine andere Bridge versuchen",
       "Try another enabled bridge when all connection checks fail.": "Wenn alle Verbindungstests fehlschlagen, eine weitere aktivierte Bridge versuchen.",
-      "Verify connection every": "Verbindung alle",
+      "Verify connection every": "Prüfintervall der Verbindung",
       "Applies to bridge connections only. Switch to Bridge lines to use it.": "Gilt nur für Bridge-Verbindungen. Wechsle zu Bridge-Zeilen, um die Option zu verwenden.",
       "Check now": "Jetzt prüfen",
       "Decrease interval": "Intervall verringern",
