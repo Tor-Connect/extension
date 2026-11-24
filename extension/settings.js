@@ -47,6 +47,8 @@ const changeBanner = document.querySelector("#changeBanner");
 const changeBannerMessage = document.querySelector("#changeBannerMessage");
 const reconnectNowButton = document.querySelector("#reconnectNow");
 const sectionLinks = [...document.querySelectorAll("[data-section-link]")];
+const settingsViewToggle = document.querySelector("#settingsViewToggle");
+const settingsViewHint = document.querySelector("#settingsViewHint");
 const exitCountrySelectNode = document.querySelector("#exitCountrySelect");
 const exitCountryCurrentNode = document.querySelector("#exitCountryCurrent");
 const exitCountryCurrentFlagNode = document.querySelector("#exitCountryCurrentFlag");
@@ -81,6 +83,8 @@ let preferenceWriteQueue = Promise.resolve();
 const t = (key, params) => (globalThis.torI18n?.t || ((s) => s))(key, params);
 const MAX_ENABLED_BRIDGES = 20;
 const ACTIVE_SETTINGS_SECTION_KEY = "torConnectSettingsActiveSection";
+const SHOW_ALL_SETTINGS_SECTIONS_KEY = "torConnectSettingsShowAllSections";
+let showAllSettingsSections = sessionStorage.getItem(SHOW_ALL_SETTINGS_SECTIONS_KEY) !== "false";
 
 function normalizeSiteCheckInterval(value) {
   const minutes = Number(value);
@@ -170,11 +174,7 @@ function readPreferences() {
       renderExitCountry();
       isDirty = false;
       markSaveState(t("All changes saved"));
-      const savedSection = sessionStorage.getItem(ACTIVE_SETTINGS_SECTION_KEY);
-      if (savedSection && document.getElementById(savedSection)?.matches(".settings-section")) {
-        setActiveSection(savedSection);
-        requestAnimationFrame(() => document.getElementById(savedSection)?.scrollIntoView({ block: "start" }));
-      }
+      setActiveSection(getSelectedSettingsSection());
       resolve();
     });
   });
@@ -334,12 +334,24 @@ function setImportMenuOpen(open) {
 }
 
 function setActiveSection(sectionId) {
+  const sections = [...document.querySelectorAll(".settings-section")];
+  if (!sections.some((section) => section.id === sectionId)) return;
   sectionLinks.forEach((link) => {
     const active = link.dataset.sectionLink === sectionId;
     link.classList.toggle("active", active);
     if (active) link.setAttribute("aria-current", "location");
     else link.removeAttribute("aria-current");
   });
+  sections.forEach((section) => { section.hidden = !showAllSettingsSections && section.id !== sectionId; });
+  settingsViewToggle.setAttribute("aria-checked", String(showAllSettingsSections));
+  const hintKey = showAllSettingsSections ? "Everything on one page" : "One section at a time";
+  settingsViewHint.dataset.i18n = hintKey;
+  settingsViewHint.textContent = t(hintKey);
+}
+
+function getSelectedSettingsSection() {
+  const candidates = [location.hash.slice(1), sessionStorage.getItem(ACTIVE_SETTINGS_SECTION_KEY), "method"];
+  return candidates.find((sectionId) => document.getElementById(sectionId)?.matches(".settings-section")) || "method";
 }
 
 function requestClipboardPermission(permission) {
@@ -1181,12 +1193,52 @@ async function reconnectUsingSavedSettings() {
 reconnectNowButton.addEventListener("click", reconnectUsingSavedSettings);
 
 sectionLinks.forEach((link) => {
-  link.addEventListener("click", () => {
+  link.addEventListener("click", (event) => {
+    event.preventDefault();
     const sectionId = link.dataset.sectionLink;
     setActiveSection(sectionId);
     sessionStorage.setItem(ACTIVE_SETTINGS_SECTION_KEY, sectionId);
+    history.replaceState(null, "", `#${sectionId}`);
+    if (showAllSettingsSections) document.getElementById(sectionId).scrollIntoView({ behavior: "smooth", block: "start" });
+    else window.scrollTo({ top: 0, behavior: "smooth" });
   });
 });
+
+settingsViewToggle.addEventListener("click", () => {
+  showAllSettingsSections = !showAllSettingsSections;
+  sessionStorage.setItem(SHOW_ALL_SETTINGS_SECTIONS_KEY, String(showAllSettingsSections));
+  setActiveSection(getSelectedSettingsSection());
+  window.scrollTo({ top: 0, behavior: "smooth" });
+});
+
+window.addEventListener("scroll", () => {
+  if (!showAllSettingsSections) return;
+  const visibleSections = [...document.querySelectorAll(".settings-section:not([hidden])")];
+  if (!visibleSections.length) return;
+  const topbarBottom = document.querySelector(".settings-topbar")?.getBoundingClientRect().bottom || 0;
+  const bannerBottom = changeBanner.hidden ? 0 : changeBanner.getBoundingClientRect().bottom;
+  const readingMarker = Math.max(topbarBottom, bannerBottom) + 40;
+  let current = visibleSections.find((section) => {
+    const bounds = section.getBoundingClientRect();
+    return bounds.top <= readingMarker && bounds.bottom > readingMarker;
+  });
+  if (!current) {
+    const first = visibleSections[0];
+    const last = visibleSections.at(-1);
+    if (readingMarker < first.getBoundingClientRect().top) current = first;
+    else if (readingMarker >= last.getBoundingClientRect().bottom) current = last;
+    else current = [...visibleSections].reverse().find((section) => section.getBoundingClientRect().bottom <= readingMarker) || first;
+  }
+  if (!current || current.id === getSelectedSettingsSection()) return;
+  sectionLinks.forEach((link) => {
+    const active = link.dataset.sectionLink === current.id;
+    link.classList.toggle("active", active);
+    if (active) link.setAttribute("aria-current", "location");
+    else link.removeAttribute("aria-current");
+  });
+  sessionStorage.setItem(ACTIVE_SETTINGS_SECTION_KEY, current.id);
+  history.replaceState(null, "", `#${current.id}`);
+}, { passive: true });
 
 killSwitchToggle.addEventListener("click", () => {
   const next = !(preferences.killSwitch === true);
@@ -1217,7 +1269,7 @@ decreaseSiteCheckIntervalButton.addEventListener("click", () => changeSiteCheckI
 increaseSiteCheckIntervalButton.addEventListener("click", () => changeSiteCheckInterval(1));
 checkSitesNowButton.addEventListener("click", checkSitesNow);
 
-document.addEventListener("tor-language-changed", () => { renderBridgeList(); renderExitCountry(); renderKillSwitch(); renderConnectionHealth(); loadDonationAddresses(); });
+document.addEventListener("tor-language-changed", () => { setActiveSection(getSelectedSettingsSection()); renderBridgeList(); renderExitCountry(); renderKillSwitch(); renderConnectionHealth(); loadDonationAddresses(); });
 
 chrome.storage.onChanged.addListener((changes, areaName) => {
   if (areaName !== "local" || !changes.torConnectionPreferences) return;
@@ -1248,32 +1300,7 @@ renderConnectionHealth();
 renderExitCountry();
 });
 
-{
-  let suppressUntil = 0;
-  document.addEventListener("click", () => { suppressUntil = Date.now() + 400; }, { capture: true });
-  const sectionIds = ["method", "bridges", "connection-health", "exit-country", "protection", "appearance", "support", "community"];
-  const updateActiveSection = () => {
-    if (Date.now() < suppressUntil) return;
-    // Track the section crossing the upper reading area, including after the
-    // browser restores the scroll position during a page refresh.
-    const markerY = Math.min(window.innerHeight - 1, Math.max(160, window.innerHeight * 0.35));
-    let active = sectionIds[0];
-    for (const id of sectionIds) {
-      const el = document.getElementById(id);
-      if (!el) continue;
-      if (el.getBoundingClientRect().top <= markerY) active = id;
-    }
-    setActiveSection(active);
-  };
-  window.addEventListener("scroll", updateActiveSection, { passive: true });
-  if ("ResizeObserver" in window) {
-    const content = document.querySelector(".settings-content");
-    if (content) new ResizeObserver(() => requestAnimationFrame(updateActiveSection)).observe(content);
-  }
-  window.addEventListener("pageshow", updateActiveSection);
-  // Recheck after layout and browser scroll restoration have settled.
-  requestAnimationFrame(updateActiveSection);
-}
+setActiveSection(getSelectedSettingsSection());
 
 loadDonationAddresses();
 readPreferences().then(sendStatus);
@@ -1288,7 +1315,7 @@ readPreferences().then(sendStatus);
     ? "https://addons.mozilla.org/firefox/addon/tor-connect/"
     : "https://chromewebstore.google.com/detail/bpakflmhpekikajckcncjgknbjebhkjm";
   if (rateLink) rateLink.href = storeUrl;
-  if (communityVersion) communityVersion.textContent = "v" + chrome.runtime.getManifest().version;
+  if (communityVersion) communityVersion.textContent = t("Version {version}", { version: chrome.runtime.getManifest().version });
 
   function renderCommunitySection() {
     if (!rateLink || !storeNameChip) return;

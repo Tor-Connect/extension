@@ -42,16 +42,44 @@
   </div>
 
   <div class="settings-layout">
-    <nav class="settings-nav" aria-label="Settings sections">
-      <a class="active" href="#method" data-section-link="method" data-i18n="Connection method">Connection method</a>
-      <a href="#bridges" data-section-link="bridges"><span data-i18n="Bridge lines">Bridge lines</span><span id="bridgeCount" class="nav-count">0</span></a>
-      <a href="#connection-health" data-section-link="connection-health"><span data-i18n="Connection health">Connection health</span><span id="autoBridgeFailoverNavBadge" class="nav-count">Off</span></a>
-      <a href="#exit-country" data-section-link="exit-country"><span data-i18n="Exit country">Exit country</span><span id="exitCountryNavBadge" class="nav-count" data-i18n>Auto</span></a>
-      <a href="#protection" data-section-link="protection"><span data-i18n="Kill switch">Kill switch</span><span id="protectionNavBadge" class="nav-count">Off</span></a>
-      <a href="#appearance" data-section-link="appearance" data-i18n="Appearance and language">Appearance and language</a>
-      <a href="#support" data-section-link="support" data-i18n="Support development">Support development</a>
-      <a href="#community" data-section-link="community" data-i18n="Community and support">Community and support</a>
-    </nav>
+    <aside class="settings-sidebar">
+      <nav class="settings-nav" aria-label="Settings sections">
+        <a class="active" href="#method" data-section-link="method" data-i18n="Connection method">Connection method</a>
+        <a href="#bridges" data-section-link="bridges"><span data-i18n="Bridge lines">Bridge lines</span><span id="bridgeCount" class="nav-count">0</span></a>
+        <a href="#connection-health" data-section-link="connection-health"><span data-i18n="Connection health">Connection health</span><span id="autoBridgeFailoverNavBadge" class="nav-count">Off</span></a>
+        <a href="#exit-country" data-section-link="exit-country"><span data-i18n="Exit country">Exit country</span><span id="exitCountryNavBadge" class="nav-count" data-i18n>Auto</span></a>
+        <a href="#protection" data-section-link="protection"><span data-i18n="Kill switch">Kill switch</span><span id="protectionNavBadge" class="nav-count">Off</span></a>
+        <a href="#appearance" data-section-link="appearance" data-i18n="Appearance and language">Appearance and language</a>
+        <a href="#support" data-section-link="support" data-i18n="Support development">Support development</a>
+        <a href="#community" data-section-link="community" data-i18n="Community and support">Community and support</a>
+      </nav>
+      <div class="settings-view-toggle">
+        <div class="settings-view-copy">
+          <strong data-i18n="Show all sections">Show all sections</strong>
+          <span id="settingsViewHint" data-i18n="Everything on one page">Everything on one page</span>
+        </div>
+        <button id="settingsViewToggle" class="settings-view-switch" type="button" role="switch" aria-checked="true" aria-label="Show all sections" data-i18n-aria-label="Show all sections">
+          <span aria-hidden="true"></span>
+        </button>
+      </div>
+      <div class="settings-sidebar-footer">
+        <span id="communityVersion" class="sidebar-version"></span>
+        <nav class="sidebar-social-links" aria-label="Community and support" data-i18n-aria-label="Community and support">
+          <a href="https://x.com/tor_Connect" target="_blank" rel="noopener noreferrer" aria-label="Follow Tor Connect on X, opens in a new tab" data-i18n-aria-label="Follow Tor Connect on X, opens in a new tab">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18.9 1.2h3.7l-8 9.2L24 22.8h-7.4l-5.8-7.6-6.6 7.6H.5l8.6-9.8L0 1.2h7.6l5.2 6.9Zm-1.3 19.5h2L6.5 3.2H4.3Z"/></svg>
+          </a>
+          <a href="https://www.youtube.com/@Tor-Connect" target="_blank" rel="noopener noreferrer" aria-label="Follow Tor Connect on YouTube, opens in a new tab" data-i18n-aria-label="Follow Tor Connect on YouTube, opens in a new tab">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M23 7.2a3 3 0 0 0-2.1-2.1C19 4.6 12 4.6 12 4.6s-7 0-8.9.5A3 3 0 0 0 1 7.2 31 31 0 0 0 .5 12s0 3.5.5 4.8a3 3 0 0 0 2.1 2.1c1.9.5 8.9.5 8.9.5s7 0 8.9-.5a3 3 0 0 0 2.1-2.1c.5-1.3.5-4.8.5-4.8s0-3.5-.5-4.8Z"/><path class="social-icon-cutout" d="m9.8 15.5 6-3.5-6-3.5z"/></svg>
+          </a>
+          <a href="https://github.com/Tor-Connect/extension" target="_blank" rel="noopener noreferrer" aria-label="GitHub repository, opens in a new tab" data-i18n-aria-label="GitHub repository, opens in a new tab">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 .8a11.2 11.2 0 0 0-3.5 21.8c.6.1.8-.2.8-.6v-2.1c-3.2.7-3.9-1.4-3.9-1.4-.5-1.3-1.3-1.7-1.3-1.7-1-.7.1-.7.1-.7 1.1.1 1.7 1.2 1.7 1.2 1 .1.8 2.1 3.5 1.5.1-.7.4-1.2.7-1.5-2.5-.3-5.1-1.3-5.1-5.5 0-1.2.4-2.2 1.2-3-.1-.3-.5-1.4.1-2.9 0 0 1-.3 3.1 1.2a10.8 10.8 0 0 1 5.7 0c2.2-1.5 3.1-1.2 3.1-1.2.6 1.5.2 2.6.1 2.9.8.8 1.2 1.8 1.2 3 0 4.2-2.6 5.2-5.1 5.5.4.3.8 1 .8 2v3.1c0 .4.2.7.8.6A11.2 11.2 0 0 0 12 .8Z"/></svg>
+          </a>
+          <a href="https://chromewebstore.google.com/detail/tor-connect/bpakflmhpekikajckcncjgknbjebhkjm/support" target="_blank" rel="noopener noreferrer" aria-label="Get support for Tor Connect, opens in a new tab" data-i18n-aria-label="Get support for Tor Connect, opens in a new tab">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><path d="m5.6 5.6 3.6 3.6m5.6 5.6 3.6 3.6M18.4 5.6l-3.6 3.6m-5.6 5.6-3.6 3.6"/></svg>
+          </a>
+        </nav>
+      </div>
+    </aside>
 
     <main class="settings-content">
       <div class="page-heading">
@@ -194,6 +222,14 @@
             <button id="checkSitesNow" class="connection-health-check-button" type="button" data-i18n="Check now">Check now</button>
           </div>
         </div>
+        <details id="diagnosticsDetails" class="diagnostics-details">
+          <summary class="diagnostics-summary" data-i18n="Connection details">Connection details</summary>
+          <div class="diagnostics-body">
+            <p id="connectionStatusMessage" data-i18n="Checking Tor connection…">Checking Tor connection…</p>
+            <pre id="diagnosticText" dir="ltr" data-i18n="Waiting for Tor status…">Waiting for Tor status…</pre>
+            <p data-i18n-html="For the live Chrome log, open chrome://extensions, find Tor Connect, then click Service worker. Look for entries beginning [Tor extension].">For the live Chrome log, open <code>chrome://extensions</code>, find Tor Connect, then click <strong>Service worker</strong>. Look for entries beginning <code>[Tor extension]</code>.</p>
+          </div>
+        </details>
       </section>
 
       <section id="exit-country" class="settings-section" aria-labelledby="exitCountryHeading">
@@ -413,7 +449,6 @@
         <div class="community-group">
           <div class="community-group-header">
             <h3 class="community-group-label" data-i18n="ABOUT">ABOUT</h3>
-            <span id="communityVersion" class="community-version"></span>
           </div>
           <div class="community-card">
             <a class="community-row" href="https://tor-connect.github.io/" target="_blank" rel="noopener noreferrer" data-i18n-aria-label="Project website, opens in a new tab">
@@ -436,18 +471,10 @@
 
         <p class="community-disclaimer">
           <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg>
-          <span><span data-i18n="Tor Connect is an independent open-source project. It is not affiliated with or endorsed by the Tor Project.">Tor Connect is an independent open-source project. It is not affiliated with or endorsed by the Tor Project.</span> <span data-i18n="This extension does not provide Tor Browser's fingerprinting protections, and some sites and features may not work through Tor.">This extension does not provide Tor Browser's fingerprinting protections, and some sites and features may not work through Tor.</span></span>
+          <span><span data-i18n="Tor Connect is an independent, open-source project and is not affiliated with the Tor Project.">Tor Connect is an independent, open-source project and is not affiliated with the Tor Project.</span> <span data-i18n="Tor Connect does not provide Tor Browser's fingerprinting protections.">Tor Connect does not provide Tor Browser's fingerprinting protections.</span></span>
         </p>
       </section>
 
-      <details id="diagnosticsDetails" class="diagnostics-details">
-        <summary class="diagnostics-summary" data-i18n="Connection details">Connection details</summary>
-        <div class="diagnostics-body">
-          <p id="connectionStatusMessage" data-i18n="Checking Tor connection…">Checking Tor connection…</p>
-          <pre id="diagnosticText" dir="ltr" data-i18n="Waiting for Tor status…">Waiting for Tor status…</pre>
-          <p data-i18n-html="For the live Chrome log, open chrome://extensions, find Tor Connect, then click Service worker. Look for entries beginning [Tor extension].">For the live Chrome log, open <code>chrome://extensions</code>, find Tor Connect, then click <strong>Service worker</strong>. Look for entries beginning <code>[Tor extension]</code>.</p>
-        </div>
-      </details>
     </main>
   </div>
 
