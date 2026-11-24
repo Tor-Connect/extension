@@ -29,6 +29,8 @@ let connectivitySiteResults = [];
 let connectivityCheckAttempt = 0;
 let connectivityCheckNextAt = 0;
 let connectivityCheckCompletedAt = 0;
+let actionSiteCheckState = "";
+let actionRetryingAfterSiteFailure = false;
 const CONNECTIVITY_CHECK_RETRY_DELAY_MS = 30_000;
 const DEFAULT_SITE_CHECK_INTERVAL_MINUTES = 5;
 let connectivityCheckRecheckIntervalMs = DEFAULT_SITE_CHECK_INTERVAL_MINUTES * 60_000;
@@ -128,15 +130,19 @@ function checkConnectivityAfterConnect(result, generation, { force = false } = {
   connectivityCheckConnectionId = connectionId;
   const attempt = ++connectivityCheckAttempt;
   connectivityCheckState = "pending";
-  connectivityCheckPromise = checkSitesReachability().then((siteResults) => {
+  connectivityCheckPromise = checkSitesReachability().then(async (siteResults) => {
     if (connectivityCheckConnectionId === connectionId && connectivityCheckAttempt === attempt) {
       connectivitySiteResults = siteResults;
       connectivityCheckState = siteResults.every((site) => site.state === "passed") ? "passed" : "failed";
+      const failedCount = siteResults.filter((site) => site.state === "failed").length;
+      actionSiteCheckState = failedCount >= siteResults.length ? "failed" : failedCount ? "limited" : "passed";
+      actionRetryingAfterSiteFailure = false;
       connectivityCheckCompletedAt = Date.now();
       connectivityCheckNextAt = connectivityCheckCompletedAt + (connectivityCheckState === "passed"
         ? connectivityCheckRecheckIntervalMs
         : CONNECTIVITY_CHECK_RETRY_DELAY_MS);
       connectivityCheckPromise = undefined;
+      await setActionConnected(true);
     }
   });
   return connectivityCheckPromise;
@@ -294,7 +300,10 @@ async function clearProxy() {
 }
 
 async function setActionConnected(connected, reconnecting = false) {
-  const variant = reconnecting ? "reconnecting" : connected ? "connected-pearl" : "disconnected";
+  const retainCheckState = connected || actionRetryingAfterSiteFailure;
+  const variant = retainCheckState && actionSiteCheckState === "failed" ? "site-failed"
+    : retainCheckState && actionSiteCheckState === "limited" ? "site-limited"
+      : reconnecting ? "reconnecting" : connected ? "connected-pearl" : "disconnected";
   const title = reconnecting ? "Reconnecting to Tor" : connected ? "Connected to Tor" : "Tor connection";
   const update = actionUpdateQueue.then(async () => {
     await chrome.action.setIcon({
@@ -376,6 +385,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       return;
     }
     if (message.type === "connect") {
+      if (!actionRetryingAfterSiteFailure) actionSiteCheckState = "";
       const result = await request("start", {
         mode: message.mode,
         bridges: message.bridges,
@@ -398,7 +408,13 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       return;
     }
     if (message.type === "disconnect" || message.type === "stopTorForRouteChange") {
-      if (message.type === "disconnect") await clearProxy();
+      if (message.type === "disconnect") {
+        actionSiteCheckState = "";
+        actionRetryingAfterSiteFailure = false;
+        await clearProxy();
+      } else {
+        actionRetryingAfterSiteFailure = ["failed", "limited"].includes(actionSiteCheckState);
+      }
       await setActionConnected(false);
       const result = await request("stop");
       logHelperResult("stop", result);

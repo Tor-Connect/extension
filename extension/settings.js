@@ -744,8 +744,11 @@ function renderConnectionHealthStatus() {
   } else if (!isConnected) {
     label = t("Not connected");
     state = "idle";
-  } else if (siteCheckState === "passed" || siteCheckState === "failed") {
-    const status = t(siteCheckState === "passed" ? "Connection verified" : "Connected, but sites aren't loading");
+  } else if (["passed", "limited", "failed"].includes(siteCheckState)) {
+    const statusKey = siteCheckState === "passed" ? "Connection verified"
+      : siteCheckState === "limited" ? "Connected · some sites may be limited"
+        : "Connected, but sites aren't loading";
+    const status = t(statusKey);
     const time = relativeCheckTime(siteCheckCompletedAt);
     label = time ? `${t("Last check {time}", { time })} · ${status}` : status;
     state = siteCheckState;
@@ -764,6 +767,10 @@ function updateConnectionHealthStatus(result) {
     siteCheckCompletedAt = 0;
   } else if (result.state === "connected") {
     siteCheckState = result.connectivityCheck || "pending";
+    if (siteCheckState === "failed" && Array.isArray(result.siteChecks)) {
+      const failedCount = result.siteChecks.filter((site) => site.state === "failed").length;
+      if (failedCount > 0 && failedCount < result.siteChecks.length) siteCheckState = "limited";
+    }
     siteCheckCompletedAt = Number(result.connectivityCheckCompletedAt) || 0;
   } else if (result.state === "starting" || result.bridgeActivity === "trying") {
     siteCheckState = "pending";
