@@ -1,7 +1,7 @@
 import Foundation
 import Darwin
 
-private let helperVersion = "1.14.0"
+private let helperVersion = "1.16.0"
 private let proxyPort = 9050
 private let appSupport = FileManager.default.homeDirectoryForCurrentUser
     .appendingPathComponent("Library/Application Support/TorChrome", isDirectory: true)
