@@ -42,16 +42,27 @@
   </div>
 
   <div class="settings-layout">
-    <nav class="settings-nav" aria-label="Settings sections">
-      <a class="active" href="#method" data-section-link="method" data-i18n="Connection method">Connection method</a>
-      <a href="#bridges" data-section-link="bridges"><span data-i18n="Bridge lines">Bridge lines</span><span id="bridgeCount" class="nav-count">0</span></a>
-      <a href="#connection-health" data-section-link="connection-health"><span data-i18n="Connection health">Connection health</span><span id="autoBridgeFailoverNavBadge" class="nav-count">Off</span></a>
-      <a href="#exit-country" data-section-link="exit-country"><span data-i18n="Exit country">Exit country</span><span id="exitCountryNavBadge" class="nav-count" data-i18n>Auto</span></a>
-      <a href="#protection" data-section-link="protection"><span data-i18n="Kill switch">Kill switch</span><span id="protectionNavBadge" class="nav-count">Off</span></a>
-      <a href="#appearance" data-section-link="appearance" data-i18n="Appearance and language">Appearance and language</a>
-      <a href="#support" data-section-link="support" data-i18n="Support development">Support development</a>
-      <a href="#community" data-section-link="community" data-i18n="Community and support">Community and support</a>
-    </nav>
+    <aside class="settings-sidebar">
+      <nav class="settings-nav" aria-label="Settings sections">
+        <a class="active" href="#method" data-section-link="method" data-i18n="Connection method">Connection method</a>
+        <a href="#bridges" data-section-link="bridges"><span data-i18n="Bridge lines">Bridge lines</span><span id="bridgeCount" class="nav-count">0</span></a>
+        <a href="#connection-health" data-section-link="connection-health"><span data-i18n="Connection health">Connection health</span><span id="autoBridgeFailoverNavBadge" class="nav-count">Off</span></a>
+        <a href="#exit-country" data-section-link="exit-country"><span data-i18n="Exit country">Exit country</span><span id="exitCountryNavBadge" class="nav-count" data-i18n>Auto</span></a>
+        <a href="#protection" data-section-link="protection"><span data-i18n="Kill switch">Kill switch</span><span id="protectionNavBadge" class="nav-count">Off</span></a>
+        <a href="#appearance" data-section-link="appearance" data-i18n="Appearance and language">Appearance and language</a>
+        <a href="#support" data-section-link="support" data-i18n="Support development">Support development</a>
+        <a href="#community" data-section-link="community" data-i18n="Community and support">Community and support</a>
+      </nav>
+      <div class="settings-view-toggle">
+        <div class="settings-view-copy">
+          <strong data-i18n="Show all sections">Show all sections</strong>
+          <span id="settingsViewHint" data-i18n="One section at a time">One section at a time</span>
+        </div>
+        <button id="settingsViewToggle" class="settings-view-switch" type="button" role="switch" aria-checked="false" aria-label="Show all sections" data-i18n-aria-label="Show all sections">
+          <span aria-hidden="true"></span>
+        </button>
+      </div>
+    </aside>
 
     <main class="settings-content">
       <div class="page-heading">
@@ -83,7 +94,7 @@
 
       </section>
 
-      <section id="bridges" class="settings-section" aria-labelledby="bridgesHeading">
+      <section id="bridges" class="settings-section" aria-labelledby="bridgesHeading" hidden>
         <div id="bridgeSummary" class="bridge-summary" hidden>
           <div class="bridge-summary-copy">
             <strong><span data-i18n="Bridge lines">Bridge lines</span> <span id="bridgeSummaryCount" class="nav-count">0 saved</span></strong>
@@ -151,7 +162,7 @@
         </div>
       </section>
 
-      <section id="connection-health" class="settings-section" aria-labelledby="connectionHealthHeading">
+      <section id="connection-health" class="settings-section" aria-labelledby="connectionHealthHeading" hidden>
         <div class="section-heading">
           <h2 id="connectionHealthHeading" data-i18n="Connection health">Connection health</h2>
           <p id="connectionHealthDescription" data-i18n="Choose how often your connection is verified and what to do if verification fails.">Choose how often your connection is verified and what to do if verification fails.</p>
@@ -194,9 +205,17 @@
             <button id="checkSitesNow" class="connection-health-check-button" type="button" data-i18n="Check now">Check now</button>
           </div>
         </div>
+        <details id="diagnosticsDetails" class="diagnostics-details">
+          <summary class="diagnostics-summary" data-i18n="Connection details">Connection details</summary>
+          <div class="diagnostics-body">
+            <p id="connectionStatusMessage" data-i18n="Checking Tor connection…">Checking Tor connection…</p>
+            <pre id="diagnosticText" dir="ltr" data-i18n="Waiting for Tor status…">Waiting for Tor status…</pre>
+            <p data-i18n-html="For the live Chrome log, open chrome://extensions, find Tor Connect, then click Service worker. Look for entries beginning [Tor extension].">For the live Chrome log, open <code>chrome://extensions</code>, find Tor Connect, then click <strong>Service worker</strong>. Look for entries beginning <code>[Tor extension]</code>.</p>
+          </div>
+        </details>
       </section>
 
-      <section id="exit-country" class="settings-section" aria-labelledby="exitCountryHeading">
+      <section id="exit-country" class="settings-section" aria-labelledby="exitCountryHeading" hidden>
         <div class="section-heading">
           <h2 id="exitCountryHeading" data-i18n="Exit country">Exit country</h2>
           <p data-i18n="Where your traffic leaves the Tor network.">Where your traffic leaves the Tor network.</p>
@@ -251,7 +270,7 @@
         </div>
       </section>
 
-      <section id="protection" class="settings-section" aria-labelledby="protectionHeading">
+      <section id="protection" class="settings-section" aria-labelledby="protectionHeading" hidden>
         <div class="section-heading">
           <h2 id="protectionHeading" data-i18n="Kill switch">Kill switch</h2>
           <p data-i18n="Keeps your real IP hidden if Tor stops working.">Keeps your real IP hidden if Tor stops working.</p>
@@ -280,7 +299,7 @@
         </div>
       </section>
 
-      <section id="appearance" class="settings-section" aria-labelledby="appearanceHeading">
+      <section id="appearance" class="settings-section" aria-labelledby="appearanceHeading" hidden>
         <div class="section-heading">
           <h2 id="appearanceHeading" data-i18n="Appearance and language">Appearance and language</h2>
           <p data-i18n="Applies to the popup and this page.">Applies to the popup and this page.</p>
@@ -344,7 +363,7 @@
         </div>
       </section>
 
-      <section id="support" class="settings-section" aria-labelledby="supportHeading">
+      <section id="support" class="settings-section" aria-labelledby="supportHeading" hidden>
         <div class="section-heading">
           <h2 id="supportHeading" data-i18n="Support development">Support development</h2>
           <p data-i18n="If Tor Connect is useful to you, consider supporting its development.">If Tor Connect is useful to you, consider supporting its development.</p>
@@ -357,7 +376,7 @@
         </p>
       </section>
 
-      <section id="community" class="settings-section" aria-labelledby="communityHeading">
+      <section id="community" class="settings-section" aria-labelledby="communityHeading" hidden>
         <div class="section-heading">
           <h2 id="communityHeading" data-i18n="Community and support">Community and support</h2>
           <p data-i18n="Get help, share feedback and follow the project.">Get help, share feedback and follow the project.</p>
@@ -440,14 +459,6 @@
         </p>
       </section>
 
-      <details id="diagnosticsDetails" class="diagnostics-details">
-        <summary class="diagnostics-summary" data-i18n="Connection details">Connection details</summary>
-        <div class="diagnostics-body">
-          <p id="connectionStatusMessage" data-i18n="Checking Tor connection…">Checking Tor connection…</p>
-          <pre id="diagnosticText" dir="ltr" data-i18n="Waiting for Tor status…">Waiting for Tor status…</pre>
-          <p data-i18n-html="For the live Chrome log, open chrome://extensions, find Tor Connect, then click Service worker. Look for entries beginning [Tor extension].">For the live Chrome log, open <code>chrome://extensions</code>, find Tor Connect, then click <strong>Service worker</strong>. Look for entries beginning <code>[Tor extension]</code>.</p>
-        </div>
-      </details>
     </main>
   </div>
 
