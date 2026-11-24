@@ -31,8 +31,9 @@ const killSwitchCard = document.querySelector("#killSwitchCard");
 const killSwitchActivePanel = document.querySelector("#killSwitchActivePanel");
 const connectionHealthCard = document.querySelector("#connectionHealthCard");
 const autoBridgeFailoverToggle = document.querySelector("#autoBridgeFailoverToggle");
-const autoBridgeFailoverRow = document.querySelector(".connection-health-failover-row");
-const autoBridgeFailoverHint = document.querySelector("#autoBridgeFailoverHint");
+const connectionHealthDescription = document.querySelector("#connectionHealthDescription");
+const autoBridgeFailoverTitle = document.querySelector("#autoBridgeFailoverTitle");
+const autoBridgeFailoverDescription = document.querySelector("#autoBridgeFailoverDescription");
 const siteCheckIntervalValue = document.querySelector("#siteCheckIntervalValue");
 const decreaseSiteCheckIntervalButton = document.querySelector("#decreaseSiteCheckInterval");
 const increaseSiteCheckIntervalButton = document.querySelector("#increaseSiteCheckInterval");
@@ -698,12 +699,16 @@ function renderKillSwitch() {
 function renderConnectionHealth() {
   const failoverEnabled = preferences.autoBridgeFailover !== false;
   const bridgeMode = selectedMode === "manual";
+  const title = bridgeMode ? "Automatically try another bridge" : "Automatically retry Snowflake";
+  const description = bridgeMode
+    ? "Try another enabled bridge when connection verification fails."
+    : "Reconnect Snowflake when connection verification fails.";
   autoBridgeFailoverToggle.setAttribute("aria-checked", String(failoverEnabled));
-  autoBridgeFailoverToggle.disabled = !bridgeMode;
-  autoBridgeFailoverToggle.setAttribute("aria-disabled", String(!bridgeMode));
-  autoBridgeFailoverRow.dataset.disabled = String(!bridgeMode);
-  autoBridgeFailoverHint.hidden = bridgeMode;
-  connectionHealthCard.dataset.on = String(failoverEnabled && bridgeMode);
+  autoBridgeFailoverTitle.textContent = t(title);
+  autoBridgeFailoverDescription.textContent = t(description);
+  autoBridgeFailoverToggle.setAttribute("aria-label", t(title));
+  connectionHealthDescription.textContent = t("Choose how often your connection is verified and what to do if verification fails.");
+  connectionHealthCard.dataset.on = String(failoverEnabled);
   autoBridgeFailoverNavBadge.textContent = t(failoverEnabled ? "On" : "Off");
   const interval = normalizeSiteCheckInterval(preferences.siteCheckIntervalMinutes);
   siteCheckIntervalValue.textContent = String(interval);

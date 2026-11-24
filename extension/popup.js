@@ -766,8 +766,8 @@ async function advanceToNextRoute({ automatic = false } = {}) {
   let automaticNextPosition = -1;
   let automaticRemainingLines;
   let automaticRemainingPositions;
-  if (automatic) {
-    if (preferences.mode !== "manual" || enabledEntries.length < 2) return;
+  if (automatic && preferences.mode === "manual") {
+    if (enabledEntries.length < 2) return;
     const signature = enabledEntries.join("\n");
     const bridgeListChanged = signature !== siteCheckFailoverBridgeSignature;
     if (bridgeListChanged) {
@@ -800,7 +800,7 @@ async function advanceToNextRoute({ automatic = false } = {}) {
     automaticNextLine = enabledEntries[automaticNextPosition];
     automaticRemainingPositions = remainingPositions;
     automaticRemainingLines = remainingPositions.map((index) => enabledEntries[index]);
-  }
+  } else if (automatic && preferences.mode !== "snowflake") return;
   if (automatic) {
     siteCheckFailoverAwaitingCheck = true;
     siteCheckFailoverPreviousConnectionId = currentResult.connectedAt;
@@ -866,6 +866,20 @@ async function advanceToNextRoute({ automatic = false } = {}) {
     } else if (!automatic) {
       if (!(await stopTorBeforeRouteChange())) return;
       renderResult(await send("connect", { mode: "snowflake", bridges: "" }));
+    } else {
+      const cancellationToken = automaticFailoverCancellationToken;
+      if (!(await stopTorBeforeRouteChange())) return;
+      if (cancellationToken !== automaticFailoverCancellationToken) {
+        siteCheckFailoverAwaitingCheck = false;
+        siteCheckFailoverPreviousConnectionId = undefined;
+        siteCheckFailoverPreviousCheckAt = 0;
+        return;
+      }
+      renderResult(await send("connect", {
+        mode: "snowflake",
+        bridges: "",
+        exitCountry: preferences.exitCountry || ""
+      }));
     }
   } finally {
     nextRouteNode.disabled = false;
@@ -1136,7 +1150,9 @@ function renderSiteCheck(result = {}) {
     siteCheckFailoverBridgeSignature = bridgeEntries().join("\n");
   }
   const checkSummary = failoverAwaitingCheck
-    ? t("Sites aren't loading · trying another bridge")
+    ? t(preferences.mode === "snowflake"
+      ? "Sites aren't loading · retrying Snowflake"
+      : "Sites aren't loading · trying another bridge")
     : pending ? t("Checking your connection")
     : allSitesFailed ? t("Connected, but sites aren't loading")
       : siteCheckFailed ? t("Connected · some sites may be limited")
@@ -1212,8 +1228,9 @@ function renderSiteCheck(result = {}) {
     row.append(icon, siteName, meta);
     return row;
   }));
-  if (connected && !pending && allSitesFailed && preferences.autoBridgeFailover !== false
-    && preferences.mode === "manual" && bridgeEntries().length > 1) {
+  const canAutomaticallyRetry = preferences.mode === "snowflake"
+    || (preferences.mode === "manual" && bridgeEntries().length > 1);
+  if (connected && !pending && allSitesFailed && preferences.autoBridgeFailover !== false && canAutomaticallyRetry) {
     const failedResult = result;
     queueMicrotask(() => {
       if (currentResult !== failedResult) return;
@@ -2263,6 +2280,7 @@ document.addEventListener("tor-language-changed", () => {
 chrome.storage.onChanged.addListener((changes, areaName) => {
   if (areaName !== "local" || !changes.torConnectionPreferences) return;
   const saved = changes.torConnectionPreferences.newValue || {};
+  const previousMode = preferences.mode;
   const wasAutoBridgeFailover = preferences.autoBridgeFailover !== false;
   preferences = {
     mode: saved.mode === "manual" ? "manual" : "snowflake",
@@ -2273,7 +2291,9 @@ chrome.storage.onChanged.addListener((changes, areaName) => {
     autoBridgeFailover: saved.autoBridgeFailover === true,
     siteCheckIntervalMinutes: normalizeSiteCheckIntervalMinutes(saved.siteCheckIntervalMinutes)
   };
-  if (wasAutoBridgeFailover && !preferences.autoBridgeFailover) automaticFailoverCancellationToken += 1;
+  if (previousMode !== preferences.mode || (wasAutoBridgeFailover && !preferences.autoBridgeFailover)) {
+    automaticFailoverCancellationToken += 1;
+  }
   if (!bridgeEntries().includes(preferences.selectedBridge)) preferences.selectedBridge = bridgeEntries()[0] || "";
   renderBridgeSelector();
   renderConnectionMethodSwitch();
