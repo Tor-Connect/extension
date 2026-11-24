@@ -391,6 +391,8 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
         bridges: message.bridges,
         bridgeIndices: message.bridgeIndices,
         selectedBridgeIndex: message.selectedBridgeIndex,
+        recoveryBridges: message.recoveryBridges,
+        recoveryIndices: message.recoveryIndices,
         exitCountry: message.exitCountry || ""
       });
       logHelperResult("start", result);

@@ -135,7 +135,11 @@ class Helper:
         elif command == "ping": result = self.ping(request.get("bridges", ""))
         elif command == "countries": result = self.countries(request.get("bridges", ""))
         elif command == "start":
-            result = self.start(request.get("mode", ""), request.get("bridges", ""), request.get("selectedBridgeIndex"), exit_country=request.get("exitCountry", ""), bridge_indices=request.get("bridgeIndices"))
+            result = self.start(
+                request.get("mode", ""), request.get("bridges", ""), request.get("selectedBridgeIndex"),
+                exit_country=request.get("exitCountry", ""), bridge_indices=request.get("bridgeIndices"),
+                recovery_bridges=request.get("recoveryBridges"), recovery_indices=request.get("recoveryIndices")
+            )
         elif command == "stop": self.stop(); result = self.status()
         else: result = {"ok": False, "error": "Unsupported command."}
         result["id"] = request_id
@@ -301,6 +305,8 @@ class Helper:
                 return self.status_payload(True)
         if mode not in {"snowflake", "manual"}:
             return {"ok": False, "error": "Choose Snowflake or manual bridge lines."}
+        if recovery_bridges is not None and mode != "manual":
+            return {"ok": False, "error": "Recovery bridges require manual bridge mode."}
         tor = self.executable("tor")
         transport = self.executable("lyrebird")
         if not tor or not transport:
@@ -324,6 +330,14 @@ class Helper:
                 and len(set(bridge_indices)) == len(bridge_indices)
             ):
                 bridge_indices = None
+            if recovery_bridges is not None:
+                if (not isinstance(recovery_bridges, list) or not 1 <= len(recovery_bridges) <= 20
+                        or not all(isinstance(line, str) for line in recovery_bridges)):
+                    return {"ok": False, "error": "Choose one or more valid recovery bridges."}
+                parsed_recovery_bridges = parse_bridges("\n".join(recovery_bridges))
+                if not parsed_recovery_bridges or len(parsed_recovery_bridges) != len(recovery_bridges):
+                    return {"ok": False, "error": "Choose one or more valid recovery bridges."}
+                recovery_bridges = parsed_recovery_bridges
             if recovery_bridges is not None and recovery_indices is not None and not (
                 isinstance(recovery_indices, list)
                 and len(recovery_indices) == len(recovery_bridges)
