@@ -1214,8 +1214,21 @@ settingsViewToggle.addEventListener("click", () => {
 window.addEventListener("scroll", () => {
   if (!showAllSettingsSections) return;
   const visibleSections = [...document.querySelectorAll(".settings-section:not([hidden])")];
-  const current = visibleSections.find((section) => section.getBoundingClientRect().top >= 0)
-    || visibleSections.at(-1);
+  if (!visibleSections.length) return;
+  const topbarBottom = document.querySelector(".settings-topbar")?.getBoundingClientRect().bottom || 0;
+  const bannerBottom = changeBanner.hidden ? 0 : changeBanner.getBoundingClientRect().bottom;
+  const readingMarker = Math.max(topbarBottom, bannerBottom) + 40;
+  let current = visibleSections.find((section) => {
+    const bounds = section.getBoundingClientRect();
+    return bounds.top <= readingMarker && bounds.bottom > readingMarker;
+  });
+  if (!current) {
+    const first = visibleSections[0];
+    const last = visibleSections.at(-1);
+    if (readingMarker < first.getBoundingClientRect().top) current = first;
+    else if (readingMarker >= last.getBoundingClientRect().bottom) current = last;
+    else current = [...visibleSections].reverse().find((section) => section.getBoundingClientRect().bottom <= readingMarker) || first;
+  }
   if (!current || current.id === getSelectedSettingsSection()) return;
   sectionLinks.forEach((link) => {
     const active = link.dataset.sectionLink === current.id;
