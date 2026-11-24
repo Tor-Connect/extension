@@ -86,6 +86,8 @@ final class Helper {
                 bridges: request["bridges"] as? String ?? "",
                 selectedBridgeIndex: request["selectedBridgeIndex"] as? Int,
                 bridgeIndices: request["bridgeIndices"] as? [Int],
+                recoveryBridges: request["recoveryBridges"] as? [String],
+                recoveryIndices: request["recoveryIndices"] as? [Int],
                 exitCountry: request["exitCountry"] as? String ?? ""
             )
         case "stop":
@@ -324,6 +326,15 @@ final class Helper {
             }
             bridgeLines = parsed.map { $0.hasPrefix("Bridge ") ? $0 : "Bridge \($0)" }
         }
+        var configuredRecoveryBridges: [String]?
+        if let recoveryBridges {
+            guard mode == "manual", (1...20).contains(recoveryBridges.count),
+                  let parsedRecoveryBridges = parseBridgeLines(recoveryBridges.joined(separator: "\n")),
+                  parsedRecoveryBridges.count == recoveryBridges.count else {
+                return ["ok": false, "error": "Choose one or more valid recovery bridges."]
+            }
+            configuredRecoveryBridges = parsedRecoveryBridges
+        }
         let validBridgeIndices = bridgeIndices.flatMap { indices -> [Int]? in
             guard indices.count == bridgeLines.count,
                   Set(indices).count == indices.count,
@@ -331,8 +342,8 @@ final class Helper {
             return indices
         }
         let validRecoveryIndices = recoveryIndices.flatMap { indices -> [Int]? in
-            guard let recoveryBridges,
-                  indices.count == recoveryBridges.count,
+            guard let configuredRecoveryBridges,
+                  indices.count == configuredRecoveryBridges.count,
                   Set(indices).count == indices.count,
                   indices.allSatisfy({ (1...20).contains($0) }) else { return nil }
             return indices
@@ -448,24 +459,24 @@ final class Helper {
             lock.lock()
             tor = process
             bridgeTargets = configuredBridgeTargets
-            currentBridgeIndex = nil
+            currentBridgeIndex = configuredBridgeTargets.count == 1 ? configuredBridgeTargets[0].index : nil
             bridgeActivity = nil
             builtCircuits = [:]
             exitRelayCandidates = []
             exitRelayIp = ""; exitRelayCountry = ""; exitRelayCircuitId = ""
             reconnectSince = nil
-            autoRecoveryBridges = recoveryBridges ?? ((mode == "manual" && selectedBridgeIndex == nil) ? autoBridges : [])
-            if let recoveryBridges {
-                autoRecoveryIndices = validRecoveryIndices ?? Array(1..<(recoveryBridges.count + 1))
+            autoRecoveryBridges = configuredRecoveryBridges ?? ((mode == "manual" && selectedBridgeIndex == nil) ? autoBridges : [])
+            if let configuredRecoveryBridges {
+                autoRecoveryIndices = validRecoveryIndices ?? Array(1..<(configuredRecoveryBridges.count + 1))
             } else if !autoRecoveryBridges.isEmpty {
                 autoRecoveryIndices = validBridgeIndices ?? Array((bridgeIndexOffset + 1)...(bridgeIndexOffset + autoBridges.count))
             } else {
                 autoRecoveryIndices = []
             }
             autoRecoveryTried = recoveryTried
-            autoRecoveryInProgress = recoveryBridges != nil || (mode == "manual" && selectedBridgeIndex == nil && !autoBridges.isEmpty)
+            autoRecoveryInProgress = configuredRecoveryBridges != nil || (mode == "manual" && selectedBridgeIndex == nil && !autoBridges.isEmpty)
             recoveryAttemptSince = autoRecoveryInProgress ? Date() : nil
-            if recoveryBridges == nil { recoveryStableSince = nil }
+            if configuredRecoveryBridges == nil { recoveryStableSince = nil }
             let shouldStartRecoveryWatchdog = !autoRecoveryBridges.isEmpty
             recoveryGeneration += 1
             let watchdogGeneration = recoveryGeneration

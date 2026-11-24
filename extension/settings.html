@@ -45,7 +45,7 @@
     <nav class="settings-nav" aria-label="Settings sections">
       <a class="active" href="#method" data-section-link="method" data-i18n="Connection method">Connection method</a>
       <a href="#bridges" data-section-link="bridges"><span data-i18n="Bridge lines">Bridge lines</span><span id="bridgeCount" class="nav-count">0</span></a>
-      <a href="#connection-health" data-section-link="connection-health"><span data-i18n="Connection health">Connection health</span><span id="autoBridgeFailoverNavBadge" class="nav-count">On</span></a>
+      <a href="#connection-health" data-section-link="connection-health"><span data-i18n="Connection health">Connection health</span><span id="autoBridgeFailoverNavBadge" class="nav-count">Off</span></a>
       <a href="#exit-country" data-section-link="exit-country"><span data-i18n="Exit country">Exit country</span><span id="exitCountryNavBadge" class="nav-count" data-i18n>Auto</span></a>
       <a href="#protection" data-section-link="protection"><span data-i18n="Kill switch">Kill switch</span><span id="protectionNavBadge" class="nav-count">Off</span></a>
       <a href="#appearance" data-section-link="appearance" data-i18n="Appearance and language">Appearance and language</a>
@@ -154,21 +154,20 @@
       <section id="connection-health" class="settings-section" aria-labelledby="connectionHealthHeading">
         <div class="section-heading">
           <h2 id="connectionHealthHeading" data-i18n="Connection health">Connection health</h2>
-          <p data-i18n="Choose how often sites are checked and whether another bridge is tried after all connection checks fail.">Choose how often sites are checked and whether another bridge is tried after all connection checks fail.</p>
+          <p id="connectionHealthDescription" data-i18n="Choose how often your connection is verified and what to do if verification fails.">Choose how often your connection is verified and what to do if verification fails.</p>
         </div>
-        <div id="connectionHealthCard" class="connection-health-card" data-on="true">
+        <div id="connectionHealthCard" class="connection-health-card" data-on="false">
           <div class="connection-health-failover-row">
             <div class="connection-health-row">
               <span class="connection-health-icon" aria-hidden="true">
                 <svg viewBox="0 0 24 24"><path d="m17 2 4 4-4 4M3 11v-1a4 4 0 0 1 4-4h14M7 22l-4-4 4-4m14-1v1a4 4 0 0 1-4 4H3"/></svg>
               </span>
               <div class="connection-health-copy">
-                <strong data-i18n="Automatically try another bridge">Automatically try another bridge</strong>
-                <span data-i18n="Try another enabled bridge when all connection checks fail.">Try another enabled bridge when all connection checks fail.</span>
+                <strong id="autoBridgeFailoverTitle" data-i18n="Automatically try another bridge">Automatically try another bridge</strong>
+                <span id="autoBridgeFailoverDescription" data-i18n="Try another enabled bridge when connection verification fails.">Try another enabled bridge when connection verification fails.</span>
               </div>
-              <button id="autoBridgeFailoverToggle" class="kill-switch-toggle" type="button" role="switch" aria-checked="true" aria-label="Automatically try another bridge" data-i18n-aria-label="Automatically try another bridge"></button>
+              <button id="autoBridgeFailoverToggle" class="kill-switch-toggle" type="button" role="switch" aria-checked="false" aria-label="Automatically try another bridge" data-i18n-aria-label="Automatically try another bridge"></button>
             </div>
-            <p id="autoBridgeFailoverHint" class="connection-health-hint" data-i18n="Applies to bridge connections only. Switch to Bridge lines to use it." hidden>Applies to bridge connections only. Switch to Bridge lines to use it.</p>
           </div>
           <div class="connection-health-row connection-health-interval-row">
             <span class="connection-health-icon" aria-hidden="true">

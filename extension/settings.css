@@ -256,11 +256,8 @@ html[data-theme="light"] .picker-code-badge { background: var(--pearl-accent-sof
 .connection-health-copy { display: flex; min-width: 0; flex-direction: column; gap: 6px; }
 .connection-health-copy strong { color: var(--pearl-text); font-size: 17px; font-weight: 600; }
 .connection-health-copy span { color: var(--pearl-secondary); font-size: 14px; line-height: 1.55; }
-.connection-health-failover-row[data-disabled="true"] .connection-health-row { opacity: .5; }
 .connection-health-failover-row .connection-health-copy { flex: 1; }
 .connection-health-interval-row .connection-health-copy { flex: 1; }
-.connection-health-hint { margin: 0; padding: 0 20px 16px; padding-inline-start: 84px; color: var(--pearl-muted); font-size: 13px; line-height: 1.5; }
-.connection-health-hint[hidden] { display: none !important; }
 .connection-health-interval-control { display: inline-flex; flex: 0 0 auto; align-items: center; gap: 6px; color: var(--pearl-secondary); font-size: 14px; }
 .connection-health-interval-control button { display: grid; width: 44px; height: 44px; flex: 0 0 44px; place-items: center; padding: 0; border: 1px solid var(--pearl-border); border-radius: 12px; color: var(--pearl-text); background: #151518; font-size: 22px; line-height: 1; transition: border-color .2s ease, background .2s ease, opacity .2s ease; }
 .connection-health-interval-control button:hover:not(:disabled), .connection-health-check-button:hover:not(:disabled) { border-color: var(--pearl-accent-border); background: var(--pearl-accent-soft); }
@@ -273,10 +270,12 @@ html[data-theme="light"] .picker-code-badge { background: var(--pearl-accent-sof
 .connection-health-check-status svg { width: 16px; height: 16px; flex: 0 0 16px; fill: none; stroke: var(--pearl-accent); stroke-linecap: round; stroke-linejoin: round; stroke-width: 2.4; }
 .connection-health-check-status .health-failed-icon, .connection-health-check-status .health-pending-icon { display: none; }
 .connection-health-check-status[data-state="passed"] { color: var(--pearl-muted); }
+.connection-health-check-status[data-state="limited"] { color: var(--pearl-warning); }
+.connection-health-check-status[data-state="limited"] svg { stroke: var(--pearl-warning); }
 .connection-health-check-status[data-state="failed"] { color: var(--pearl-error); }
 .connection-health-check-status[data-state="failed"] svg { stroke: var(--pearl-error); }
-.connection-health-check-status[data-state="failed"] .health-check-icon, .connection-health-check-status[data-state="checking"] .health-check-icon { display: none; }
-.connection-health-check-status[data-state="failed"] .health-failed-icon, .connection-health-check-status[data-state="checking"] .health-pending-icon { display: block; }
+.connection-health-check-status[data-state="limited"] .health-check-icon, .connection-health-check-status[data-state="failed"] .health-check-icon, .connection-health-check-status[data-state="checking"] .health-check-icon { display: none; }
+.connection-health-check-status[data-state="limited"] .health-failed-icon, .connection-health-check-status[data-state="failed"] .health-failed-icon, .connection-health-check-status[data-state="checking"] .health-pending-icon { display: block; }
 .connection-health-check-status[data-state="checking"] .health-pending-icon { animation: health-check-spin 1s linear infinite; }
 .connection-health-check-status[data-state="idle"] .health-check-icon, .connection-health-check-status[data-state="idle"] .health-failed-icon, .connection-health-check-status[data-state="idle"] .health-pending-icon { display: none; }
 .connection-health-check-button { box-sizing: border-box; min-height: 40px; flex: 0 0 auto; padding: 0 18px; border: 1px solid var(--pearl-border); border-radius: 12px; color: var(--pearl-text); background: #151518; font-size: 14px; font-weight: 600; transition: border-color .2s ease, background .2s ease, opacity .2s ease; }
@@ -427,6 +426,7 @@ html[data-theme="light"] .connection-health-card[data-on="true"] .connection-hea
 html[data-theme="light"] .connection-health-interval-control button, html[data-theme="light"] .connection-health-check-button { border-color: var(--pearl-border); color: var(--pearl-text); background: var(--pearl-surface); }
 html[data-theme="light"] .connection-health-interval-control output { color: var(--pearl-text); background: var(--pearl-surface); }
 html[data-theme="light"] .connection-health-check-status[data-state="passed"] { color: var(--pearl-muted); }
+html[data-theme="light"] .connection-health-check-status[data-state="limited"] { color: var(--pearl-warning); }
 html[data-theme="light"] .connection-health-check-status[data-state="failed"] { color: var(--pearl-error); }
 html[data-theme="light"] .kill-switch-icon { color: var(--pearl-secondary); background: var(--pearl-accent-soft); }
 html[data-theme="light"] .kill-switch-card[data-on="true"] .kill-switch-icon { color: var(--pearl-accent); background: var(--pearl-accent-soft); }
@@ -691,6 +691,7 @@ html[data-theme="dim"] .connection-health-card[data-on="true"] .connection-healt
 html[data-theme="dim"] .connection-health-interval-control button, html[data-theme="dim"] .connection-health-check-button { border-color: var(--pearl-border); color: var(--pearl-text); background: #292930; }
 html[data-theme="dim"] .connection-health-interval-control output { color: var(--pearl-text); background: var(--pearl-page); }
 html[data-theme="dim"] .connection-health-check-status[data-state="passed"] { color: var(--pearl-muted); }
+html[data-theme="dim"] .connection-health-check-status[data-state="limited"] { color: var(--pearl-warning); }
 html[data-theme="dim"] .connection-health-check-status[data-state="failed"] { color: var(--pearl-error); }
 html[data-theme="dim"] .kill-switch-icon { color: var(--pearl-secondary); background: var(--pearl-surface); }
 html[data-theme="dim"] .kill-switch-card[data-on="true"] .kill-switch-icon { color: var(--pearl-accent); background: var(--pearl-accent-soft); }

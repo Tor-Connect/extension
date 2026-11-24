@@ -31,8 +31,9 @@ const killSwitchCard = document.querySelector("#killSwitchCard");
 const killSwitchActivePanel = document.querySelector("#killSwitchActivePanel");
 const connectionHealthCard = document.querySelector("#connectionHealthCard");
 const autoBridgeFailoverToggle = document.querySelector("#autoBridgeFailoverToggle");
-const autoBridgeFailoverRow = document.querySelector(".connection-health-failover-row");
-const autoBridgeFailoverHint = document.querySelector("#autoBridgeFailoverHint");
+const connectionHealthDescription = document.querySelector("#connectionHealthDescription");
+const autoBridgeFailoverTitle = document.querySelector("#autoBridgeFailoverTitle");
+const autoBridgeFailoverDescription = document.querySelector("#autoBridgeFailoverDescription");
 const siteCheckIntervalValue = document.querySelector("#siteCheckIntervalValue");
 const decreaseSiteCheckIntervalButton = document.querySelector("#decreaseSiteCheckInterval");
 const increaseSiteCheckIntervalButton = document.querySelector("#increaseSiteCheckInterval");
@@ -54,7 +55,7 @@ const exitCountryOptionButtons = [...document.querySelectorAll("[data-exit-count
 const exitCountryCardNode = document.querySelector("#exitCountryCard");
 const exitCountryNoticeNode = document.querySelector("#exitCountryNotice");
 const exitCountryNavBadge = document.querySelector("#exitCountryNavBadge");
-let preferences = { mode: "snowflake", bridges: "", selectedBridge: "", disabledBridges: [], killSwitch: false, exitCountry: "", autoBridgeFailover: true, siteCheckIntervalMinutes: 5 };
+let preferences = { mode: "snowflake", bridges: "", selectedBridge: "", disabledBridges: [], killSwitch: false, exitCountry: "", autoBridgeFailover: false, siteCheckIntervalMinutes: 5 };
 let confirmedKillSwitch = false;
 let confirmedSiteCheckInterval = 5;
 let selectedMode = "snowflake";
@@ -153,7 +154,7 @@ function readPreferences() {
         selectedBridge: enabled.includes(saved.selectedBridge) ? saved.selectedBridge : enabled[0] || "",
         killSwitch: saved.killSwitch === true,
         exitCountry: typeof saved.exitCountry === "string" ? saved.exitCountry : "",
-        autoBridgeFailover: saved.autoBridgeFailover !== false,
+        autoBridgeFailover: saved.autoBridgeFailover === true,
         siteCheckIntervalMinutes: normalizeSiteCheckInterval(saved.siteCheckIntervalMinutes)
       };
       confirmedKillSwitch = preferences.killSwitch;
@@ -428,12 +429,22 @@ function renderBridgeList() {
     return;
   }
 
+  let connectedBridgeLine = "";
+  if (connectedBridgeFingerprint) {
+    const matches = bridgeLines.filter((line) => parseBridgeLine(line).fingerprint.toLowerCase() === connectedBridgeFingerprint);
+    if (matches.length === 1) connectedBridgeLine = matches[0];
+  }
+  if (!connectedBridgeLine && connectedBridgeAddress) {
+    const matches = bridgeLines.filter((line) => parseBridgeLine(line).address.toLowerCase() === connectedBridgeAddress);
+    if (matches.length === 1) connectedBridgeLine = matches[0];
+  }
+
   bridgeLines.forEach((line, index) => {
     const numberLabel = bridgeNumberForLine(line, index);
     const parts = parseBridgeLine(line);
-    const connected = connectedBridgeFingerprint
-      ? parts.fingerprint.toLowerCase() === connectedBridgeFingerprint
-      : connectedBridgeAddress ? parts.address.toLowerCase() === connectedBridgeAddress : connectedBridgeIndex === numberLabel;
+    const connected = connectedBridgeLine
+      ? line === connectedBridgeLine
+      : !connectedBridgeFingerprint && !connectedBridgeAddress && connectedBridgeIndex === numberLabel;
     const enabled = !disabledBridgeLines.has(line);
     const item = document.createElement("article");
     item.className = "settings-bridge-item";
@@ -688,12 +699,16 @@ function renderKillSwitch() {
 function renderConnectionHealth() {
   const failoverEnabled = preferences.autoBridgeFailover !== false;
   const bridgeMode = selectedMode === "manual";
+  const title = bridgeMode ? "Automatically try another bridge" : "Automatically retry Snowflake";
+  const description = bridgeMode
+    ? "Try another enabled bridge when connection verification fails."
+    : "Reconnect Snowflake when connection verification fails.";
   autoBridgeFailoverToggle.setAttribute("aria-checked", String(failoverEnabled));
-  autoBridgeFailoverToggle.disabled = !bridgeMode;
-  autoBridgeFailoverToggle.setAttribute("aria-disabled", String(!bridgeMode));
-  autoBridgeFailoverRow.dataset.disabled = String(!bridgeMode);
-  autoBridgeFailoverHint.hidden = bridgeMode;
-  connectionHealthCard.dataset.on = String(failoverEnabled && bridgeMode);
+  autoBridgeFailoverTitle.textContent = t(title);
+  autoBridgeFailoverDescription.textContent = t(description);
+  autoBridgeFailoverToggle.setAttribute("aria-label", t(title));
+  connectionHealthDescription.textContent = t("Choose how often your connection is verified and what to do if verification fails.");
+  connectionHealthCard.dataset.on = String(failoverEnabled);
   autoBridgeFailoverNavBadge.textContent = t(failoverEnabled ? "On" : "Off");
   const interval = normalizeSiteCheckInterval(preferences.siteCheckIntervalMinutes);
   siteCheckIntervalValue.textContent = String(interval);
@@ -729,8 +744,11 @@ function renderConnectionHealthStatus() {
   } else if (!isConnected) {
     label = t("Not connected");
     state = "idle";
-  } else if (siteCheckState === "passed" || siteCheckState === "failed") {
-    const status = t(siteCheckState === "passed" ? "Connection verified" : "Connected, but sites aren't loading");
+  } else if (["passed", "limited", "failed"].includes(siteCheckState)) {
+    const statusKey = siteCheckState === "passed" ? "Connection verified"
+      : siteCheckState === "limited" ? "Connected · some sites may be limited"
+        : "Connected, but sites aren't loading";
+    const status = t(statusKey);
     const time = relativeCheckTime(siteCheckCompletedAt);
     label = time ? `${t("Last check {time}", { time })} · ${status}` : status;
     state = siteCheckState;
@@ -749,6 +767,10 @@ function updateConnectionHealthStatus(result) {
     siteCheckCompletedAt = 0;
   } else if (result.state === "connected") {
     siteCheckState = result.connectivityCheck || "pending";
+    if (siteCheckState === "failed" && Array.isArray(result.siteChecks)) {
+      const failedCount = result.siteChecks.filter((site) => site.state === "failed").length;
+      if (failedCount > 0 && failedCount < result.siteChecks.length) siteCheckState = "limited";
+    }
     siteCheckCompletedAt = Number(result.connectivityCheckCompletedAt) || 0;
   } else if (result.state === "starting" || result.bridgeActivity === "trying") {
     siteCheckState = "pending";
@@ -1050,7 +1072,10 @@ function sendStatus() {
       return;
     }
     const diagnosticLines = Array.isArray(result?.diagnostics) ? result.diagnostics : [];
-    const active = result?.ok && (result.state === "connected" || result.state === "starting" && result.bridgeActivity === "connected");
+    const hasReportedBridge = Number(result?.currentBridgeIndex) > 0
+      || Boolean(result?.bridgeAddress || result?.bridgeFingerprint);
+    const active = result?.ok && (result.state === "connected"
+      || result.state === "starting" && (result.bridgeActivity === "connected" || hasReportedBridge));
     connectedBridgeAddress = active && typeof result.bridgeAddress === "string" ? result.bridgeAddress.toLowerCase() : "";
     connectedBridgeFingerprint = active && typeof result.bridgeFingerprint === "string" ? result.bridgeFingerprint.toLowerCase() : "";
     if (active) {
@@ -1212,7 +1237,7 @@ chrome.storage.onChanged.addListener((changes, areaName) => {
     selectedBridge: typeof saved.selectedBridge === "string" ? saved.selectedBridge : allEnabledLines()[0] || "",
     killSwitch: saved.killSwitch === true,
     exitCountry: typeof saved.exitCountry === "string" ? saved.exitCountry : "",
-    autoBridgeFailover: saved.autoBridgeFailover !== false,
+    autoBridgeFailover: saved.autoBridgeFailover === true,
     siteCheckIntervalMinutes: normalizeSiteCheckInterval(saved.siteCheckIntervalMinutes)
 };
 selectedMode = preferences.mode;
