@@ -1302,7 +1302,7 @@ readPreferences().then(sendStatus);
     ? "https://addons.mozilla.org/firefox/addon/tor-connect/"
     : "https://chromewebstore.google.com/detail/bpakflmhpekikajckcncjgknbjebhkjm";
   if (rateLink) rateLink.href = storeUrl;
-  if (communityVersion) communityVersion.textContent = "v" + chrome.runtime.getManifest().version;
+  if (communityVersion) communityVersion.textContent = t("Version {version}", { version: chrome.runtime.getManifest().version });
 
   function renderCommunitySection() {
     if (!rateLink || !storeNameChip) return;
