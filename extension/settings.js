@@ -84,7 +84,7 @@ const t = (key, params) => (globalThis.torI18n?.t || ((s) => s))(key, params);
 const MAX_ENABLED_BRIDGES = 20;
 const ACTIVE_SETTINGS_SECTION_KEY = "torConnectSettingsActiveSection";
 const SHOW_ALL_SETTINGS_SECTIONS_KEY = "torConnectSettingsShowAllSections";
-let showAllSettingsSections = sessionStorage.getItem(SHOW_ALL_SETTINGS_SECTIONS_KEY) === "true";
+let showAllSettingsSections = sessionStorage.getItem(SHOW_ALL_SETTINGS_SECTIONS_KEY) !== "false";
 
 function normalizeSiteCheckInterval(value) {
   const minutes = Number(value);
