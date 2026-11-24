@@ -195,7 +195,7 @@ module.exports = {
       "Choose how often sites are checked and whether another bridge is tried after all connection checks fail.": "منتخب کریں کہ سائٹس کتنی بار چیک ہوں اور تمام کنکشن چیکس ناکام ہونے پر دوسرا برج آزمایا جائے یا نہیں۔",
       "Automatically try another bridge": "خودکار طور پر دوسرا برج آزمائیں",
       "Try another enabled bridge when all connection checks fail.": "تمام کنکشن چیکس ناکام ہونے پر ایک اور فعال برج آزمائیں۔",
-      "Check sites every": "سائٹس ہر",
+      "Verify connection every": "کنکشن کی تصدیق ہر",
       "Applies to bridge connections only. Switch to Bridge lines to use it.": "یہ صرف برج کنکشنز پر لاگو ہوتا ہے۔ استعمال کے لیے برج لائنز پر جائیں۔",
       "Check now": "ابھی چیک کریں",
       "Decrease interval": "وقفہ کم کریں",

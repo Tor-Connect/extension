@@ -195,7 +195,7 @@ module.exports = {
       "Choose how often sites are checked and whether another bridge is tried after all connection checks fail.": "Выберите, как часто проверять сайты и пробовать ли другой мост, если все проверки соединения завершились неудачно.",
       "Automatically try another bridge": "Автоматически пробовать другой мост",
       "Try another enabled bridge when all connection checks fail.": "Если все проверки соединения не прошли, попробовать другой включённый мост.",
-      "Check sites every": "Проверять сайты каждые",
+      "Verify connection every": "Проверять соединение каждые",
       "Applies to bridge connections only. Switch to Bridge lines to use it.": "Доступно только для подключений через мосты. Переключитесь на строки мостов, чтобы использовать эту функцию.",
       "Check now": "Проверить",
       "Decrease interval": "Уменьшить интервал",

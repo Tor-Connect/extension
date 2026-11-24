@@ -195,7 +195,7 @@ module.exports = {
       "Choose how often sites are checked and whether another bridge is tried after all connection checks fail.": "Pilih seberapa sering situs diperiksa dan apakah jembatan lain dicoba setelah semua pemeriksaan koneksi gagal.",
       "Automatically try another bridge": "Coba jembatan lain secara otomatis",
       "Try another enabled bridge when all connection checks fail.": "Coba jembatan aktif lain jika semua pemeriksaan koneksi gagal.",
-      "Check sites every": "Periksa situs setiap",
+      "Verify connection every": "Verifikasi koneksi setiap",
       "Applies to bridge connections only. Switch to Bridge lines to use it.": "Berlaku hanya untuk koneksi bridge. Beralih ke Bridge lines untuk menggunakannya.",
       "Check now": "Periksa sekarang",
       "Decrease interval": "Kurangi interval",

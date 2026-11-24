@@ -195,7 +195,7 @@ module.exports = {
       "Choose how often sites are checked and whether another bridge is tried after all connection checks fail.": "选择网站检查频率，以及所有连接检查失败后是否尝试其他网桥。",
       "Automatically try another bridge": "自动尝试其他网桥",
       "Try another enabled bridge when all connection checks fail.": "所有连接检查失败时，尝试另一个已启用的网桥。",
-      "Check sites every": "每隔",
+      "Verify connection every": "连接检查间隔",
       "Applies to bridge connections only. Switch to Bridge lines to use it.": "仅适用于网桥连接。切换到“网桥线路”即可使用。",
       "Check now": "立即检查",
       "Decrease interval": "缩短间隔",

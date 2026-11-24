@@ -195,7 +195,7 @@ module.exports = {
       "Choose how often sites are checked and whether another bridge is tried after all connection checks fail.": "اختر عدد مرات فحص المواقع وما إذا كان سيتم تجربة جسر آخر عند فشل جميع فحوصات الاتصال.",
       "Automatically try another bridge": "جرّب جسراً آخر تلقائياً",
       "Try another enabled bridge when all connection checks fail.": "جرّب جسراً مفعّلاً آخر عند فشل جميع فحوصات الاتصال.",
-      "Check sites every": "افحص المواقع كل",
+      "Verify connection every": "تحقق من الاتصال كل",
       "Applies to bridge connections only. Switch to Bridge lines to use it.": "ينطبق هذا على اتصالات الجسور فقط. انتقل إلى أسطر الجسور لاستخدامه.",
       "Check now": "تحقق الآن",
       "Decrease interval": "تقليل الفاصل",
