@@ -448,7 +448,7 @@ final class Helper {
             lock.lock()
             tor = process
             bridgeTargets = configuredBridgeTargets
-            currentBridgeIndex = nil
+            currentBridgeIndex = configuredBridgeTargets.count == 1 ? configuredBridgeTargets[0].index : nil
             bridgeActivity = nil
             builtCircuits = [:]
             exitRelayCandidates = []

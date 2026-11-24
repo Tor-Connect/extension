@@ -367,7 +367,8 @@ class Helper:
                                        stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                                        text=True, encoding="utf-8", errors="replace", bufsize=1)
             with self.lock:
-                self.process = process; self.targets = targets; self.current_index = None
+                self.process = process; self.targets = targets
+                self.current_index = targets[0]["index"] if len(targets) == 1 else None
                 self.bridge_activity = None; self.connected_at = None; self.state = "starting"; self.message = "Starting Tor…"
                 self.bootstrap_progress = -1
                 self.built_circuits = {}; self.exit_relay_candidates = set(); self.reconnect_since = None

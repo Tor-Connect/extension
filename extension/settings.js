@@ -54,7 +54,7 @@ const exitCountryOptionButtons = [...document.querySelectorAll("[data-exit-count
 const exitCountryCardNode = document.querySelector("#exitCountryCard");
 const exitCountryNoticeNode = document.querySelector("#exitCountryNotice");
 const exitCountryNavBadge = document.querySelector("#exitCountryNavBadge");
-let preferences = { mode: "snowflake", bridges: "", selectedBridge: "", disabledBridges: [], killSwitch: false, exitCountry: "", autoBridgeFailover: true, siteCheckIntervalMinutes: 5 };
+let preferences = { mode: "snowflake", bridges: "", selectedBridge: "", disabledBridges: [], killSwitch: false, exitCountry: "", autoBridgeFailover: false, siteCheckIntervalMinutes: 5 };
 let confirmedKillSwitch = false;
 let confirmedSiteCheckInterval = 5;
 let selectedMode = "snowflake";
@@ -153,7 +153,7 @@ function readPreferences() {
         selectedBridge: enabled.includes(saved.selectedBridge) ? saved.selectedBridge : enabled[0] || "",
         killSwitch: saved.killSwitch === true,
         exitCountry: typeof saved.exitCountry === "string" ? saved.exitCountry : "",
-        autoBridgeFailover: saved.autoBridgeFailover !== false,
+        autoBridgeFailover: saved.autoBridgeFailover === true,
         siteCheckIntervalMinutes: normalizeSiteCheckInterval(saved.siteCheckIntervalMinutes)
       };
       confirmedKillSwitch = preferences.killSwitch;
@@ -428,12 +428,22 @@ function renderBridgeList() {
     return;
   }
 
+  let connectedBridgeLine = "";
+  if (connectedBridgeFingerprint) {
+    const matches = bridgeLines.filter((line) => parseBridgeLine(line).fingerprint.toLowerCase() === connectedBridgeFingerprint);
+    if (matches.length === 1) connectedBridgeLine = matches[0];
+  }
+  if (!connectedBridgeLine && connectedBridgeAddress) {
+    const matches = bridgeLines.filter((line) => parseBridgeLine(line).address.toLowerCase() === connectedBridgeAddress);
+    if (matches.length === 1) connectedBridgeLine = matches[0];
+  }
+
   bridgeLines.forEach((line, index) => {
     const numberLabel = bridgeNumberForLine(line, index);
     const parts = parseBridgeLine(line);
-    const connected = connectedBridgeFingerprint
-      ? parts.fingerprint.toLowerCase() === connectedBridgeFingerprint
-      : connectedBridgeAddress ? parts.address.toLowerCase() === connectedBridgeAddress : connectedBridgeIndex === numberLabel;
+    const connected = connectedBridgeLine
+      ? line === connectedBridgeLine
+      : !connectedBridgeFingerprint && !connectedBridgeAddress && connectedBridgeIndex === numberLabel;
     const enabled = !disabledBridgeLines.has(line);
     const item = document.createElement("article");
     item.className = "settings-bridge-item";
@@ -1050,7 +1060,10 @@ function sendStatus() {
       return;
     }
     const diagnosticLines = Array.isArray(result?.diagnostics) ? result.diagnostics : [];
-    const active = result?.ok && (result.state === "connected" || result.state === "starting" && result.bridgeActivity === "connected");
+    const hasReportedBridge = Number(result?.currentBridgeIndex) > 0
+      || Boolean(result?.bridgeAddress || result?.bridgeFingerprint);
+    const active = result?.ok && (result.state === "connected"
+      || result.state === "starting" && (result.bridgeActivity === "connected" || hasReportedBridge));
     connectedBridgeAddress = active && typeof result.bridgeAddress === "string" ? result.bridgeAddress.toLowerCase() : "";
     connectedBridgeFingerprint = active && typeof result.bridgeFingerprint === "string" ? result.bridgeFingerprint.toLowerCase() : "";
     if (active) {
@@ -1212,7 +1225,7 @@ chrome.storage.onChanged.addListener((changes, areaName) => {
     selectedBridge: typeof saved.selectedBridge === "string" ? saved.selectedBridge : allEnabledLines()[0] || "",
     killSwitch: saved.killSwitch === true,
     exitCountry: typeof saved.exitCountry === "string" ? saved.exitCountry : "",
-    autoBridgeFailover: saved.autoBridgeFailover !== false,
+    autoBridgeFailover: saved.autoBridgeFailover === true,
     siteCheckIntervalMinutes: normalizeSiteCheckInterval(saved.siteCheckIntervalMinutes)
 };
 selectedMode = preferences.mode;

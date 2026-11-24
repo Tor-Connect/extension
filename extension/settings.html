@@ -45,7 +45,7 @@
     <nav class="settings-nav" aria-label="Settings sections">
       <a class="active" href="#method" data-section-link="method" data-i18n="Connection method">Connection method</a>
       <a href="#bridges" data-section-link="bridges"><span data-i18n="Bridge lines">Bridge lines</span><span id="bridgeCount" class="nav-count">0</span></a>
-      <a href="#connection-health" data-section-link="connection-health"><span data-i18n="Connection health">Connection health</span><span id="autoBridgeFailoverNavBadge" class="nav-count">On</span></a>
+      <a href="#connection-health" data-section-link="connection-health"><span data-i18n="Connection health">Connection health</span><span id="autoBridgeFailoverNavBadge" class="nav-count">Off</span></a>
       <a href="#exit-country" data-section-link="exit-country"><span data-i18n="Exit country">Exit country</span><span id="exitCountryNavBadge" class="nav-count" data-i18n>Auto</span></a>
       <a href="#protection" data-section-link="protection"><span data-i18n="Kill switch">Kill switch</span><span id="protectionNavBadge" class="nav-count">Off</span></a>
       <a href="#appearance" data-section-link="appearance" data-i18n="Appearance and language">Appearance and language</a>
@@ -166,7 +166,7 @@
                 <strong data-i18n="Automatically try another bridge">Automatically try another bridge</strong>
                 <span data-i18n="Try another enabled bridge when all connection checks fail.">Try another enabled bridge when all connection checks fail.</span>
               </div>
-              <button id="autoBridgeFailoverToggle" class="kill-switch-toggle" type="button" role="switch" aria-checked="true" aria-label="Automatically try another bridge" data-i18n-aria-label="Automatically try another bridge"></button>
+              <button id="autoBridgeFailoverToggle" class="kill-switch-toggle" type="button" role="switch" aria-checked="false" aria-label="Automatically try another bridge" data-i18n-aria-label="Automatically try another bridge"></button>
             </div>
             <p id="autoBridgeFailoverHint" class="connection-health-hint" data-i18n="Applies to bridge connections only. Switch to Bridge lines to use it." hidden>Applies to bridge connections only. Switch to Bridge lines to use it.</p>
           </div>
