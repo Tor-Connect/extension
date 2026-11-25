@@ -1,10 +1,10 @@
 const themeChoices = [...document.querySelectorAll("[data-theme-choice]")];
 const themePreferenceKey = "torTheme";
 const systemThemeQuery = window.matchMedia("(prefers-color-scheme: dark)");
-let savedThemePreference = "dark";
+let savedThemePreference = "dim";
 
 function applyTheme(theme) {
-  savedThemePreference = ["light", "dark", "dim", "system"].includes(theme) ? theme : "dark";
+  savedThemePreference = ["light", "dark", "dim", "system"].includes(theme) ? theme : "dim";
   const resolvedTheme = savedThemePreference === "system"
     ? systemThemeQuery.matches ? "dark" : "light"
     : savedThemePreference;
