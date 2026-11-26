@@ -489,6 +489,12 @@ module.exports = {
       "Your traffic is relayed through Snowflake proxies. The route may change.": "يتم تمرير حركة مرورك عبر وكلاء Snowflake. قد يتغير المسار.",
       "{n} circuits": "{n} دوائر",
       "{n} imported bridge lines were left disabled; up to {limit} bridges can be enabled.": "تُركت {n} من أسطر الجسور المستوردة معطّلة؛ يمكن تفعيل {limit} جسراً كحد أقصى.",
-      "Up to {n} bridges may be enabled at a time. Disable one to enable another.": "يمكن تفعيل ما يصل إلى {n} جسور في الوقت نفسه. عطّل جسراً لتفعيل آخر."
+      "Up to {n} bridges may be enabled at a time. Disable one to enable another.": "يمكن تفعيل ما يصل إلى {n} جسور في الوقت نفسه. عطّل جسراً لتفعيل آخر.",
+
+      "No completed connection attempts yet.": "لا توجد محاولات اتصال مكتملة بعد.",
+      "No data yet": "لا توجد بيانات بعد",
+      "Often fails": "يفشل غالبًا",
+      "Success": "نجاح",
+      "Success rate: {rate}% ({successes} of {attempts} recent connection attempts passed Tor and site verification.)": "معدل النجاح: {rate}% (نجح {successes} من آخر {attempts} محاولة اتصال في الاتصال بـ Tor واجتياز فحص المواقع.)",
   },
 };

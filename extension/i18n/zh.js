@@ -489,6 +489,12 @@ module.exports = {
       "Your traffic is relayed through Snowflake proxies. The route may change.": "你的流量通过 Snowflake 代理转发，连接路线可能会变化。",
       "{n} circuits": "{n} 条回路",
       "{n} imported bridge lines were left disabled; up to {limit} bridges can be enabled.": "有 {n} 条导入的网桥线路保持停用；最多可启用 {limit} 个网桥。",
-      "Up to {n} bridges may be enabled at a time. Disable one to enable another.": "最多可同时启用 {n} 个网桥。请先停用一个，再启用另一个。"
+      "Up to {n} bridges may be enabled at a time. Disable one to enable another.": "最多可同时启用 {n} 个网桥。请先停用一个，再启用另一个。",
+
+      "No completed connection attempts yet.": "尚无已完成的连接尝试。",
+      "No data yet": "暂无数据",
+      "Often fails": "经常失败",
+      "Success": "成功",
+      "Success rate: {rate}% ({successes} of {attempts} recent connection attempts passed Tor and site verification.)": "成功率：{rate}%（最近 {attempts} 次连接中有 {successes} 次通过了 Tor 连接和网站验证。）",
   },
 };
