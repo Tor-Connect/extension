@@ -228,6 +228,9 @@ html[data-theme="light"] .picker-code-badge { background: var(--pearl-accent-sof
 .bridge-row-actions { display: flex; flex: 0 0 auto; gap: 6px; margin-left: auto; }
 .bridge-row-action { display: grid; width: 44px; height: 44px; min-height: 44px; place-items: center; padding: 0; color: var(--pearl-secondary); }
 .bridge-row-action svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 2; }
+.bridge-row-action.copy-bridge .copied-icon { display: none; }
+.bridge-row-action.copy-bridge.is-copied .copy-icon { display: none; }
+.bridge-row-action.copy-bridge.is-copied .copied-icon { display: block; }
 .bridge-row-action.remove-bridge { color: var(--pearl-secondary); }
 .bridge-row-action.is-copied { border-color: var(--pearl-accent-border); color: var(--pearl-accent); background: var(--pearl-accent-soft); }
 .bridge-list-empty { margin: 0; padding: 24px; border: 1px dashed var(--pearl-border); border-radius: 16px; color: var(--pearl-muted); text-align: center; }

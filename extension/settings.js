@@ -566,7 +566,7 @@ function renderBridgeList() {
 
     const actions = document.createElement("div");
     actions.className = "bridge-row-actions";
-    const copyButton = makeIconButton("copy-bridge", t("Copy Bridge {n}", { n: numberLabel }), '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="13" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h3"/></svg>');
+    const copyButton = makeIconButton("copy-bridge", t("Copy Bridge {n}", { n: numberLabel }), '<svg class="copy-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="13" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h3"/></svg><svg class="copied-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>');
     copyButton.addEventListener("click", async () => {
       copyButton.disabled = true;
       try {
@@ -579,7 +579,6 @@ function renderBridgeList() {
         copyButton.classList.add("is-copied");
         copyButton.setAttribute("aria-label", t("Bridge {n} copied", { n: numberLabel }));
         copyButton.title = t(t("Copied"));
-        showClipboardStatus(t("Bridge {n} copied.", { n: numberLabel }), "success");
         clearTimeout(copiedTimers.get(line));
         copiedTimers.set(line, window.setTimeout(() => {
           copyButton.classList.remove("is-copied");
