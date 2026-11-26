@@ -341,9 +341,13 @@ function renderGlobeEntry(result = {}, visualState = result.state || "disconnect
     const entries = bridgeEntries();
     const activePosition = activeBridgePosition(result, entries);
     const hasBridgeAddress = Boolean(String(result.bridgeAddress || "").trim());
-    const cachedPosition = hasBridgeAddress && activePosition < 0 ? -1 : cachedShownBridgePosition(entries);
+    const canUseFallbackIdentity = state !== "connected"
+      && !(state === "starting" && Number(result.bridgeCount) > 1);
+    const cachedPosition = !canUseFallbackIdentity || (hasBridgeAddress && activePosition < 0)
+      ? -1 : cachedShownBridgePosition(entries);
     const position = activePosition >= 0 ? activePosition
-      : cachedPosition >= 0 ? cachedPosition : hasBridgeAddress ? -1 : selectedBridgePosition(entries);
+      : cachedPosition >= 0 ? cachedPosition
+        : canUseFallbackIdentity && !hasBridgeAddress ? selectedBridgePosition(entries) : -1;
     entryCC = (bridgeCountries.get(entries[position]) || "").toUpperCase();
   }
   if (globeEntryTryCCNode) globeEntryTryCCNode.textContent = entryCC;
@@ -352,12 +356,17 @@ function renderGlobeEntry(result = {}, visualState = result.state || "disconnect
     const entries = snow ? [] : bridgeEntries();
     const activePosition = activeBridgePosition(result, entries);
     const hasBridgeAddress = Boolean(String(result.bridgeAddress || "").trim());
+    const canUseCachedIdentity = state !== "connected"
+      && !(state === "starting" && Number(result.bridgeCount) > 1)
+      && !hasBridgeAddress;
+    const cachedPosition = !canUseCachedIdentity
+      ? -1 : cachedShownBridgePosition(entries);
     const shownPosition = activePosition >= 0 ? activePosition
-      : hasBridgeAddress ? -1 : cachedShownBridgePosition(entries);
+      : cachedPosition;
     const activeLine = shownPosition >= 0 ? entries[shownPosition] : "";
     const bridgeNum = snow ? t("Snowflake")
       : activeLine ? t("Bridge {n}", { n: bridgeNumberForLine(activeLine) })
-        : !hasBridgeAddress && result.currentBridgeIndex ? t("Bridge {n}", { n: result.currentBridgeIndex }) : t("Bridge");
+        : t("Bridge");
     if (globeEntryCCNode) globeEntryCCNode.textContent = entryCC;
     if (globeEntryNameNode) globeEntryNameNode.textContent = bridgeNum;
     globeEntryLabelNode.hidden = !isEntryFound;
@@ -847,6 +856,7 @@ async function advanceToNextRoute({ automatic = false } = {}) {
           ...enabledEntries.slice(nextEnabledPosition),
           ...enabledEntries.slice(0, nextEnabledPosition)
         ];
+        const failoverLines = nextLines.length > 1 ? nextLines.slice(0, -1) : nextLines;
         const request = automatic
           ? {
             mode: "manual",
@@ -857,17 +867,14 @@ async function advanceToNextRoute({ automatic = false } = {}) {
           }
           : {
             mode: "manual",
-            bridges: nextLine,
-            bridgeIndices: [enabledEntries.indexOf(nextLine) + 1],
-            selectedBridgeIndex: enabledEntries.indexOf(nextLine) + 1,
-            recoveryBridges: nextLines,
-            recoveryIndices: nextLines.map((line) => enabledEntries.indexOf(line) + 1),
+            bridges: failoverLines.join("\n"),
+            bridgeIndices: failoverLines.map((line) => enabledEntries.indexOf(line) + 1),
+            selectedBridgeIndex: null,
             exitCountry: preferences.exitCountry || ""
           };
         if (!automatic) rememberShownBridgePosition(enabledEntries.indexOf(nextLine), enabledEntries);
-        if (automatic) siteCheckFailoverExpectedPosition = automaticNextPosition;
-        else siteCheckFailoverExpectedPosition = null;
-        if (automatic) rememberShownBridgePosition(automaticNextPosition, enabledEntries);
+        siteCheckFailoverExpectedPosition = null;
+        if (!automatic) rememberManualBridgeAttempt(nextLine);
         renderResult(await send("connect", request));
       } else if (!automatic && entries.length === 1) {
         if (!(await stopTorBeforeRouteChange())) return;
@@ -1427,6 +1434,13 @@ function bridgeIdentity(line) {
   return address ? `${transport}|${address}|${details}` : "";
 }
 
+function rememberManualBridgeAttempt(line) {
+  const identity = bridgeIdentity(line);
+  if (!identity || identity === lastManuallyUsedBridgeIdentity) return;
+  lastManuallyUsedBridgeIdentity = identity;
+  chrome.storage.local.set({ [LAST_MANUAL_BRIDGE_ID_KEY]: identity });
+}
+
 function cachedShownBridgePosition(entries = bridgeEntries()) {
   if (!lastShownBridgeIdentity || lastShownPosition < 0 || lastShownPosition >= entries.length) return -1;
   return bridgeIdentity(entries[lastShownPosition]) === lastShownBridgeIdentity ? lastShownPosition : -1;
@@ -1872,7 +1886,10 @@ function renderRoute(result = {}, visualState = connectionRevealPending && resul
   if (entries.length) {
     if (activePosition >= 0) shownPosition = activePosition;
     else if (["starting", "connected"].includes(visualState)
-      && !hasBridgeAddress) shownPosition = cachedShownBridgePosition(entries);
+      && !hasBridgeAddress
+      && !(visualState === "starting" && Number(result.bridgeCount) > 1)) {
+      shownPosition = cachedShownBridgePosition(entries);
+    }
   }
   if (shownPosition >= 0) rememberShownBridgePosition(shownPosition, entries);
   if (visualState !== "starting" && visualState !== "connected") rememberShownBridgePosition(-1, entries);
@@ -1986,7 +2003,7 @@ function pollOutdatedStatus() {
 function renderResult(result) {
   connectionToggle.classList.remove("is-pressing");
   currentResult = result || {};
-  if (preferences.mode === "manual" && currentResult.state === "connected") {
+  if (preferences.mode === "manual" && ["starting", "connected"].includes(currentResult.state)) {
     const entries = bridgeEntries();
     const position = activeBridgePosition(currentResult, entries);
     const identity = position >= 0 ? bridgeIdentity(entries[position]) : "";
@@ -2234,10 +2251,10 @@ async function connectWithSavedPreferences() {
       const firstPosition = (lastPosition + 1) % entries.length;
       orderedEntries = [...entries.slice(firstPosition), ...entries.slice(0, firstPosition)];
     }
-    rememberShownBridgePosition(entries.indexOf(orderedEntries[0]), entries);
   }
   const bridgeIndices = saved.mode === "manual"
     ? orderedEntries.map((line) => entries.indexOf(line) + 1) : undefined;
+  if (saved.mode === "manual" && orderedEntries.length > 1) rememberShownBridgePosition(-1, entries);
   return send("connect", {
     mode: saved.mode,
     bridges: orderedEntries.join("\n"),

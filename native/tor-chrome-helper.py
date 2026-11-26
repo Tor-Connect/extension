@@ -680,7 +680,7 @@ class Helper:
                             if len(fields) >= 5 and fields[3] in {"LAUNCHED", "EXTENDED", "BUILT"}:
                                 hops = fields[4].split(",")
                                 if len(hops) >= 3:
-                                    last_fp = hops[-1].split("~", 1)[0] if hops else ""
+                                    last_fp = re.split(r"[~=]", hops[-1], maxsplit=1)[0] if hops else ""
                                     if fields[3] in {"LAUNCHED", "EXTENDED"}:
                                         with self.lock:
                                             self.exit_relay_candidates.add(fields[2])
@@ -740,7 +740,9 @@ class Helper:
 
     def bridge_index_for_target(self, reported: str, targets: list[dict]) -> int | None:
         target = reported.lower()
-        fingerprint = target.split("~", 1)[0].strip("$")
+        # Tor LongName values may separate the fingerprint and nickname with
+        # either "~" or "=". Match the fingerprint portion in both forms.
+        fingerprint = re.split(r"[~=]", target, maxsplit=1)[0].strip("$")
         for bridge in targets:
             if (bridge.get("fingerprint") and fingerprint == bridge["fingerprint"]) or target.strip("[]") == bridge["address"]:
                 return bridge["index"]
@@ -754,7 +756,7 @@ class Helper:
             fields = line.split()
             if len(fields) >= 3 and fields[1] == "BUILT":
                 hops = fields[2].split(",")
-                last_fp = hops[-1].split("~", 1)[0] if hops else ""
+                last_fp = re.split(r"[~=]", hops[-1], maxsplit=1)[0] if hops else ""
                 self.lookup_exit_relay_fresh(port, cookie, last_fp, fields[0], process)
                 return  # use first BUILT circuit found
 
@@ -898,9 +900,16 @@ class Helper:
             count = len(self.auto_recovery_bridges)
             current = next((position for position, bridge_index in enumerate(self.auto_recovery_indices)
                             if bridge_index == self.current_index), -1)
-            candidate = next(((current + step) % count for step in range(1, count + 1)
-                              if (current + step) % count not in self.auto_recovery_tried), None)
-            if candidate is None:
+            tried = set(self.auto_recovery_tried)
+            if current >= 0:
+                tried.add(current)
+            else:
+                configured_indices = {target["index"] for target in self.targets}
+                tried.update(position for position, bridge_index in enumerate(self.auto_recovery_indices)
+                             if bridge_index in configured_indices)
+            ordered_positions = [(current + step) % count for step in range(1, count + 1)]
+            remaining_positions = [position for position in ordered_positions if position not in tried]
+            if not remaining_positions:
                 self.bridge_activity = "failed"
                 self.reconnect_since = None
                 self.auto_recovery_in_progress = False
@@ -910,13 +919,15 @@ class Helper:
                 exhausted = False
             if exhausted:
                 bridges = []
-                tried = set(self.auto_recovery_tried)
+                recovery_bridges = list(self.auto_recovery_bridges)
+                recovery_indices = list(self.auto_recovery_indices)
+                target_indices = []
             else:
-                bridges = list(self.auto_recovery_bridges)
-                indices = list(self.auto_recovery_indices)
-                tried = set(self.auto_recovery_tried)
-                tried.add(candidate)
-                self.message = f"Trying saved bridge {candidate + 1}…"
+                recovery_bridges = list(self.auto_recovery_bridges)
+                recovery_indices = list(self.auto_recovery_indices)
+                bridges = [recovery_bridges[position] for position in remaining_positions]
+                target_indices = [recovery_indices[position] for position in remaining_positions]
+                self.message = "Starting Tor…"
                 self.reconnect_since = None
         if exhausted:
             self.stop(preserve_auto_recovery=True)
@@ -926,10 +937,11 @@ class Helper:
                 self.last_error = self.message
             return True
         self.stop(preserve_auto_recovery=True)
-        result = self.start("manual", bridges[candidate], indices[candidate],
-                            recovery_bridges=bridges, recovery_tried=tried,
+        result = self.start("manual", "\n".join(bridges), None,
+                            recovery_bridges=recovery_bridges, recovery_tried=tried,
                             exit_country=self.exit_country,
-                            recovery_indices=indices)
+                            bridge_indices=target_indices,
+                            recovery_indices=recovery_indices)
         if not result.get("ok"):
             with self.lock:
                 self.state = "failed"

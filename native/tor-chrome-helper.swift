@@ -766,7 +766,7 @@ final class Helper {
                 let fields = line.split(whereSeparator: \.isWhitespace)
                 guard fields.count >= 3, fields[1] == "BUILT" else { continue }
                 let hops = String(fields[2]).components(separatedBy: ",")
-                let lastFp = hops.last?.components(separatedBy: "~").first ?? ""
+                let lastFp = hops.last?.split(whereSeparator: { $0 == "~" || $0 == "=" }).first.map(String.init) ?? ""
                 let pf = portFile; let cf = cookieFile; let fp = lastFp
                 let cid = String(fields[0]); let sp = sessionProcess
                 DispatchQueue.global(qos: .utility).async { [weak self] in
@@ -824,7 +824,7 @@ final class Helper {
                         if fields.count >= 5 && (fields[3] == "LAUNCHED" || fields[3] == "EXTENDED" || fields[3] == "BUILT") {
                             let hops = String(fields[4]).components(separatedBy: ",")
                             if hops.count >= 3 {
-                                let lastFp = hops.last?.components(separatedBy: "~").first ?? ""
+                                let lastFp = hops.last?.split(whereSeparator: { $0 == "~" || $0 == "=" }).first.map(String.init) ?? ""
                                 let cid = String(fields[2])
                                 if fields[3] == "LAUNCHED" || fields[3] == "EXTENDED" {
                                     lock.lock(); exitRelayCandidates.insert(cid); lock.unlock()
@@ -1092,7 +1092,18 @@ final class Helper {
         }
         let count = autoRecoveryBridges.count
         let current = autoRecoveryIndices.firstIndex(of: currentBridgeIndex ?? -1) ?? -1
-        guard let candidate = (1...count).map({ (current + $0) % count }).first(where: { !autoRecoveryTried.contains($0) }) else {
+        var tried = autoRecoveryTried
+        if current >= 0 {
+            tried.insert(current)
+        } else {
+            let configuredIndices = Set(bridgeTargets.map(\.index))
+            for (position, bridgeIndex) in autoRecoveryIndices.enumerated() where configuredIndices.contains(bridgeIndex) {
+                tried.insert(position)
+            }
+        }
+        let orderedPositions = (1...count).map { (current + $0) % count }
+        let remainingPositions = orderedPositions.filter { !tried.contains($0) }
+        guard !remainingPositions.isEmpty else {
             bridgeActivity = "failed"
             self.reconnectSince = nil
             autoRecoveryInProgress = false
@@ -1108,15 +1119,16 @@ final class Helper {
         }
         let bridges = autoRecoveryBridges
         let indices = autoRecoveryIndices
-        var tried = autoRecoveryTried
-        tried.insert(candidate)
-        message = "Trying saved bridge \(candidate + 1)…"
+        let bridgesToTry = remainingPositions.map { bridges[$0] }
+        let indicesToTry = remainingPositions.map { indices[$0] }
+        message = "Starting Tor…"
         self.reconnectSince = nil
         recoveryAttemptSince = nil
         lock.unlock()
 
         stop(preserveAutoRecovery: true)
-        let result = start(mode: "manual", bridges: bridges[candidate], selectedBridgeIndex: indices[candidate],
+        let result = start(mode: "manual", bridges: bridgesToTry.joined(separator: "\n"), selectedBridgeIndex: nil,
+                           bridgeIndices: indicesToTry,
                            recoveryBridges: bridges, recoveryIndices: indices, recoveryTried: tried,
                            exitCountry: exitCountry)
         if (result["ok"] as? Bool) != true {
@@ -1150,7 +1162,7 @@ final class Helper {
     private func bridgeIndex(for reportedTarget: String, targets: [BridgeTarget]) -> Int? {
         let target = reportedTarget.lowercased()
         let targetFingerprint = target
-            .split(separator: "~", maxSplits: 1).first.map(String.init)?
+            .split(maxSplits: 1, whereSeparator: { $0 == "~" || $0 == "=" }).first.map(String.init)?
             .trimmingCharacters(in: CharacterSet(charactersIn: "$"))
         for bridge in targets {
             if let fingerprint = bridge.fingerprint, targetFingerprint == fingerprint { return bridge.index }
