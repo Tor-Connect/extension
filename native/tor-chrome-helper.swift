@@ -13,6 +13,7 @@ private let extensionIDURL = appSupport.appendingPathComponent("extension-id")
 private let manualBridgeConnectTimeout: TimeInterval = 5 * 60
 private let initialBridgeNoProgressTimeout: TimeInterval = 90
 private let bridgeRecoveryNoProgressTimeout: TimeInterval = 60
+private let maxUnattributedRecoveryAttempts = 2
 private let manualBridgeTimeoutMessage = "Could not connect through this bridge within 5 minutes."
 
 final class Helper {
@@ -24,6 +25,7 @@ final class Helper {
     private var transportLaunchDirectory: URL?
     private var bridgeTargets: [BridgeTarget] = []
     private var currentBridgeIndex: Int?
+    private var lastAttributableBridgeIndex: Int?
     private var bridgeActivity: String?
     private var builtCircuits: [String: Int] = [:]
     private var exitRelayCandidates: Set<String> = []
@@ -36,7 +38,9 @@ final class Helper {
     private var autoRecoveryBridges: [String] = []
     private var autoRecoveryIndices: [Int] = []
     private var autoRecoveryTried: Set<Int> = []
+    private var autoRecoveryUnattributedAttempts = 0
     private var autoRecoveryInProgress = false
+    private var recoveryClaimedProcess: Process?
     private var recoveryAttemptSince: Date?
     private var recoveryStableSince: Date?
     private var lastBootstrapProgress = -1
@@ -472,6 +476,7 @@ final class Helper {
             tor = process
             bridgeTargets = configuredBridgeTargets
             currentBridgeIndex = configuredBridgeTargets.count == 1 ? configuredBridgeTargets[0].index : nil
+            lastAttributableBridgeIndex = currentBridgeIndex
             bridgeActivity = nil
             builtCircuits = [:]
             exitRelayCandidates = []
@@ -492,6 +497,7 @@ final class Helper {
                 autoRecoveryIndices = []
             }
             autoRecoveryTried = recoveryTried
+            if configuredRecoveryBridges == nil { autoRecoveryUnattributedAttempts = 0 }
             autoRecoveryInProgress = configuredRecoveryBridges != nil || (mode == "manual" && selectedBridgeIndex == nil && !autoBridges.isEmpty)
             recoveryAttemptSince = autoRecoveryInProgress ? Date() : nil
             if configuredRecoveryBridges == nil { recoveryStableSince = nil }
@@ -518,7 +524,7 @@ final class Helper {
                 }
                 if shouldStartRecoveryWatchdog {
                     DispatchQueue.global(qos: .utility).async { [weak self] in
-                        self?.autoRecoveryWatchdog(generation: watchdogGeneration)
+                        self?.autoRecoveryWatchdog(process: process, generation: watchdogGeneration)
                     }
                 }
                 if mode == "manual", selectedBridgeIndex != nil {
@@ -799,17 +805,23 @@ final class Helper {
             return "control_event_subscription_failed"
         }
         processControlEvents(initialEvents, targets: targets, sessionProcess: sessionProcess)
-        if !targets.isEmpty, sendControlCommand("GETINFO orconn-status", to: descriptor),
-           let snapshot = readControlReply(from: descriptor),
-           controlSnapshotRows(snapshot, key: "orconn-status") != nil {
-            let (before, after) = controlSnapshotEventParts(snapshot, key: "orconn-status")
-            processControlEvents(before, targets: targets, sessionProcess: sessionProcess)
-            processORConnectionSnapshot(snapshot, targets: targets, sessionProcess: sessionProcess)
-            processControlEvents(after, targets: targets, sessionProcess: sessionProcess)
+        if !targets.isEmpty {
+            guard sendControlCommand("GETINFO orconn-status", to: descriptor),
+                  let snapshot = readControlReply(from: descriptor) else {
+                return "control_reply_incomplete"
+            }
+            if controlSnapshotRows(snapshot, key: "orconn-status") != nil {
+                let (before, after) = controlSnapshotEventParts(snapshot, key: "orconn-status")
+                processControlEvents(before, targets: targets, sessionProcess: sessionProcess)
+                processORConnectionSnapshot(snapshot, targets: targets, sessionProcess: sessionProcess)
+                processControlEvents(after, targets: targets, sessionProcess: sessionProcess)
+            }
         }
-        if sendControlCommand("GETINFO stream-status", to: descriptor),
-           let streamSnapshot = readControlReply(from: descriptor),
-           controlSnapshotRows(streamSnapshot, key: "stream-status") != nil {
+        guard sendControlCommand("GETINFO stream-status", to: descriptor),
+              let streamSnapshot = readControlReply(from: descriptor) else {
+            return "control_reply_incomplete"
+        }
+        if controlSnapshotRows(streamSnapshot, key: "stream-status") != nil {
             let (before, after) = controlSnapshotEventParts(streamSnapshot, key: "stream-status")
             processControlEvents(before, targets: targets, sessionProcess: sessionProcess)
             processStreamSnapshot(streamSnapshot, sessionProcess: sessionProcess)
@@ -831,11 +843,13 @@ final class Helper {
                     nextSnapshot = Date()
                 }
                 handleControlCircuitEvent(line, targets: targets, sessionProcess: sessionProcess)
-                if maybeAutoRecover() { return "process_replaced" }
-            } else if maybeAutoRecover() {
+                if maybeAutoRecover(for: sessionProcess) { return "process_replaced" }
+            } else if maybeAutoRecover(for: sessionProcess) {
                 return "process_replaced"
             }
-            applyExitCountryIfNeeded(to: descriptor, process: sessionProcess, targets: targets)
+            guard applyExitCountryIfNeeded(to: descriptor, process: sessionProcess, targets: targets) else {
+                return "control_reply_incomplete"
+            }
             if Date() >= nextSnapshot {
                 guard refreshCircuitSnapshot(from: descriptor, targets: targets,
                                              sessionProcess: sessionProcess) else {
@@ -847,22 +861,26 @@ final class Helper {
         return "process_replaced"
     }
 
-    private func applyExitCountryIfNeeded(to descriptor: Int32, process: Process, targets: [BridgeTarget]) {
+    private func applyExitCountryIfNeeded(to descriptor: Int32, process: Process,
+                                         targets: [BridgeTarget]) -> Bool {
         lock.lock()
-        guard tor === process, state == "connected", !exitNodesApplied else { lock.unlock(); return }
+        guard tor === process, state == "connected", !exitNodesApplied else { lock.unlock(); return true }
         let country = exitCountry.trimmingCharacters(in: .whitespaces)
         lock.unlock()
         guard country.count == 2, country.allSatisfy({ $0.isLetter }) else {
             lock.lock(); if tor === process { exitNodesApplied = true }; lock.unlock()
-            return
+            return true
         }
         guard sendControlCommand("SETCONF ExitNodes={\(country.lowercased())}", to: descriptor),
-              let setReply = readControlReply(from: descriptor), setReply.contains("250 OK") else { return }
+              let setReply = readControlReply(from: descriptor) else { return false }
+        guard setReply.contains("250 OK") else { return true }
         processControlEvents(setReply, targets: targets, sessionProcess: process)
         guard sendControlCommand("SIGNAL NEWNYM", to: descriptor),
-              let newnymReply = readControlReply(from: descriptor), newnymReply.contains("250 OK") else { return }
+              let newnymReply = readControlReply(from: descriptor) else { return false }
+        guard newnymReply.contains("250 OK") else { return true }
         processControlEvents(newnymReply, targets: targets, sessionProcess: process)
         lock.lock(); if tor === process { exitNodesApplied = true }; lock.unlock()
+        return true
     }
 
     private func refreshCircuitSnapshot(from descriptor: Int32, targets: [BridgeTarget],
@@ -1196,6 +1214,7 @@ final class Helper {
         let selectedBridgeIndex = built[selectedExitCircuitId] ?? 0
         if selectedBridgeIndex > 0 {
             currentBridgeIndex = selectedBridgeIndex
+            lastAttributableBridgeIndex = selectedBridgeIndex
             bridgeActivity = "connected"
             reconnectSince = nil
             if state == "connected" { recoveryAttemptSince = nil }
@@ -1209,6 +1228,7 @@ final class Helper {
             if !activeBridgeIsMapped {
                 currentBridgeIndex = firstMapped
             }
+            lastAttributableBridgeIndex = currentBridgeIndex
             bridgeActivity = "connected"
             reconnectSince = nil
             if state == "connected" { recoveryAttemptSince = nil }
@@ -1244,7 +1264,10 @@ final class Helper {
             // omitted its fingerprint and cannot be mapped back to a list row.
             builtCircuits[id] = index ?? 0
             exitRelayCandidates.remove(id)
-            if let index { currentBridgeIndex = index }
+            if let index {
+                currentBridgeIndex = index
+                lastAttributableBridgeIndex = index
+            }
             bridgeActivity = "connected"
             reconnectSince = nil
             // Guard: a CIRC BUILT event can arrive (via the control port) while
@@ -1384,6 +1407,7 @@ final class Helper {
             return
         }
         currentBridgeIndex = index
+        lastAttributableBridgeIndex = index
         bridgeActivity = activity
         if ["trying", "failed", "closed"].contains(activity) {
             if reconnectSince == nil { reconnectSince = Date() }
@@ -1393,11 +1417,16 @@ final class Helper {
         lock.unlock()
     }
 
-    private func maybeAutoRecover() -> Bool {
+    private func maybeAutoRecover(for sessionProcess: Process) -> Bool {
         lock.lock()
+        guard tor === sessionProcess, !stopping, recoveryClaimedProcess !== sessionProcess else {
+            lock.unlock()
+            return false
+        }
         if !builtCircuits.isEmpty && state != "starting" {
             if let recoveryStableSince, Date().timeIntervalSince(recoveryStableSince) >= 60 {
                 autoRecoveryTried.removeAll()
+                autoRecoveryUnattributedAttempts = 0
                 self.recoveryStableSince = nil
                 autoRecoveryInProgress = false
             }
@@ -1418,24 +1447,48 @@ final class Helper {
             return false
         }
         let count = autoRecoveryBridges.count
-        let current = autoRecoveryIndices.firstIndex(of: currentBridgeIndex ?? -1) ?? -1
+        var attributableIndex = currentBridgeIndex
+        if !autoRecoveryIndices.contains(attributableIndex ?? -1) {
+            attributableIndex = lastAttributableBridgeIndex
+        }
+        let current = autoRecoveryIndices.firstIndex(of: attributableIndex ?? -1) ?? -1
         var tried = autoRecoveryTried
         if current >= 0 {
             tried.insert(current)
+            autoRecoveryUnattributedAttempts = 0
         } else {
-            let configuredIndices = Set(bridgeTargets.map(\.index))
-            for (position, bridgeIndex) in autoRecoveryIndices.enumerated() where configuredIndices.contains(bridgeIndex) {
-                tried.insert(position)
-            }
+            autoRecoveryUnattributedAttempts += 1
         }
         let orderedPositions = (1...count).map { (current + $0) % count }
         let remainingPositions = orderedPositions.filter { !tried.contains($0) }
-        guard !remainingPositions.isEmpty else {
+        let unknownAttemptsExhausted = current < 0
+            && autoRecoveryUnattributedAttempts > maxUnattributedRecoveryAttempts
+        let exhausted = remainingPositions.isEmpty || unknownAttemptsExhausted
+        if exhausted {
             bridgeActivity = "failed"
             self.reconnectSince = nil
             autoRecoveryInProgress = false
             message = "Saved bridges could not restore the connection."
+        } else {
+            message = "Starting Tor…"
+            self.reconnectSince = nil
+            recoveryAttemptSince = nil
+        }
+        let bridges = autoRecoveryBridges
+        let indices = autoRecoveryIndices
+        let bridgesToTry = remainingPositions.map { bridges[$0] }
+        let indicesToTry = remainingPositions.map { indices[$0] }
+        recoveryClaimedProcess = sessionProcess
+        lock.unlock()
+        defer {
+            lock.lock()
+            if recoveryClaimedProcess === sessionProcess {
+                recoveryClaimedProcess = nil
+            }
             lock.unlock()
+        }
+
+        if exhausted {
             stop(preserveAutoRecovery: true)
             lock.lock()
             state = "failed"
@@ -1444,14 +1497,6 @@ final class Helper {
             lock.unlock()
             return true
         }
-        let bridges = autoRecoveryBridges
-        let indices = autoRecoveryIndices
-        let bridgesToTry = remainingPositions.map { bridges[$0] }
-        let indicesToTry = remainingPositions.map { indices[$0] }
-        message = "Starting Tor…"
-        self.reconnectSince = nil
-        recoveryAttemptSince = nil
-        lock.unlock()
 
         stop(preserveAutoRecovery: true)
         let result = start(mode: "manual", bridges: bridgesToTry.joined(separator: "\n"), selectedBridgeIndex: nil,
@@ -1468,14 +1513,14 @@ final class Helper {
         return true
     }
 
-    private func autoRecoveryWatchdog(generation: Int) {
+    private func autoRecoveryWatchdog(process: Process, generation: Int) {
         while true {
             Thread.sleep(forTimeInterval: 1)
             lock.lock()
-            let isCurrent = recoveryGeneration == generation
+            let isCurrent = recoveryGeneration == generation && tor === process
             lock.unlock()
             if !isCurrent { return }
-            if maybeAutoRecover() { return }
+            if maybeAutoRecover(for: process) { return }
         }
     }
 
@@ -1510,12 +1555,13 @@ final class Helper {
         let savedRecoveryBridges = preserveAutoRecovery ? autoRecoveryBridges : []
         let savedRecoveryIndices = preserveAutoRecovery ? autoRecoveryIndices : []
         let savedRecoveryTried = preserveAutoRecovery ? autoRecoveryTried : []
+        let savedUnattributedAttempts = preserveAutoRecovery ? autoRecoveryUnattributedAttempts : 0
         let savedRecoveryInProgress = preserveAutoRecovery ? autoRecoveryInProgress : false
         let savedRecoveryAttemptSince = preserveAutoRecovery ? recoveryAttemptSince : nil
         let savedRecoveryStableSince = preserveAutoRecovery ? recoveryStableSince : nil
         lock.unlock()
         if let process, process.isRunning { process.terminate(); process.waitUntilExit() }
-        lock.lock(); tor = nil; state = "disconnected"; message = "Tor stopped."; lastError = nil; bridgeTargets = []; currentBridgeIndex = nil; bridgeActivity = nil; builtCircuits = [:]; exitRelayCandidates = []; exitRelayLookupsInProgress = []; controlMonitorState = "stopped"; controlMonitorError = nil; controlSnapshotCount = 0; exitNodesApplied = false; exitRelayIp = ""; exitRelayCountry = ""; exitRelayCircuitId = ""; selectedExitCircuitId = ""; reconnectSince = nil; autoRecoveryBridges = savedRecoveryBridges; autoRecoveryIndices = savedRecoveryIndices; autoRecoveryTried = savedRecoveryTried; autoRecoveryInProgress = savedRecoveryInProgress; recoveryAttemptSince = savedRecoveryAttemptSince; recoveryStableSince = savedRecoveryStableSince; connectedAt = nil; stopping = false; lock.unlock()
+        lock.lock(); tor = nil; state = "disconnected"; message = "Tor stopped."; lastError = nil; bridgeTargets = []; currentBridgeIndex = nil; lastAttributableBridgeIndex = nil; bridgeActivity = nil; builtCircuits = [:]; exitRelayCandidates = []; exitRelayLookupsInProgress = []; controlMonitorState = "stopped"; controlMonitorError = nil; controlSnapshotCount = 0; exitNodesApplied = false; exitRelayIp = ""; exitRelayCountry = ""; exitRelayCircuitId = ""; selectedExitCircuitId = ""; reconnectSince = nil; autoRecoveryBridges = savedRecoveryBridges; autoRecoveryIndices = savedRecoveryIndices; autoRecoveryTried = savedRecoveryTried; autoRecoveryUnattributedAttempts = savedUnattributedAttempts; autoRecoveryInProgress = savedRecoveryInProgress; recoveryAttemptSince = savedRecoveryAttemptSince; recoveryStableSince = savedRecoveryStableSince; connectedAt = nil; stopping = false; lock.unlock()
     }
 
     private func executable(named name: String) -> URL? {

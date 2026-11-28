@@ -96,7 +96,8 @@ async function loadActiveBridgeConnectionAttempt() {
   const revision = bridgeAttemptRevision;
   return new Promise((resolve) => {
     chrome.storage.local.get("torConnectActiveBridgeConnectionAttempt", (stored) => {
-      if (!activeBridgeConnectionAttemptLoaded && bridgeAttemptRevision === revision) {
+      if (!chrome.runtime.lastError && !activeBridgeConnectionAttemptLoaded
+          && bridgeAttemptRevision === revision) {
         activeBridgeConnectionAttemptId = stored?.torConnectActiveBridgeConnectionAttempt || undefined;
         activeBridgeConnectionAttemptLoaded = true;
       }
@@ -131,9 +132,8 @@ function clearBridgeConnectionAttempt(id) {
   return bridgeAttemptStorageQueue;
 }
 
-async function recordBridgeFailureIfReported(result) {
-  const id = await loadActiveBridgeConnectionAttempt();
-  if (!id || result?.state === "connected") return;
+async function recordBridgeFailureIfReported(result, id) {
+  if (!id || activeBridgeConnectionAttemptId !== id || result?.state === "connected") return;
   const currentIndex = Number(result?.currentBridgeIndex) || 0;
   const bridgeFailed = result?.bridgeActivity === "failed" || result?.bridgeActivity === "closed";
   const connectionFailed = result?.state === "failed";
@@ -472,9 +472,10 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   (async () => {
     if (!message || typeof message.type !== "string") throw new Error("Invalid request.");
     if (message.type === "status") {
+      const attemptId = await loadActiveBridgeConnectionAttempt();
       const result = await request("status");
       logHelperResult("status", result);
-      await recordBridgeFailureIfReported(result);
+      await recordBridgeFailureIfReported(result, attemptId);
       const connected = result.ok && result.state === "connected";
       const generation = trackConnectivityConnection(result);
       if (connected) {
@@ -511,7 +512,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       return;
     }
     if (message.type === "connect") {
-      await beginBridgeConnectionAttempt();
+      const attemptId = await beginBridgeConnectionAttempt();
       if (!actionRetryingAfterSiteFailure) actionSiteCheckState = "";
       const result = await request("start", {
         mode: message.mode,
@@ -523,7 +524,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
         exitCountry: message.exitCountry || ""
       });
       logHelperResult("start", result);
-      await recordBridgeFailureIfReported(result);
+      await recordBridgeFailureIfReported(result, attemptId);
       const connected = result.ok && result.state === "connected";
       const generation = trackConnectivityConnection(result);
       if (connected) {

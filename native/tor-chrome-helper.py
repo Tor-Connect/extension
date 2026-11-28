@@ -26,6 +26,7 @@ MAX_MESSAGE = 1_048_576
 MANUAL_BRIDGE_CONNECT_TIMEOUT = 5 * 60
 INITIAL_BRIDGE_NO_PROGRESS_TIMEOUT = 90
 BRIDGE_RECOVERY_NO_PROGRESS_TIMEOUT = 60
+MAX_UNATTRIBUTED_RECOVERY_ATTEMPTS = 2
 MANUAL_BRIDGE_TIMEOUT_MESSAGE = "Could not connect through this bridge within 5 minutes."
 if os.name == "nt":
     BASE = Path(os.environ.get("LOCALAPPDATA", Path.home() / "AppData/Local")) / "TorChrome"
@@ -106,6 +107,7 @@ class Helper:
         self.diagnostics: list[str] = []
         self.targets: list[dict] = []
         self.current_index: int | None = None
+        self.last_attributable_bridge_index: int | None = None
         self.bridge_activity: str | None = None
         self.built_circuits: dict[str, int] = {}
         self.exit_relay_candidates: set[str] = set()
@@ -118,7 +120,9 @@ class Helper:
         self.auto_recovery_bridges: list[str] = []
         self.auto_recovery_indices: list[int] = []
         self.auto_recovery_tried: set[int] = set()
+        self.auto_recovery_unattributed_attempts = 0
         self.auto_recovery_in_progress = False
+        self.recovery_claimed_process: subprocess.Popen[str] | None = None
         self.recovery_attempt_since: float | None = None
         self.recovery_stable_since: float | None = None
         self.connected_at: int | None = None
@@ -397,6 +401,7 @@ class Helper:
             with self.lock:
                 self.process = process; self.targets = targets
                 self.current_index = targets[0]["index"] if len(targets) == 1 else None
+                self.last_attributable_bridge_index = self.current_index
                 self.bridge_activity = None; self.connected_at = None; self.state = "starting"; self.message = "Starting Tor…"
                 self.bootstrap_progress = -1
                 self.built_circuits = {}; self.exit_relay_candidates = set(); self.exit_relay_lookups_in_progress = set(); self.reconnect_since = None
@@ -412,6 +417,8 @@ class Helper:
                 else:
                     self.auto_recovery_indices = []
                 self.auto_recovery_tried = set(recovery_tried or ())
+                if recovery_bridges is None:
+                    self.auto_recovery_unattributed_attempts = 0
                 self.auto_recovery_in_progress = (recovery_bridges is not None or
                     (mode == "manual" and selected_index is None and bool(auto_bridges)))
                 self.recovery_attempt_since = time.monotonic() if self.auto_recovery_in_progress else None
@@ -661,6 +668,8 @@ class Helper:
                 if targets:
                     conn.sendall(b"GETINFO orconn-status\r\n")
                     orconn_snapshot = self.read_control_reply(conn)
+                    if not orconn_snapshot:
+                        return "control_reply_incomplete"
                     if self.control_snapshot_rows(orconn_snapshot, "orconn-status") is not None:
                         before, after = self.control_snapshot_event_parts(orconn_snapshot, "orconn-status")
                         self.process_control_events(before, targets, process)
@@ -668,6 +677,8 @@ class Helper:
                         self.process_control_events(after, targets, process)
                 conn.sendall(b"GETINFO stream-status\r\n")
                 stream_snapshot = self.read_control_reply(conn)
+                if not stream_snapshot:
+                    return "control_reply_incomplete"
                 if self.control_snapshot_rows(stream_snapshot, "stream-status") is not None:
                     before, after = self.control_snapshot_event_parts(stream_snapshot, "stream-status")
                     self.process_control_events(before, targets, process)
@@ -687,10 +698,11 @@ class Helper:
                         if self.process_control_events(event + "\r\n", targets, process):
                             next_snapshot = time.monotonic()
                         self._handle_control_circuit_event(event, port, cookie, targets, process)
-                    if self.maybe_auto_recover():
+                    if self.maybe_auto_recover(process):
                         return "process_replaced"
 
-                    self._apply_exit_country_if_needed(conn, process, targets)
+                    if not self._apply_exit_country_if_needed(conn, process, targets):
+                        return "control_reply_incomplete"
                     if time.monotonic() >= next_snapshot:
                         if not self._refresh_circuit_snapshot(conn, port, cookie, targets, process):
                             return "circuit_snapshot_failed"
@@ -700,33 +712,38 @@ class Helper:
             return "control_socket_failed"
 
     def _apply_exit_country_if_needed(self, conn: socket.socket,
-                                      process: subprocess.Popen[str], targets: list[dict]) -> None:
+                                      process: subprocess.Popen[str], targets: list[dict]) -> bool:
         with self.lock:
             if self.process is not process or self.state != "connected" or self.exit_nodes_applied:
-                return
+                return True
             current_exit = self.exit_country.strip()
         if not re.fullmatch(r"[A-Za-z]{2}", current_exit):
             with self.lock:
                 if self.process is process:
                     self.exit_nodes_applied = True
-            return
+            return True
         code = current_exit.lower()
         try:
             conn.sendall(f"SETCONF ExitNodes={{{code}}}\r\n".encode())
             reply = self.read_control_reply(conn)
+            if not reply:
+                return False
             if "250 OK" not in reply:
-                return
+                return True
             self.process_control_events(reply, targets, process)
             conn.sendall(b"SIGNAL NEWNYM\r\n")
             reply = self.read_control_reply(conn)
+            if not reply:
+                return False
             if "250 OK" not in reply:
-                return
+                return True
             self.process_control_events(reply, targets, process)
             with self.lock:
                 if self.process is process:
                     self.exit_nodes_applied = True
+            return True
         except OSError:
-            pass
+            return False
 
     def _refresh_circuit_snapshot(self, conn: socket.socket, port: int, cookie: bytes,
                                   targets: list[dict], process: subprocess.Popen[str]) -> bool:
@@ -933,6 +950,9 @@ class Helper:
             if self.process is not process or self.selected_exit_circuit_id == circuit_id:
                 return False
             self.selected_exit_circuit_id = circuit_id
+            selected_bridge_index = self.built_circuits.get(circuit_id, 0)
+            self.current_index = selected_bridge_index if selected_bridge_index > 0 else None
+            self.last_attributable_bridge_index = selected_bridge_index if selected_bridge_index > 0 else None
             self.exit_relay_ip = ""
             self.exit_relay_country = ""
             self.exit_relay_circuit_id = ""
@@ -984,6 +1004,7 @@ class Helper:
             selected_bridge_index = built.get(self.selected_exit_circuit_id, 0)
             if selected_bridge_index > 0:
                 self.current_index = selected_bridge_index
+                self.last_attributable_bridge_index = selected_bridge_index
                 self.bridge_activity = "connected"
                 self.reconnect_since = None
                 if self.state == "connected":
@@ -992,11 +1013,13 @@ class Helper:
                     self.recovery_stable_since = time.monotonic()
             elif self.selected_exit_circuit_id:
                 self.current_index = None
+                self.last_attributable_bridge_index = None
                 self.bridge_activity = "connected"
                 self.reconnect_since = None
             elif mapped_indices:
                 if self.current_index not in mapped_indices:
                     self.current_index = mapped_indices[0]
+                self.last_attributable_bridge_index = self.current_index
                 self.bridge_activity = "connected"
                 self.reconnect_since = None
                 if self.state == "connected":
@@ -1005,6 +1028,7 @@ class Helper:
                     self.recovery_stable_since = time.monotonic()
             elif built:
                 self.current_index = None
+                self.last_attributable_bridge_index = None
                 self.bridge_activity = "connected"
                 self.reconnect_since = None
             elif had_built_circuits or self.state == "connected":
@@ -1096,7 +1120,13 @@ class Helper:
                 # proves a usable route exists, even if its saved-line index is unknown.
                 self.built_circuits[circuit_id] = bridge_index or 0
                 self.exit_relay_candidates.discard(circuit_id)
-                if bridge_index is not None: self.current_index = bridge_index
+                is_selected = circuit_id == self.selected_exit_circuit_id
+                if bridge_index is not None and (is_selected or not self.selected_exit_circuit_id):
+                    self.current_index = bridge_index
+                    self.last_attributable_bridge_index = bridge_index
+                elif is_selected:
+                    self.current_index = None
+                    self.last_attributable_bridge_index = None
                 self.bridge_activity = "connected"
                 self.reconnect_since = None
                 # Guard: a CIRC BUILT event can arrive (via the control port) while
@@ -1112,7 +1142,7 @@ class Helper:
             with self.lock:
                 if self.process is not process:
                     return
-                self.built_circuits.pop(circuit_id, None)
+                closed_bridge_index = self.built_circuits.pop(circuit_id, 0)
                 self.exit_relay_candidates.discard(circuit_id)
                 if (circuit_id == self.selected_exit_circuit_id
                         or circuit_id == self.exit_relay_circuit_id):
@@ -1120,6 +1150,7 @@ class Helper:
                     self.exit_relay_country = ""
                     self.exit_relay_circuit_id = ""
                 if circuit_id == self.selected_exit_circuit_id:
+                    self.last_attributable_bridge_index = closed_bridge_index or None
                     self.selected_exit_circuit_id = ""
 
     def update_bridge_activity(self, event: str, targets: list[dict], process: subprocess.Popen[str]) -> None:
@@ -1146,17 +1177,30 @@ class Helper:
             # Parallel OR connections must not replace a built circuit's healthy status.
             if self.built_circuits and activity in {"trying", "failed", "closed"}: return
             if activity in {"failed", "closed"} and self.current_index not in (None, bridge_index): return
-            self.current_index, self.bridge_activity = bridge_index, activity
+            selected_bridge_index = self.built_circuits.get(self.selected_exit_circuit_id, 0)
+            if not self.selected_exit_circuit_id:
+                self.current_index = bridge_index
+                self.last_attributable_bridge_index = bridge_index
+            elif selected_bridge_index > 0 and bridge_index == selected_bridge_index:
+                self.current_index = selected_bridge_index
+                self.last_attributable_bridge_index = selected_bridge_index
+            elif selected_bridge_index <= 0:
+                self.current_index = None
+                self.last_attributable_bridge_index = None
+            self.bridge_activity = activity
             if activity in {"trying", "failed", "closed"}:
                 if self.reconnect_since is None: self.reconnect_since = time.monotonic()
             elif activity == "connected":
                 self.reconnect_since = None
 
-    def maybe_auto_recover(self) -> bool:
+    def maybe_auto_recover(self, process: subprocess.Popen[str]) -> bool:
         with self.lock:
+            if self.process is not process or self.stopping or self.recovery_claimed_process is process:
+                return False
             if self.built_circuits and self.state != "starting":
                 if self.recovery_stable_since and time.monotonic() - self.recovery_stable_since >= 60:
                     self.auto_recovery_tried.clear()
+                    self.auto_recovery_unattributed_attempts = 0
                     self.recovery_stable_since = None
                     self.auto_recovery_in_progress = False
                 return False
@@ -1173,18 +1217,24 @@ class Helper:
             if not self.auto_recovery_bridges or not (recovery_attempt_due or outage_due):
                 return False
             count = len(self.auto_recovery_bridges)
+            attributable_index = self.current_index
+            if attributable_index not in self.auto_recovery_indices:
+                attributable_index = self.last_attributable_bridge_index
             current = next((position for position, bridge_index in enumerate(self.auto_recovery_indices)
-                            if bridge_index == self.current_index), -1)
+                            if bridge_index == attributable_index), -1)
             tried = set(self.auto_recovery_tried)
             if current >= 0:
                 tried.add(current)
+                self.auto_recovery_unattributed_attempts = 0
             else:
-                configured_indices = {target["index"] for target in self.targets}
-                tried.update(position for position, bridge_index in enumerate(self.auto_recovery_indices)
-                             if bridge_index in configured_indices)
+                self.auto_recovery_unattributed_attempts += 1
             ordered_positions = [(current + step) % count for step in range(1, count + 1)]
             remaining_positions = [position for position in ordered_positions if position not in tried]
-            if not remaining_positions:
+            unknown_attempts_exhausted = (
+                current < 0
+                and self.auto_recovery_unattributed_attempts > MAX_UNATTRIBUTED_RECOVERY_ATTEMPTS
+            )
+            if not remaining_positions or unknown_attempts_exhausted:
                 self.bridge_activity = "failed"
                 self.reconnect_since = None
                 self.auto_recovery_in_progress = False
@@ -1204,32 +1254,38 @@ class Helper:
                 target_indices = [recovery_indices[position] for position in remaining_positions]
                 self.message = "Starting Tor…"
                 self.reconnect_since = None
-        if exhausted:
+            self.recovery_claimed_process = process
+        try:
+            if exhausted:
+                self.stop(preserve_auto_recovery=True)
+                with self.lock:
+                    self.state = "failed"
+                    self.message = "Saved bridges could not restore the connection. Try connecting again."
+                    self.last_error = self.message
+                return True
             self.stop(preserve_auto_recovery=True)
-            with self.lock:
-                self.state = "failed"
-                self.message = "Saved bridges could not restore the connection. Try connecting again."
-                self.last_error = self.message
+            result = self.start("manual", "\n".join(bridges), None,
+                                recovery_bridges=recovery_bridges, recovery_tried=tried,
+                                exit_country=self.exit_country,
+                                bridge_indices=target_indices,
+                                recovery_indices=recovery_indices)
+            if not result.get("ok"):
+                with self.lock:
+                    self.state = "failed"
+                    self.message = result.get("error", "Automatic bridge recovery failed.")
+                    self.last_error = self.message
             return True
-        self.stop(preserve_auto_recovery=True)
-        result = self.start("manual", "\n".join(bridges), None,
-                            recovery_bridges=recovery_bridges, recovery_tried=tried,
-                            exit_country=self.exit_country,
-                            bridge_indices=target_indices,
-                            recovery_indices=recovery_indices)
-        if not result.get("ok"):
+        finally:
             with self.lock:
-                self.state = "failed"
-                self.message = result.get("error", "Automatic bridge recovery failed.")
-                self.last_error = self.message
-        return True
+                if self.recovery_claimed_process is process:
+                    self.recovery_claimed_process = None
 
     def auto_recovery_watchdog(self, process: subprocess.Popen[str]) -> None:
         while True:
             time.sleep(1)
             with self.lock:
                 if self.process is not process: return
-            if self.maybe_auto_recover(): return
+            if self.maybe_auto_recover(process): return
 
     def stop(self, preserve_auto_recovery: bool = False) -> None:
         with self.lock:
@@ -1240,6 +1296,7 @@ class Helper:
             recovery_in_progress = self.auto_recovery_in_progress if preserve_auto_recovery else False
             recovery_attempt_since = self.recovery_attempt_since if preserve_auto_recovery else None
             stable_since = self.recovery_stable_since if preserve_auto_recovery else None
+            unattributed_attempts = self.auto_recovery_unattributed_attempts if preserve_auto_recovery else 0
         if process and process.poll() is None:
             process.terminate()
             try: process.wait(timeout=5)
@@ -1247,7 +1304,7 @@ class Helper:
                 process.kill(); process.wait()
         with self.lock:
             self.process = None; self.state = "disconnected"; self.message = "Tor stopped."
-            self.last_error = None; self.targets = []; self.current_index = None
+            self.last_error = None; self.targets = []; self.current_index = None; self.last_attributable_bridge_index = None
             self.bridge_activity = None; self.built_circuits = {}; self.exit_relay_candidates = set(); self.reconnect_since = None
             self.exit_relay_ip = ""; self.exit_relay_country = ""; self.exit_relay_circuit_id = ""
             self.selected_exit_circuit_id = ""
@@ -1257,6 +1314,7 @@ class Helper:
             self.auto_recovery_bridges = auto_bridges; self.auto_recovery_tried = auto_tried
             self.auto_recovery_indices = recovery_indices
             self.auto_recovery_in_progress = recovery_in_progress; self.recovery_attempt_since = recovery_attempt_since
+            self.auto_recovery_unattributed_attempts = unattributed_attempts
             self.recovery_stable_since = stable_since
             self.connected_at = None; self.stopping = False
 
