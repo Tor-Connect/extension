@@ -781,6 +781,7 @@ async function advanceToNextRoute({ automatic = false } = {}) {
   let automaticNextPosition = -1;
   let automaticRemainingLines;
   let automaticRemainingPositions;
+  let manualCurrentPosition = -1;
   if (automatic && preferences.mode === "manual") {
     if (enabledEntries.length < 2) return;
     const signature = enabledEntries.join("\n");
@@ -835,11 +836,13 @@ async function advanceToNextRoute({ automatic = false } = {}) {
         nextLine = automaticNextLine;
       } else if (enabledEntries.length === 1) {
         nextLine = enabledEntries[0];
+        manualCurrentPosition = activeBridgePosition(currentResult, enabledEntries);
       } else if (enabledEntries.length > 1) {
         const active = activeBridgePosition(currentResult, enabledEntries);
         const previousPosition = active >= 0 ? active
           : cachedShownBridgePosition(enabledEntries) >= 0
             ? cachedShownBridgePosition(enabledEntries) : selectedBridgePosition(enabledEntries);
+        manualCurrentPosition = previousPosition;
         nextLine = enabledEntries[(previousPosition + 1) % enabledEntries.length];
       }
       if (nextLine) {
@@ -852,11 +855,15 @@ async function advanceToNextRoute({ automatic = false } = {}) {
           return;
         }
         const nextEnabledPosition = enabledEntries.indexOf(nextLine);
-        const nextLines = [
-          ...enabledEntries.slice(nextEnabledPosition),
-          ...enabledEntries.slice(0, nextEnabledPosition)
+        const nextPositions = [
+          ...Array.from({ length: enabledEntries.length - nextEnabledPosition }, (_, index) => nextEnabledPosition + index),
+          ...Array.from({ length: nextEnabledPosition }, (_, index) => index)
         ];
-        const failoverLines = nextLines.length > 1 ? nextLines.slice(0, -1) : nextLines;
+        const activeEnabledPosition = automatic
+          ? activeBridgePosition(currentResult, enabledEntries) : manualCurrentPosition;
+        const positionsWithoutActive = nextPositions.filter((position) => position !== activeEnabledPosition);
+        const failoverPositions = positionsWithoutActive.length ? positionsWithoutActive : nextPositions;
+        const failoverLines = failoverPositions.map((position) => enabledEntries[position]);
         const request = automatic
           ? {
             mode: "manual",
@@ -873,7 +880,7 @@ async function advanceToNextRoute({ automatic = false } = {}) {
             exitCountry: preferences.exitCountry || ""
           };
         if (!automatic) rememberShownBridgePosition(enabledEntries.indexOf(nextLine), enabledEntries);
-        siteCheckFailoverExpectedPosition = null;
+        siteCheckFailoverExpectedPosition = automatic ? automaticNextPosition : null;
         if (!automatic) rememberManualBridgeAttempt(nextLine);
         renderResult(await send("connect", request));
       } else if (!automatic && entries.length === 1) {

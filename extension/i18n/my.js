@@ -495,6 +495,6 @@ module.exports = {
       "No data yet": "ဒေတာ မရှိသေးပါ",
       "Often fails": "မကြာခဏ မအောင်မြင်ပါ",
       "Success": "အောင်မြင်သည်",
-      "Success rate: {rate}% ({successes} of {attempts} recent connection attempts passed Tor and site verification.)": "အောင်မြင်မှုနှုန်း {rate}% ({attempts} ကြိမ်အနက် {successes} ကြိမ် Tor ချိတ်ဆက်မှုနှင့် ဝဘ်ဆိုက်စစ်ဆေးမှု အောင်မြင်ခဲ့သည်။)",
+      "Success rate: {rate}% ({successes} of {attempts} recent connection attempts passed Tor and site verification.)": "မကြာသေးမီက ချိတ်ဆက်မှုကြိုးပမ်းမှု {attempts} ကြိမ်အနက် {successes} ကြိမ်တွင် Tor ချိတ်ဆက်မှုနှင့် ဝဘ်ဆိုက်စစ်ဆေးမှု အောင်မြင်ခဲ့ပြီး အောင်မြင်မှုနှုန်းမှာ {rate}% ဖြစ်သည်။",
   },
 };

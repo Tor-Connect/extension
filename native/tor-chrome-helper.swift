@@ -53,6 +53,8 @@ final class Helper {
     private var exitRelayCountry = ""
     private var exitRelayCircuitId = ""
     private var selectedExitCircuitId = ""
+    private var controlReadBuffers: [Int32: Data] = [:]
+    private let controlReadBufferLock = NSLock()
     private let lock = NSLock()
 
     private struct BridgeTarget {
@@ -166,7 +168,7 @@ final class Helper {
            let cookie = try? Data(contentsOf: cookieURL), cookie.count == 32 {
             let descriptor = socket(AF_INET, SOCK_STREAM, 0)
             if descriptor >= 0 {
-                defer { close(descriptor) }
+                defer { clearControlReadBuffer(descriptor); close(descriptor) }
                 var timeout = timeval(tv_sec: 0, tv_usec: 350_000)
                 _ = setsockopt(descriptor, SOL_SOCKET, SO_RCVTIMEO, &timeout, socklen_t(MemoryLayout<timeval>.size))
                 var address = sockaddr_in()
@@ -511,7 +513,8 @@ final class Helper {
                 let controlPortFile = dataDirectory.appendingPathComponent("control-port")
                 let cookieFile = dataDirectory.appendingPathComponent("control_auth_cookie")
                 DispatchQueue.global(qos: .utility).async { [weak self] in
-                    self?.monitorControlPort(portFile: controlPortFile, cookieFile: cookieFile, targets: configuredBridgeTargets)
+                    self?.monitorControlPort(portFile: controlPortFile, cookieFile: cookieFile,
+                                             targets: configuredBridgeTargets, process: process)
                 }
                 if shouldStartRecoveryWatchdog {
                     DispatchQueue.global(qos: .utility).async { [weak self] in
@@ -719,13 +722,13 @@ final class Helper {
         }
     }
 
-    private func monitorControlPort(portFile: URL, cookieFile: URL, targets: [BridgeTarget]) {
+    private func monitorControlPort(portFile: URL, cookieFile: URL, targets: [BridgeTarget], process: Process) {
         // Pre-load GeoIP caches here, single-threaded, before any concurrent lookup
         // workers are dispatched. After this point the caches are read-only.
         loadIPv4GeoIPDataIfNeeded()
         loadIPv6GeoIPDataIfNeeded()
-        lock.lock(); let sessionProcess = tor; lock.unlock()
-        guard let sessionProcess else { return }
+        let sessionProcess = process
+        guard isCurrentTorProcess(sessionProcess) else { return }
         var retryDelay: TimeInterval = 1
         while isCurrentTorProcess(sessionProcess) {
             setControlMonitor(sessionProcess, state: "connecting")
@@ -770,7 +773,8 @@ final class Helper {
 
         let descriptor = socket(AF_INET, SOCK_STREAM, 0)
         guard descriptor >= 0 else { return "control_socket_unavailable" }
-        defer { close(descriptor) }
+        controlReadBufferLock.lock(); controlReadBuffers[descriptor] = Data(); controlReadBufferLock.unlock()
+        defer { clearControlReadBuffer(descriptor); close(descriptor) }
         var timeout = timeval(tv_sec: 1, tv_usec: 0)
         _ = setsockopt(descriptor, SOL_SOCKET, SO_RCVTIMEO, &timeout, socklen_t(MemoryLayout<timeval>.size))
         var socketAddress = sockaddr_in()
@@ -796,15 +800,20 @@ final class Helper {
         }
         processControlEvents(initialEvents, targets: targets, sessionProcess: sessionProcess)
         if !targets.isEmpty, sendControlCommand("GETINFO orconn-status", to: descriptor),
-           let snapshot = readControlReply(from: descriptor), snapshot.contains("250 OK") {
-            processControlEvents(snapshot, targets: targets, sessionProcess: sessionProcess)
-            processORConnectionSnapshot(snapshot, targets: targets)
+           let snapshot = readControlReply(from: descriptor),
+           controlSnapshotRows(snapshot, key: "orconn-status") != nil {
+            let (before, after) = controlSnapshotEventParts(snapshot, key: "orconn-status")
+            processControlEvents(before, targets: targets, sessionProcess: sessionProcess)
+            processORConnectionSnapshot(snapshot, targets: targets, sessionProcess: sessionProcess)
+            processControlEvents(after, targets: targets, sessionProcess: sessionProcess)
         }
         if sendControlCommand("GETINFO stream-status", to: descriptor),
            let streamSnapshot = readControlReply(from: descriptor),
-           streamSnapshot.contains("250+stream-status=") {
+           controlSnapshotRows(streamSnapshot, key: "stream-status") != nil {
+            let (before, after) = controlSnapshotEventParts(streamSnapshot, key: "stream-status")
+            processControlEvents(before, targets: targets, sessionProcess: sessionProcess)
             processStreamSnapshot(streamSnapshot, sessionProcess: sessionProcess)
-            processControlEvents(streamSnapshot, targets: targets, sessionProcess: sessionProcess)
+            processControlEvents(after, targets: targets, sessionProcess: sessionProcess)
         }
         guard refreshCircuitSnapshot(from: descriptor, targets: targets,
                                      sessionProcess: sessionProcess) else {
@@ -812,42 +821,21 @@ final class Helper {
         }
 
         setControlMonitor(sessionProcess, state: "watching")
-        var buffered = Data()
-        var chunk = [UInt8](repeating: 0, count: 8192)
         var nextSnapshot = Date().addingTimeInterval(5)
         while isCurrentTorProcess(sessionProcess) {
-            let count = chunk.withUnsafeMutableBytes { Darwin.read(descriptor, $0.baseAddress, $0.count) }
-            if count == 0 { return "control_socket_closed" }
-            if count < 0 {
-                if errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR {
-                    if maybeAutoRecover() { return "process_replaced" }
-                    applyExitCountryIfNeeded(to: descriptor, process: sessionProcess)
-                    if Date() >= nextSnapshot {
-                        guard refreshCircuitSnapshot(from: descriptor, targets: targets,
-                                                     sessionProcess: sessionProcess) else {
-                            return "circuit_snapshot_failed"
-                        }
-                        nextSnapshot = Date().addingTimeInterval(5)
-                    }
-                    continue
+            let (line, closed) = readControlLine(from: descriptor)
+            if closed { return "control_socket_closed" }
+            if let line {
+                if processControlEvents(line + "\r\n", targets: targets,
+                                        sessionProcess: sessionProcess) {
+                    nextSnapshot = Date()
                 }
-                return "control_socket_failed"
+                handleControlCircuitEvent(line, targets: targets, sessionProcess: sessionProcess)
+                if maybeAutoRecover() { return "process_replaced" }
+            } else if maybeAutoRecover() {
+                return "process_replaced"
             }
-            buffered.append(contentsOf: chunk.prefix(count))
-            while let newline = buffered.firstRange(of: Data([13, 10])) {
-                let lineData = buffered[..<newline.lowerBound]
-                buffered.removeSubrange(..<newline.upperBound)
-                if let line = String(data: lineData, encoding: .utf8) {
-                    if processControlEvents(line + "\r\n", targets: targets,
-                                            sessionProcess: sessionProcess) {
-                        nextSnapshot = Date()
-                    }
-                    handleControlCircuitEvent(line, targets: targets, sessionProcess: sessionProcess)
-                    if maybeAutoRecover() { return "process_replaced" }
-                }
-            }
-            if buffered.count > 65_536 { buffered.removeAll(keepingCapacity: true) }
-            applyExitCountryIfNeeded(to: descriptor, process: sessionProcess)
+            applyExitCountryIfNeeded(to: descriptor, process: sessionProcess, targets: targets)
             if Date() >= nextSnapshot {
                 guard refreshCircuitSnapshot(from: descriptor, targets: targets,
                                              sessionProcess: sessionProcess) else {
@@ -859,7 +847,7 @@ final class Helper {
         return "process_replaced"
     }
 
-    private func applyExitCountryIfNeeded(to descriptor: Int32, process: Process) {
+    private func applyExitCountryIfNeeded(to descriptor: Int32, process: Process, targets: [BridgeTarget]) {
         lock.lock()
         guard tor === process, state == "connected", !exitNodesApplied else { lock.unlock(); return }
         let country = exitCountry.trimmingCharacters(in: .whitespaces)
@@ -869,9 +857,11 @@ final class Helper {
             return
         }
         guard sendControlCommand("SETCONF ExitNodes={\(country.lowercased())}", to: descriptor),
-              readControlReply(from: descriptor)?.contains("250 OK") == true,
-              sendControlCommand("SIGNAL NEWNYM", to: descriptor),
-              readControlReply(from: descriptor)?.contains("250 OK") == true else { return }
+              let setReply = readControlReply(from: descriptor), setReply.contains("250 OK") else { return }
+        processControlEvents(setReply, targets: targets, sessionProcess: process)
+        guard sendControlCommand("SIGNAL NEWNYM", to: descriptor),
+              let newnymReply = readControlReply(from: descriptor), newnymReply.contains("250 OK") else { return }
+        processControlEvents(newnymReply, targets: targets, sessionProcess: process)
         lock.lock(); if tor === process { exitNodesApplied = true }; lock.unlock()
     }
 
@@ -879,9 +869,12 @@ final class Helper {
                                         sessionProcess: Process) -> Bool {
         guard sendControlCommand("GETINFO circuit-status", to: descriptor),
               let snapshot = readControlReply(from: descriptor),
-              snapshot.contains("250+circuit-status="), snapshot.contains("250 OK") else { return false }
-        processControlEvents(snapshot, targets: targets, sessionProcess: sessionProcess)
+              controlSnapshotRows(snapshot, key: "circuit-status") != nil,
+              snapshot.contains("250 OK") else { return false }
+        let (before, after) = controlSnapshotEventParts(snapshot, key: "circuit-status")
+        processControlEvents(before, targets: targets, sessionProcess: sessionProcess)
         let lookups = processCircuitSnapshot(snapshot, targets: targets, sessionProcess: sessionProcess)
+        processControlEvents(after, targets: targets, sessionProcess: sessionProcess)
         for (circuitId, fingerprint) in lookups {
             scheduleExitRelayLookup(portFile: dataDirectory.appendingPathComponent("control-port"),
                                     cookieFile: dataDirectory.appendingPathComponent("control_auth_cookie"),
@@ -937,6 +930,8 @@ final class Helper {
 
     private func sendControlCommand(_ command: String, to descriptor: Int32) -> Bool {
         let data = Data((command + "\r\n").utf8)
+        var noSignal: Int32 = 1
+        _ = setsockopt(descriptor, SOL_SOCKET, SO_NOSIGPIPE, &noSignal, socklen_t(MemoryLayout<Int32>.size))
         return data.withUnsafeBytes { bytes in
             guard let base = bytes.baseAddress else { return false }
             return Darwin.write(descriptor, base, bytes.count) == bytes.count
@@ -944,14 +939,19 @@ final class Helper {
     }
 
     private func readControlReply(from descriptor: Int32) -> String? {
-        var reply = Data()
         var chunk = [UInt8](repeating: 0, count: 1024)
         let deadline = Date().addingTimeInterval(5)
-        while Date() < deadline && reply.count < 1_048_576 {
+        while Date() < deadline && controlReadBuffer(descriptor).count < 1_048_576 {
+            let buffered = controlReadBuffer(descriptor)
+            if let end = controlReplyEnd(in: buffered) {
+                let reply = Data(buffered.prefix(end))
+                consumeControlReadBuffer(descriptor, count: end)
+                return String(data: reply, encoding: .utf8)
+            }
             let count = chunk.withUnsafeMutableBytes { Darwin.read(descriptor, $0.baseAddress, $0.count) }
             if count > 0 {
-                reply.append(contentsOf: chunk.prefix(count))
-                if let text = String(data: reply, encoding: .utf8), text.contains("250 OK\r\n") { return text }
+                appendControlReadBuffer(Data(chunk.prefix(count)), descriptor: descriptor)
+                if controlReadBuffer(descriptor).count >= 1_048_576 { return nil }
             } else if count == 0 {
                 return nil
             } else if errno != EAGAIN && errno != EWOULDBLOCK && errno != EINTR {
@@ -959,6 +959,136 @@ final class Helper {
             }
         }
         return nil
+    }
+
+    private func controlReplyEnd(in data: Data) -> Int? {
+        let separator = Data([13, 10])
+        var start = data.startIndex
+        var responseCode: Data?
+        var inDataBlock = false
+        while let range = data.range(of: separator, options: [], in: start..<data.endIndex) {
+            let line = data[start..<range.lowerBound]
+            if responseCode == nil, line.count >= 4 {
+                let code = Data(line.prefix(3))
+                let marker = line[line.index(line.startIndex, offsetBy: 3)]
+                if code.allSatisfy({ (48...57).contains($0) }), code != Data("650".utf8),
+                   marker == 32 || marker == 43 || marker == 45 {
+                    responseCode = code
+                    if marker == 43 {
+                        inDataBlock = true
+                    } else if marker == 32 {
+                        return data.distance(from: data.startIndex, to: range.upperBound)
+                    }
+                }
+            } else if let responseCode {
+                if inDataBlock {
+                    if line == Data([46]) { inDataBlock = false }
+                } else if line.starts(with: responseCode + Data([43])) {
+                    inDataBlock = true
+                } else if line.starts(with: responseCode + Data([32])) {
+                    return data.distance(from: data.startIndex, to: range.upperBound)
+                }
+            }
+            start = range.upperBound
+        }
+        return nil
+    }
+
+    private func controlSnapshotRows(_ text: String, key: String) -> [String]? {
+        var found = false
+        var inSnapshot = false
+        var rows: [String] = []
+        for line in text.components(separatedBy: "\r\n") {
+            if line.hasPrefix("250+\(key)=") {
+                found = true
+                inSnapshot = true
+                continue
+            }
+            if line.hasPrefix("250-\(key)=") {
+                found = true
+                let value = String(line.dropFirst("250-\(key)=".count))
+                if !value.isEmpty { rows.append(contentsOf: value.replacingOccurrences(of: "\\n", with: "\n").components(separatedBy: "\n")) }
+                continue
+            }
+            if inSnapshot && line == "." {
+                inSnapshot = false
+                continue
+            }
+            if inSnapshot && !line.hasPrefix("650 ") { rows.append(line) }
+        }
+        return found ? rows : nil
+    }
+
+    private func controlSnapshotEventParts(_ text: String, key: String) -> (before: String, after: String) {
+        let lines = text.components(separatedBy: "\r\n")
+        let start = lines.firstIndex(where: {
+            $0.hasPrefix("250+\(key)=") || $0.hasPrefix("250-\(key)=")
+        }) ?? lines.endIndex
+        var end = start < lines.endIndex ? lines.index(after: start) : lines.endIndex
+        if start < lines.endIndex, lines[start].hasPrefix("250+\(key)=") {
+            var index = lines.index(after: start)
+            while index < lines.endIndex {
+                if lines[index] == "." {
+                    end = lines.index(after: index)
+                    break
+                }
+                index = lines.index(after: index)
+            }
+        }
+        let before = lines[..<start].joined(separator: "\r\n")
+        var afterLines = lines[(start < lines.endIndex ? lines.index(after: start) : start)..<end]
+            .filter { $0.hasPrefix("650 ") }
+        afterLines.append(contentsOf: lines[end...])
+        return (before, afterLines.joined(separator: "\r\n"))
+    }
+
+    private func controlReadBuffer(_ descriptor: Int32) -> Data {
+        controlReadBufferLock.lock(); defer { controlReadBufferLock.unlock() }
+        return controlReadBuffers[descriptor] ?? Data()
+    }
+
+    private func appendControlReadBuffer(_ data: Data, descriptor: Int32) {
+        controlReadBufferLock.lock(); defer { controlReadBufferLock.unlock() }
+        controlReadBuffers[descriptor, default: Data()].append(data)
+    }
+
+    private func consumeControlReadBuffer(_ descriptor: Int32, count: Int) {
+        controlReadBufferLock.lock(); defer { controlReadBufferLock.unlock() }
+        guard var buffered = controlReadBuffers[descriptor], count <= buffered.count else { return }
+        buffered.removeSubrange(..<count)
+        if buffered.isEmpty { controlReadBuffers.removeValue(forKey: descriptor) }
+        else { controlReadBuffers[descriptor] = buffered }
+    }
+
+    private func clearControlReadBuffer(_ descriptor: Int32) {
+        controlReadBufferLock.lock(); controlReadBuffers.removeValue(forKey: descriptor); controlReadBufferLock.unlock()
+    }
+
+    private func readControlLine(from descriptor: Int32) -> (String?, Bool) {
+        let separator = Data([13, 10])
+        var chunk = [UInt8](repeating: 0, count: 8192)
+        while true {
+            let buffered = controlReadBuffer(descriptor)
+            if let range = buffered.range(of: separator) {
+                let lineData = Data(buffered[..<range.lowerBound])
+                consumeControlReadBuffer(descriptor, count: buffered.distance(from: buffered.startIndex, to: range.upperBound))
+                return (String(data: lineData, encoding: .utf8), false)
+            }
+            let count = chunk.withUnsafeMutableBytes { Darwin.read(descriptor, $0.baseAddress, $0.count) }
+            if count > 0 {
+                appendControlReadBuffer(Data(chunk.prefix(count)), descriptor: descriptor)
+                if controlReadBuffer(descriptor).count > 65_536 {
+                    clearControlReadBuffer(descriptor)
+                    return (nil, false)
+                }
+            } else if count == 0 {
+                return (nil, true)
+            } else if errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR {
+                return (nil, false)
+            } else {
+                return (nil, true)
+            }
+        }
     }
 
     @discardableResult
@@ -973,24 +1103,14 @@ final class Helper {
                     status: String(fields[3]), circuitId: String(fields[4]),
                     target: String(fields[5]), sessionProcess: sessionProcess) || selectedStreamChanged
             }
-            updateBridgeActivity(from: line, targets: targets)
+            updateBridgeActivity(from: line, targets: targets, sessionProcess: sessionProcess)
         }
         return selectedStreamChanged
     }
 
     private func processStreamSnapshot(_ text: String, sessionProcess: Process) {
-        var inSnapshot = false
         var latestStream: (number: Int, circuitId: String, target: String)?
-        for line in text.components(separatedBy: "\r\n") {
-            if line.hasPrefix("250+stream-status=") {
-                inSnapshot = true
-                continue
-            }
-            if inSnapshot && line == "." {
-                inSnapshot = false
-                continue
-            }
-            guard inSnapshot else { continue }
+        for line in controlSnapshotRows(text, key: "stream-status") ?? [] {
             let fields = line.split(whereSeparator: \.isWhitespace)
             guard fields.count >= 4 else { continue }
             guard let streamNumber = Int(fields[0]), streamNumber > 0,
@@ -1023,42 +1143,25 @@ final class Helper {
         return true
     }
 
-    private func processORConnectionSnapshot(_ text: String, targets: [BridgeTarget]) {
-        var inSnapshot = false
-        for line in text.components(separatedBy: "\r\n") {
-            if line.hasPrefix("250+orconn-status=") {
-                inSnapshot = true
-                continue
-            }
-            if inSnapshot && line == "." {
-                inSnapshot = false
-                continue
-            }
-            guard inSnapshot else { continue }
+    private func processORConnectionSnapshot(_ text: String, targets: [BridgeTarget],
+                                             sessionProcess: Process) {
+        for line in controlSnapshotRows(text, key: "orconn-status") ?? [] {
             let fields = line.split(whereSeparator: \.isWhitespace)
             guard fields.count >= 2 else { continue }
-            updateBridgeActivity(from: "650 ORCONN \(fields[0]) \(fields[1])", targets: targets)
+            updateBridgeActivity(from: "650 ORCONN \(fields[0]) \(fields[1])", targets: targets,
+                                 sessionProcess: sessionProcess)
         }
     }
 
     private func processCircuitSnapshot(_ text: String, targets: [BridgeTarget],
                                         sessionProcess: Process) -> [(String, String)] {
-        var inSnapshot = false
         var built: [String: Int] = [:]
         var builtPaths: [String: String] = [:]
         var candidates: Set<String> = []
         var mappedIndices: [Int] = []
         var lookups: [(String, String)] = []
-        for line in text.components(separatedBy: "\r\n") {
-            if line.hasPrefix("250+circuit-status=") {
-                inSnapshot = true
-                continue
-            }
-            if inSnapshot && line == "." {
-                inSnapshot = false
-                continue
-            }
-            guard inSnapshot, !line.contains("ONEHOP_TUNNEL"), !line.contains("IS_INTERNAL") else { continue }
+        for line in controlSnapshotRows(text, key: "circuit-status") ?? [] {
+            guard !line.contains("ONEHOP_TUNNEL"), !line.contains("IS_INTERNAL") else { continue }
             let fields = line.split(whereSeparator: \.isWhitespace)
             guard fields.count >= 3 else { continue }
             let circuitId = String(fields[0])
@@ -1090,7 +1193,18 @@ final class Helper {
                                 hops[hops.count - 1].split(whereSeparator: { $0 == "~" || $0 == "=" }).first.map(String.init) ?? ""))
             }
         }
-        if let firstMapped = mappedIndices.first {
+        let selectedBridgeIndex = built[selectedExitCircuitId] ?? 0
+        if selectedBridgeIndex > 0 {
+            currentBridgeIndex = selectedBridgeIndex
+            bridgeActivity = "connected"
+            reconnectSince = nil
+            if state == "connected" { recoveryAttemptSince = nil }
+            if !autoRecoveryTried.isEmpty && recoveryStableSince == nil { recoveryStableSince = Date() }
+        } else if !selectedExitCircuitId.isEmpty {
+            currentBridgeIndex = nil
+            bridgeActivity = "connected"
+            reconnectSince = nil
+        } else if let firstMapped = mappedIndices.first {
             let activeBridgeIsMapped = currentBridgeIndex.map { mappedIndices.contains($0) } ?? false
             if !activeBridgeIsMapped {
                 currentBridgeIndex = firstMapped
@@ -1105,8 +1219,8 @@ final class Helper {
             reconnectSince = nil
         } else if hadBuiltCircuits || state == "connected" {
             currentBridgeIndex = nil
-            bridgeActivity = nil
-            reconnectSince = nil
+            bridgeActivity = "trying"
+            if reconnectSince == nil { reconnectSince = Date() }
         }
         if !builtCircuits.keys.contains(exitRelayCircuitId) || exitRelayCircuitId != selectedExitCircuitId {
             exitRelayIp = ""; exitRelayCountry = ""; exitRelayCircuitId = ""
@@ -1115,13 +1229,17 @@ final class Helper {
         return lookups
     }
 
-    private func updateCircuitActivity(id: String, status: String, path: String, targets: [BridgeTarget]) {
+    private func updateCircuitActivity(id: String, status: String, path: String,
+                                       targets: [BridgeTarget], sessionProcess: Process) {
         if status == "EXTENDED", path.split(separator: ",").count >= 3 {
-            lock.lock(); exitRelayCandidates.insert(id); lock.unlock()
+            lock.lock()
+            if tor === sessionProcess { exitRelayCandidates.insert(id) }
+            lock.unlock()
         } else if status == "BUILT" {
             let firstHop = String(path.split(separator: ",", maxSplits: 1).first ?? "")
             let index = bridgeIndex(for: firstHop, targets: targets)
             lock.lock()
+            guard tor === sessionProcess else { lock.unlock(); return }
             // A built circuit proves the tunnel works even when a bridge line
             // omitted its fingerprint and cannot be mapped back to a list row.
             builtCircuits[id] = index ?? 0
@@ -1139,6 +1257,7 @@ final class Helper {
             lock.unlock()
         } else if ["CLOSED", "FAILED", "DESTROYED"].contains(status) {
             lock.lock()
+            guard tor === sessionProcess else { lock.unlock(); return }
             builtCircuits.removeValue(forKey: id)
             exitRelayCandidates.remove(id)
             if id == selectedExitCircuitId || id == exitRelayCircuitId {
@@ -1184,7 +1303,7 @@ final class Helper {
         let cookieHex = cookie.map { String(format: "%02x", $0) }.joined()
         let descriptor = socket(AF_INET, SOCK_STREAM, 0)
         guard descriptor >= 0 else { return nil }
-        defer { close(descriptor) }
+        defer { clearControlReadBuffer(descriptor); close(descriptor) }
         var addr = sockaddr_in()
         addr.sin_family = sa_family_t(AF_INET)
         addr.sin_port = in_port_t(port).bigEndian
@@ -1226,13 +1345,14 @@ final class Helper {
         return nil
     }
 
-    private func updateBridgeActivity(from event: String, targets: [BridgeTarget]) {
+    private func updateBridgeActivity(from event: String, targets: [BridgeTarget], sessionProcess: Process) {
         var reportedTarget: String?
         var activity: String?
         let fields = event.split(whereSeparator: \.isWhitespace)
         if event.contains(" CIRC "), fields.count >= 5 {
             if event.contains("ONEHOP_TUNNEL") || event.contains("IS_INTERNAL") { return }
-            updateCircuitActivity(id: String(fields[2]), status: String(fields[3]), path: String(fields[4]), targets: targets)
+            updateCircuitActivity(id: String(fields[2]), status: String(fields[3]), path: String(fields[4]),
+                                  targets: targets, sessionProcess: sessionProcess)
             return
         }
         if event.contains(" STATUS_CLIENT "), event.contains(" BOOTSTRAP ") {
@@ -1252,6 +1372,7 @@ final class Helper {
         guard let reportedTarget, let activity,
               let index = bridgeIndex(for: reportedTarget, targets: targets) else { return }
         lock.lock()
+        guard tor === sessionProcess else { lock.unlock(); return }
         // Preserve the working route while Tor opens or closes parallel OR connections.
         if !builtCircuits.isEmpty, ["trying", "failed", "closed"].contains(activity) {
             lock.unlock()

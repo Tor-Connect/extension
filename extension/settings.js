@@ -387,10 +387,11 @@ function parseBridgeLine(line) {
 
 function bridgeSuccessIdentity(line) {
   const parts = parseBridgeLine(line);
+  const fingerprint = /^[a-f\d]{40}$/i.test(parts.fingerprint) ? parts.fingerprint.toLowerCase() : "";
   return JSON.stringify([
     parts.transport.toLowerCase(),
     parts.address.toLowerCase(),
-    parts.fingerprint.toLowerCase()
+    fingerprint
   ]);
 }
 
@@ -407,6 +408,32 @@ function bridgeSuccessPresentation(line) {
       rate, successes, attempts: recent.length
     });
   return { attempts: recent, rate, note, title, successes };
+}
+
+function refreshBridgeSuccessPresentations() {
+  for (const item of bridgeListNode.querySelectorAll(".settings-bridge-item[data-bridge-index]")) {
+    const line = bridgeLines[Number(item.dataset.bridgeIndex)];
+    if (!line) continue;
+    const success = bridgeSuccessPresentation(line);
+    const successNode = item.querySelector(".bridge-success-rate");
+    const valueNode = successNode?.querySelector(".bridge-success-value");
+    const noteNode = successNode?.querySelector(".bridge-success-note");
+    const barsNode = successNode?.querySelector(".bridge-success-bars");
+    if (!successNode || !valueNode || !noteNode || !barsNode) continue;
+    successNode.dataset.level = success.rate === null ? "empty" : success.rate < 50 ? "low" : success.rate < 80 ? "medium" : "high";
+    successNode.title = success.title;
+    successNode.setAttribute("aria-label", success.title);
+    valueNode.textContent = success.rate === null ? "—" : `${success.rate}%`;
+    noteNode.textContent = success.note;
+    barsNode.replaceChildren();
+    const recentOutcomes = success.attempts.slice(-10);
+    for (let barIndex = 0; barIndex < 10; barIndex += 1) {
+      const outcome = recentOutcomes[barIndex - (10 - recentOutcomes.length)];
+      const bar = document.createElement("i");
+      bar.dataset.outcome = outcome ? outcome.success ? "success" : "failure" : "empty";
+      barsNode.append(bar);
+    }
+  }
 }
 
 const KNOWN_TRANSPORTS = new Set(["obfs4", "webtunnel", "snowflake", "meek_lite"]);
@@ -487,6 +514,7 @@ function renderBridgeList() {
     const enabled = !disabledBridgeLines.has(line);
     const item = document.createElement("article");
     item.className = "settings-bridge-item";
+    item.dataset.bridgeIndex = String(index);
     item.dataset.enabled = String(enabled);
     if (connected) item.dataset.connected = "true";
 
@@ -1328,7 +1356,7 @@ chrome.storage.onChanged.addListener((changes, areaName) => {
   if (areaName !== "local") return;
   if (changes[BRIDGE_SUCCESS_HISTORY_KEY]) {
     bridgeSuccessHistory = changes[BRIDGE_SUCCESS_HISTORY_KEY].newValue || {};
-    renderBridgeList();
+    refreshBridgeSuccessPresentations();
   }
   if (!changes.torConnectionPreferences) return;
   const saved = { ...(changes.torConnectionPreferences.newValue || {}) };
