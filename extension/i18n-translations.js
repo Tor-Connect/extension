@@ -487,7 +487,12 @@
       "Your traffic is relayed through Snowflake proxies. The route may change.": "",
       "{n} circuits": "",
       "{n} imported bridge lines were left disabled; up to {limit} bridges can be enabled.": "",
-      "Up to {n} bridges may be enabled at a time. Disable one to enable another.": ""
+      "Up to {n} bridges may be enabled at a time. Disable one to enable another.": "",
+      "No completed connection attempts yet.": "",
+      "No data yet": "",
+      "Often fails": "",
+      "Success": "",
+      "Success rate: {rate}% ({successes} of {attempts} recent connection attempts passed Tor and site verification.)": "",
     },
     fa: {
       " and ": " و ",
@@ -977,7 +982,13 @@
       "Your traffic is relayed through Snowflake proxies. The route may change.": "ترافیک شما از پراکسی‌های اسنو‌فلیک عبور می‌کند. مسیر ممکن است تغییر کند.",
       "{n} circuits": "{n} مدار",
       "{n} imported bridge lines were left disabled; up to {limit} bridges can be enabled.": "{n} خط پل واردشده غیرفعال ماند؛ حداکثر {limit} پل می‌تواند فعال باشد.",
-      "Up to {n} bridges may be enabled at a time. Disable one to enable another.": "هم‌زمان حداکثر {n} پل می‌تواند فعال باشد. برای فعال کردن پل دیگر، یکی را غیرفعال کنید."
+      "Up to {n} bridges may be enabled at a time. Disable one to enable another.": "هم‌زمان حداکثر {n} پل می‌تواند فعال باشد. برای فعال کردن پل دیگر، یکی را غیرفعال کنید.",
+
+      "No completed connection attempts yet.": "هنوز هیچ تلاش اتصال تکمیل‌شده‌ای ثبت نشده است.",
+      "No data yet": "هنوز داده‌ای نیست",
+      "Often fails": "اغلب ناموفق",
+      "Success": "موفق",
+      "Success rate: {rate}% ({successes} of {attempts} recent connection attempts passed Tor and site verification.)": "نرخ موفقیت: {rate}% (در {successes} مورد از {attempts} تلاش اخیر، اتصال Tor برقرار شد و بررسی سایت‌ها موفق بود.)",
     },
     de: {
       " and ": " und ",
@@ -1467,7 +1478,13 @@
       "Your traffic is relayed through Snowflake proxies. The route may change.": "Dein Datenverkehr wird über Snowflake-Proxys weitergeleitet. Die Route kann sich ändern.",
       "{n} circuits": "{n} Schaltkreise",
       "{n} imported bridge lines were left disabled; up to {limit} bridges can be enabled.": "{n} importierte Bridge-Zeilen blieben deaktiviert; es können höchstens {limit} Bridges aktiviert sein.",
-      "Up to {n} bridges may be enabled at a time. Disable one to enable another.": "Es können höchstens {n} Bridges gleichzeitig aktiviert sein. Deaktiviere eine, um eine andere zu aktivieren."
+      "Up to {n} bridges may be enabled at a time. Disable one to enable another.": "Es können höchstens {n} Bridges gleichzeitig aktiviert sein. Deaktiviere eine, um eine andere zu aktivieren.",
+
+      "No completed connection attempts yet.": "Noch keine abgeschlossenen Verbindungsversuche.",
+      "No data yet": "Noch keine Daten",
+      "Often fails": "Scheitert oft",
+      "Success": "Erfolg",
+      "Success rate: {rate}% ({successes} of {attempts} recent connection attempts passed Tor and site verification.)": "Erfolgsquote: {rate}% ({successes} von {attempts} letzten Verbindungsversuchen haben Tor- und Website-Prüfung bestanden.)",
     },
     es: {
       " and ": " y ",
@@ -1957,7 +1974,13 @@
       "Your traffic is relayed through Snowflake proxies. The route may change.": "Tu tráfico se retransmite mediante proxies Snowflake. La ruta puede cambiar.",
       "{n} circuits": "{n} circuitos",
       "{n} imported bridge lines were left disabled; up to {limit} bridges can be enabled.": "Se dejaron desactivadas {n} líneas de puente importadas; se pueden activar hasta {limit} puentes.",
-      "Up to {n} bridges may be enabled at a time. Disable one to enable another.": "Se pueden activar hasta {n} puentes a la vez. Desactiva uno para activar otro."
+      "Up to {n} bridges may be enabled at a time. Disable one to enable another.": "Se pueden activar hasta {n} puentes a la vez. Desactiva uno para activar otro.",
+
+      "No completed connection attempts yet.": "Aún no hay intentos de conexión completados.",
+      "No data yet": "Aún no hay datos",
+      "Often fails": "Suele fallar",
+      "Success": "Éxito",
+      "Success rate: {rate}% ({successes} of {attempts} recent connection attempts passed Tor and site verification.)": "Tasa de éxito: {rate}% ({successes} de los {attempts} intentos de conexión recientes superaron Tor y la verificación de sitios.)",
     },
     ar: {
       " and ": " و ",
@@ -2447,7 +2470,13 @@
       "Your traffic is relayed through Snowflake proxies. The route may change.": "يتم تمرير حركة مرورك عبر وكلاء Snowflake. قد يتغير المسار.",
       "{n} circuits": "{n} دوائر",
       "{n} imported bridge lines were left disabled; up to {limit} bridges can be enabled.": "تُركت {n} من أسطر الجسور المستوردة معطّلة؛ يمكن تفعيل {limit} جسراً كحد أقصى.",
-      "Up to {n} bridges may be enabled at a time. Disable one to enable another.": "يمكن تفعيل ما يصل إلى {n} جسور في الوقت نفسه. عطّل جسراً لتفعيل آخر."
+      "Up to {n} bridges may be enabled at a time. Disable one to enable another.": "يمكن تفعيل ما يصل إلى {n} جسور في الوقت نفسه. عطّل جسراً لتفعيل آخر.",
+
+      "No completed connection attempts yet.": "لا توجد محاولات اتصال مكتملة بعد.",
+      "No data yet": "لا توجد بيانات بعد",
+      "Often fails": "يفشل غالبًا",
+      "Success": "نجاح",
+      "Success rate: {rate}% ({successes} of {attempts} recent connection attempts passed Tor and site verification.)": "معدل النجاح: {rate}% (نجح {successes} من آخر {attempts} محاولة اتصال في الاتصال بـ Tor واجتياز فحص المواقع.)",
     },
     zh: {
       " and ": " 和 ",
@@ -2937,7 +2966,13 @@
       "Your traffic is relayed through Snowflake proxies. The route may change.": "你的流量通过 Snowflake 代理转发，连接路线可能会变化。",
       "{n} circuits": "{n} 条回路",
       "{n} imported bridge lines were left disabled; up to {limit} bridges can be enabled.": "有 {n} 条导入的网桥线路保持停用；最多可启用 {limit} 个网桥。",
-      "Up to {n} bridges may be enabled at a time. Disable one to enable another.": "最多可同时启用 {n} 个网桥。请先停用一个，再启用另一个。"
+      "Up to {n} bridges may be enabled at a time. Disable one to enable another.": "最多可同时启用 {n} 个网桥。请先停用一个，再启用另一个。",
+
+      "No completed connection attempts yet.": "尚无已完成的连接尝试。",
+      "No data yet": "暂无数据",
+      "Often fails": "经常失败",
+      "Success": "成功",
+      "Success rate: {rate}% ({successes} of {attempts} recent connection attempts passed Tor and site verification.)": "成功率：{rate}%（最近 {attempts} 次连接中有 {successes} 次通过了 Tor 连接和网站验证。）",
     },
     hi: {
       " and ": " और ",
@@ -3427,7 +3462,13 @@
       "Your traffic is relayed through Snowflake proxies. The route may change.": "आपका ट्रैफ़िक Snowflake प्रॉक्सी से जाता है। रूट बदल सकता है।",
       "{n} circuits": "{n} सर्किट",
       "{n} imported bridge lines were left disabled; up to {limit} bridges can be enabled.": "आयात की गई {n} ब्रिज लाइनें अक्षम रखी गईं; अधिकतम {limit} ब्रिज सक्षम हो सकते हैं।",
-      "Up to {n} bridges may be enabled at a time. Disable one to enable another.": "एक समय में अधिकतम {n} ब्रिज सक्षम हो सकते हैं। दूसरा सक्षम करने के लिए एक को अक्षम करें।"
+      "Up to {n} bridges may be enabled at a time. Disable one to enable another.": "एक समय में अधिकतम {n} ब्रिज सक्षम हो सकते हैं। दूसरा सक्षम करने के लिए एक को अक्षम करें।",
+
+      "No completed connection attempts yet.": "अभी तक कोई कनेक्शन प्रयास पूरा नहीं हुआ है।",
+      "No data yet": "अभी कोई डेटा नहीं",
+      "Often fails": "अक्सर विफल",
+      "Success": "सफल",
+      "Success rate: {rate}% ({successes} of {attempts} recent connection attempts passed Tor and site verification.)": "सफलता दर: {rate}% (हाल के {attempts} कनेक्शन प्रयासों में से {successes} Tor से जुड़े और साइट जाँच में सफल रहे।)",
     },
     fr: {
       " and ": " et ",
@@ -3917,7 +3958,13 @@
       "Your traffic is relayed through Snowflake proxies. The route may change.": "Votre trafic passe par des proxys Snowflake. La route peut changer.",
       "{n} circuits": "{n} circuits",
       "{n} imported bridge lines were left disabled; up to {limit} bridges can be enabled.": "{n} lignes de bridge importées ont été laissées désactivées ; vous pouvez en activer jusqu’à {limit}.",
-      "Up to {n} bridges may be enabled at a time. Disable one to enable another.": "Vous pouvez activer jusqu’à {n} bridges à la fois. Désactivez-en un pour en activer un autre."
+      "Up to {n} bridges may be enabled at a time. Disable one to enable another.": "Vous pouvez activer jusqu’à {n} bridges à la fois. Désactivez-en un pour en activer un autre.",
+
+      "No completed connection attempts yet.": "Aucune tentative de connexion terminée pour le moment.",
+      "No data yet": "Pas encore de données",
+      "Often fails": "Échoue souvent",
+      "Success": "Réussite",
+      "Success rate: {rate}% ({successes} of {attempts} recent connection attempts passed Tor and site verification.)": "Taux de réussite : {rate}% ({successes} des {attempts} dernières tentatives ont connecté Tor et réussi la vérification des sites.)",
     },
     ru: {
       " and ": " и ",
@@ -4407,7 +4454,13 @@
       "Your traffic is relayed through Snowflake proxies. The route may change.": "Ваш трафик передаётся через прокси Snowflake. Маршрут может измениться.",
       "{n} circuits": "{n} цепочки",
       "{n} imported bridge lines were left disabled; up to {limit} bridges can be enabled.": "Импортированные строки мостов ({n}) оставлены выключенными; можно включить не более {limit} мостов.",
-      "Up to {n} bridges may be enabled at a time. Disable one to enable another.": "Одновременно можно включить не более {n} мостов. Отключите один, чтобы включить другой."
+      "Up to {n} bridges may be enabled at a time. Disable one to enable another.": "Одновременно можно включить не более {n} мостов. Отключите один, чтобы включить другой.",
+
+      "No completed connection attempts yet.": "Пока нет завершённых попыток подключения.",
+      "No data yet": "Пока нет данных",
+      "Often fails": "Часто не удаётся",
+      "Success": "Успешно",
+      "Success rate: {rate}% ({successes} of {attempts} recent connection attempts passed Tor and site verification.)": "Успешность: {rate}% ({successes} из последних {attempts} попыток подключили Tor и прошли проверку сайтов.)",
     },
     pt: {
       " and ": " e ",
@@ -4897,7 +4950,13 @@
       "Your traffic is relayed through Snowflake proxies. The route may change.": "Seu tráfego é retransmitido por proxies Snowflake. A rota pode mudar.",
       "{n} circuits": "{n} circuitos",
       "{n} imported bridge lines were left disabled; up to {limit} bridges can be enabled.": "{n} linhas de bridge importadas foram deixadas desativadas; até {limit} bridges podem ficar ativadas.",
-      "Up to {n} bridges may be enabled at a time. Disable one to enable another.": "Até {n} bridges podem ficar ativadas ao mesmo tempo. Desative uma para ativar outra."
+      "Up to {n} bridges may be enabled at a time. Disable one to enable another.": "Até {n} bridges podem ficar ativadas ao mesmo tempo. Desative uma para ativar outra.",
+
+      "No completed connection attempts yet.": "Ainda não há tentativas de conexão concluídas.",
+      "No data yet": "Sem dados ainda",
+      "Often fails": "Falha com frequência",
+      "Success": "Sucesso",
+      "Success rate: {rate}% ({successes} of {attempts} recent connection attempts passed Tor and site verification.)": "Taxa de sucesso: {rate}% ({successes} das {attempts} tentativas recentes conectaram ao Tor e passaram na verificação dos sites.)",
     },
     tr: {
       " and ": " ve ",
@@ -5387,7 +5446,13 @@
       "Your traffic is relayed through Snowflake proxies. The route may change.": "Trafiğiniz Snowflake proxy'leri üzerinden iletiliyor. Rota değişebilir.",
       "{n} circuits": "{n} devre",
       "{n} imported bridge lines were left disabled; up to {limit} bridges can be enabled.": "İçe aktarılan {n} köprü satırı devre dışı bırakıldı; en fazla {limit} köprü etkin olabilir.",
-      "Up to {n} bridges may be enabled at a time. Disable one to enable another.": "Aynı anda en fazla {n} köprü etkin olabilir. Başka bir köprüyü etkinleştirmek için birini devre dışı bırakın."
+      "Up to {n} bridges may be enabled at a time. Disable one to enable another.": "Aynı anda en fazla {n} köprü etkin olabilir. Başka bir köprüyü etkinleştirmek için birini devre dışı bırakın.",
+
+      "No completed connection attempts yet.": "Henüz tamamlanmış bağlantı denemesi yok.",
+      "No data yet": "Henüz veri yok",
+      "Often fails": "Sık sık başarısız",
+      "Success": "Başarılı",
+      "Success rate: {rate}% ({successes} of {attempts} recent connection attempts passed Tor and site verification.)": "Başarı oranı: %{rate} (son {attempts} bağlantı denemesinin {successes} tanesi Tor bağlantısını ve site doğrulamasını tamamladı.)",
     },
     ur: {
       " and ": " اور ",
@@ -5877,7 +5942,13 @@
       "Your traffic is relayed through Snowflake proxies. The route may change.": "آپ کی ٹریفک Snowflake پراکسیز کے ذریعے ریلے ہو رہی ہے۔ راستہ بدل سکتا ہے۔",
       "{n} circuits": "{n} سرکٹ",
       "{n} imported bridge lines were left disabled; up to {limit} bridges can be enabled.": "درآمد کی گئی {n} برج لائنیں غیر فعال رکھی گئیں؛ زیادہ سے زیادہ {limit} برج فعال ہو سکتے ہیں۔",
-      "Up to {n} bridges may be enabled at a time. Disable one to enable another.": "ایک وقت میں زیادہ سے زیادہ {n} برج فعال ہو سکتے ہیں۔ دوسرا فعال کرنے کے لیے ایک کو غیر فعال کریں۔"
+      "Up to {n} bridges may be enabled at a time. Disable one to enable another.": "ایک وقت میں زیادہ سے زیادہ {n} برج فعال ہو سکتے ہیں۔ دوسرا فعال کرنے کے لیے ایک کو غیر فعال کریں۔",
+
+      "No completed connection attempts yet.": "ابھی تک کنکشن کی کوئی کوشش مکمل نہیں ہوئی۔",
+      "No data yet": "ابھی کوئی ڈیٹا نہیں",
+      "Often fails": "اکثر ناکام",
+      "Success": "کامیاب",
+      "Success rate: {rate}% ({successes} of {attempts} recent connection attempts passed Tor and site verification.)": "کامیابی کی شرح: {rate}% (حالیہ {attempts} کوششوں میں سے {successes} میں Tor کنکشن اور سائٹ کی تصدیق کامیاب ہوئی۔)",
     },
     bn: {
       " and ": " এবং ",
@@ -6367,7 +6438,13 @@
       "Your traffic is relayed through Snowflake proxies. The route may change.": "আপনার ট্রাফিক Snowflake প্রক্সির মাধ্যমে রিলে হচ্ছে। রুট পরিবর্তন হতে পারে।",
       "{n} circuits": "{n} সার্কিট",
       "{n} imported bridge lines were left disabled; up to {limit} bridges can be enabled.": "আমদানি করা {n}টি ব্রিজ লাইন বন্ধ রাখা হয়েছে; সর্বোচ্চ {limit}টি ব্রিজ চালু রাখা যাবে।",
-      "Up to {n} bridges may be enabled at a time. Disable one to enable another.": "একসঙ্গে সর্বোচ্চ {n}টি ব্রিজ চালু রাখা যাবে। আরেকটি চালু করতে একটি বন্ধ করুন।"
+      "Up to {n} bridges may be enabled at a time. Disable one to enable another.": "একসঙ্গে সর্বোচ্চ {n}টি ব্রিজ চালু রাখা যাবে। আরেকটি চালু করতে একটি বন্ধ করুন।",
+
+      "No completed connection attempts yet.": "এখনও কোনো সংযোগ প্রচেষ্টা সম্পন্ন হয়নি।",
+      "No data yet": "এখনও কোনো তথ্য নেই",
+      "Often fails": "প্রায়ই ব্যর্থ হয়",
+      "Success": "সফল",
+      "Success rate: {rate}% ({successes} of {attempts} recent connection attempts passed Tor and site verification.)": "সফলতার হার: {rate}% (সাম্প্রতিক {attempts}টি সংযোগ প্রচেষ্টার মধ্যে {successes}টি Tor সংযোগ ও সাইট যাচাইয়ে সফল হয়েছে।)",
     },
     id: {
       " and ": " dan ",
@@ -6857,7 +6934,13 @@
       "Your traffic is relayed through Snowflake proxies. The route may change.": "Traffic Anda diteruskan melalui proksi Snowflake. Rute mungkin berubah.",
       "{n} circuits": "{n} sirkuit",
       "{n} imported bridge lines were left disabled; up to {limit} bridges can be enabled.": "{n} baris bridge yang diimpor dinonaktifkan; maksimal {limit} bridge dapat diaktifkan.",
-      "Up to {n} bridges may be enabled at a time. Disable one to enable another.": "Maksimal {n} bridge dapat diaktifkan sekaligus. Nonaktifkan satu untuk mengaktifkan yang lain."
+      "Up to {n} bridges may be enabled at a time. Disable one to enable another.": "Maksimal {n} bridge dapat diaktifkan sekaligus. Nonaktifkan satu untuk mengaktifkan yang lain.",
+
+      "No completed connection attempts yet.": "Belum ada percobaan koneksi yang selesai.",
+      "No data yet": "Belum ada data",
+      "Often fails": "Sering gagal",
+      "Success": "Berhasil",
+      "Success rate: {rate}% ({successes} of {attempts} recent connection attempts passed Tor and site verification.)": "Tingkat keberhasilan: {rate}% ({successes} dari {attempts} percobaan koneksi terbaru berhasil terhubung ke Tor dan lolos pemeriksaan situs.)",
     },
     my: {
       " and ": " နှင့် ",
@@ -7347,7 +7430,13 @@
       "Your traffic is relayed through Snowflake proxies. The route may change.": "သင်၏ traffic ကို Snowflake proxy များမှတစ်ဆင့် ဆက်ဆံပေးနေသည်။ လမ်းကြောင်း ပြောင်းလဲနိုင်သည်။",
       "{n} circuits": "လမ်းကြောင်း {n} ခု",
       "{n} imported bridge lines were left disabled; up to {limit} bridges can be enabled.": "တင်သွင်းထားသော bridge လိုင်း {n} ခုကို ပိတ်ထားသည်။ အများဆုံး {limit} ခုအထိ ဖွင့်နိုင်သည်။",
-      "Up to {n} bridges may be enabled at a time. Disable one to enable another.": "တစ်ချိန်တည်းတွင် bridge {n} ခုအထိသာ ဖွင့်နိုင်သည်။ နောက်တစ်ခုဖွင့်ရန် တစ်ခုကို ပိတ်ပါ။"
+      "Up to {n} bridges may be enabled at a time. Disable one to enable another.": "တစ်ချိန်တည်းတွင် bridge {n} ခုအထိသာ ဖွင့်နိုင်သည်။ နောက်တစ်ခုဖွင့်ရန် တစ်ခုကို ပိတ်ပါ။",
+
+      "No completed connection attempts yet.": "ပြီးဆုံးသည့် ချိတ်ဆက်မှုကြိုးစားမှု မရှိသေးပါ။",
+      "No data yet": "ဒေတာ မရှိသေးပါ",
+      "Often fails": "မကြာခဏ မအောင်မြင်ပါ",
+      "Success": "အောင်မြင်သည်",
+      "Success rate: {rate}% ({successes} of {attempts} recent connection attempts passed Tor and site verification.)": "မကြာသေးမီက ချိတ်ဆက်မှုကြိုးပမ်းမှု {attempts} ကြိမ်အနက် {successes} ကြိမ်တွင် Tor ချိတ်ဆက်မှုနှင့် ဝဘ်ဆိုက်စစ်ဆေးမှု အောင်မြင်ခဲ့ပြီး အောင်မြင်မှုနှုန်းမှာ {rate}% ဖြစ်သည်။",
     },
     ro: {
       " and ": " și ",
@@ -7837,6 +7926,12 @@
       "Your traffic is relayed through Snowflake proxies. The route may change.": "Traficul tău este transmis prin proxy-uri Snowflake. Ruta se poate schimba.",
       "{n} circuits": "{n} circuite",
       "{n} imported bridge lines were left disabled; up to {limit} bridges can be enabled.": "{n} linii bridge importate au rămas dezactivate; pot fi activate cel mult {limit} bridge-uri.",
-      "Up to {n} bridges may be enabled at a time. Disable one to enable another.": "Pot fi activate simultan cel mult {n} bridge-uri. Dezactivează unul pentru a activa altul."
+      "Up to {n} bridges may be enabled at a time. Disable one to enable another.": "Pot fi activate simultan cel mult {n} bridge-uri. Dezactivează unul pentru a activa altul.",
+
+      "No completed connection attempts yet.": "Încă nu există încercări de conectare finalizate.",
+      "No data yet": "Încă nu există date",
+      "Often fails": "Eșuează des",
+      "Success": "Reușită",
+      "Success rate: {rate}% ({successes} of {attempts} recent connection attempts passed Tor and site verification.)": "Rata de succes: {rate}% ({successes} dintre ultimele {attempts} încercări au conectat Tor și au trecut verificarea site-urilor.)",
     }
   };

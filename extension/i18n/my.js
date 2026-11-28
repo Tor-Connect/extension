@@ -489,6 +489,12 @@ module.exports = {
       "Your traffic is relayed through Snowflake proxies. The route may change.": "သင်၏ traffic ကို Snowflake proxy များမှတစ်ဆင့် ဆက်ဆံပေးနေသည်။ လမ်းကြောင်း ပြောင်းလဲနိုင်သည်။",
       "{n} circuits": "လမ်းကြောင်း {n} ခု",
       "{n} imported bridge lines were left disabled; up to {limit} bridges can be enabled.": "တင်သွင်းထားသော bridge လိုင်း {n} ခုကို ပိတ်ထားသည်။ အများဆုံး {limit} ခုအထိ ဖွင့်နိုင်သည်။",
-      "Up to {n} bridges may be enabled at a time. Disable one to enable another.": "တစ်ချိန်တည်းတွင် bridge {n} ခုအထိသာ ဖွင့်နိုင်သည်။ နောက်တစ်ခုဖွင့်ရန် တစ်ခုကို ပိတ်ပါ။"
+      "Up to {n} bridges may be enabled at a time. Disable one to enable another.": "တစ်ချိန်တည်းတွင် bridge {n} ခုအထိသာ ဖွင့်နိုင်သည်။ နောက်တစ်ခုဖွင့်ရန် တစ်ခုကို ပိတ်ပါ။",
+
+      "No completed connection attempts yet.": "ပြီးဆုံးသည့် ချိတ်ဆက်မှုကြိုးစားမှု မရှိသေးပါ။",
+      "No data yet": "ဒေတာ မရှိသေးပါ",
+      "Often fails": "မကြာခဏ မအောင်မြင်ပါ",
+      "Success": "အောင်မြင်သည်",
+      "Success rate: {rate}% ({successes} of {attempts} recent connection attempts passed Tor and site verification.)": "မကြာသေးမီက ချိတ်ဆက်မှုကြိုးပမ်းမှု {attempts} ကြိမ်အနက် {successes} ကြိမ်တွင် Tor ချိတ်ဆက်မှုနှင့် ဝဘ်ဆိုက်စစ်ဆေးမှု အောင်မြင်ခဲ့ပြီး အောင်မြင်မှုနှုန်းမှာ {rate}% ဖြစ်သည်။",
   },
 };

@@ -1,9 +1,8 @@
 const HOST_NAME = "org.torconnect.torchrome";
 const PROXY_PORT = 9050;
-// The minimum helper version the extension requires. Bump this (matching the
-// helper's HELPER_VERSION constant) only when the native protocol changes in a
-// breaking way that requires users to reinstall the helper.
-const MIN_HELPER_VERSION = "1.16.0";
+// The minimum helper version required for the extension's native behavior.
+// Keep this aligned with the helper version so older helpers surface an update.
+const MIN_HELPER_VERSION = "1.16.2";
 
 function isHelperOutdated(result) {
   const v = result?.helperVersion;
@@ -34,6 +33,115 @@ let actionRetryingAfterSiteFailure = false;
 const CONNECTIVITY_CHECK_RETRY_DELAY_MS = 30_000;
 const DEFAULT_SITE_CHECK_INTERVAL_MINUTES = 5;
 let connectivityCheckRecheckIntervalMs = DEFAULT_SITE_CHECK_INTERVAL_MINUTES * 60_000;
+const BRIDGE_SUCCESS_HISTORY_KEY = "torConnectBridgeSuccessHistory";
+const BRIDGE_SUCCESS_HISTORY_LIMIT = 30;
+let bridgeSuccessWriteQueue = Promise.resolve();
+let bridgeAttemptStorageQueue = Promise.resolve();
+let bridgeConnectionAttemptSequence = 0;
+let bridgeAttemptRevision = 0;
+let activeBridgeConnectionAttemptId;
+let activeBridgeConnectionAttemptLoaded = false;
+
+function bridgeOutcomeIdentity(result) {
+  const transport = String(result?.bridgeTransport || "").trim().toLowerCase();
+  const address = String(result?.bridgeAddress || "").trim().toLowerCase();
+  const fingerprintValue = String(result?.bridgeFingerprint || "").trim().toLowerCase();
+  const fingerprint = /^[a-f\d]{40}$/.test(fingerprintValue) ? fingerprintValue : "";
+  return transport && address ? JSON.stringify([transport, address, fingerprint]) : "";
+}
+
+function appendBridgeOutcome(result, id, success) {
+  const identity = bridgeOutcomeIdentity(result);
+  if (!identity || !id) return Promise.resolve(false);
+  bridgeSuccessWriteQueue = bridgeSuccessWriteQueue.catch(() => {}).then(() => new Promise((resolve) => {
+    chrome.storage.local.get(BRIDGE_SUCCESS_HISTORY_KEY, (stored) => {
+      if (chrome.runtime.lastError) { resolve(false); return; }
+      const history = { ...(stored?.[BRIDGE_SUCCESS_HISTORY_KEY] || {}) };
+      const entry = { ...(history[identity] || {}) };
+      const outcomes = Array.isArray(entry.outcomes) ? entry.outcomes : [];
+      const existingIndex = outcomes.findIndex((outcome) => outcome.id === id);
+      if (existingIndex >= 0) {
+        if (!success || outcomes[existingIndex].success === true) { resolve(true); return; }
+        history[identity] = {
+          outcomes: outcomes.map((outcome, index) => index === existingIndex
+            ? { ...outcome, success: true } : outcome)
+        };
+        chrome.storage.local.set({ [BRIDGE_SUCCESS_HISTORY_KEY]: history }, () => resolve(!chrome.runtime.lastError));
+        return;
+      }
+      history[identity] = {
+        outcomes: [...outcomes, { id, success: Boolean(success) }].slice(-BRIDGE_SUCCESS_HISTORY_LIMIT)
+      };
+      chrome.storage.local.set({ [BRIDGE_SUCCESS_HISTORY_KEY]: history }, () => resolve(!chrome.runtime.lastError));
+    });
+  }));
+  return bridgeSuccessWriteQueue;
+}
+
+function beginBridgeConnectionAttempt() {
+  const id = `${Date.now()}-${++bridgeConnectionAttemptSequence}`;
+  bridgeAttemptRevision += 1;
+  activeBridgeConnectionAttemptId = id;
+  activeBridgeConnectionAttemptLoaded = true;
+  bridgeAttemptStorageQueue = bridgeAttemptStorageQueue.then(() => new Promise((resolve) => {
+    chrome.storage.local.set({ torConnectActiveBridgeConnectionAttempt: id }, resolve);
+  }));
+  return bridgeAttemptStorageQueue.then(() => id);
+}
+
+async function loadActiveBridgeConnectionAttempt() {
+  if (activeBridgeConnectionAttemptLoaded) return activeBridgeConnectionAttemptId;
+  await bridgeAttemptStorageQueue;
+  if (activeBridgeConnectionAttemptLoaded) return activeBridgeConnectionAttemptId;
+  const revision = bridgeAttemptRevision;
+  return new Promise((resolve) => {
+    chrome.storage.local.get("torConnectActiveBridgeConnectionAttempt", (stored) => {
+      if (!chrome.runtime.lastError && !activeBridgeConnectionAttemptLoaded
+          && bridgeAttemptRevision === revision) {
+        activeBridgeConnectionAttemptId = stored?.torConnectActiveBridgeConnectionAttempt || undefined;
+        activeBridgeConnectionAttemptLoaded = true;
+      }
+      resolve(activeBridgeConnectionAttemptId);
+    });
+  });
+}
+
+function clearBridgeConnectionAttempt(id) {
+  const clearAnyAttempt = arguments.length === 0;
+  if (!clearAnyAttempt && (!id || activeBridgeConnectionAttemptId && activeBridgeConnectionAttemptId !== id)) {
+    return Promise.resolve(false);
+  }
+  bridgeAttemptRevision += 1;
+  if (clearAnyAttempt || activeBridgeConnectionAttemptId === id) {
+    activeBridgeConnectionAttemptId = undefined;
+    activeBridgeConnectionAttemptLoaded = true;
+  }
+  bridgeAttemptStorageQueue = bridgeAttemptStorageQueue.then(() => new Promise((resolve) => {
+    if (clearAnyAttempt) {
+      chrome.storage.local.remove("torConnectActiveBridgeConnectionAttempt", () => resolve(!chrome.runtime.lastError));
+      return;
+    }
+    chrome.storage.local.get("torConnectActiveBridgeConnectionAttempt", (stored) => {
+      if (chrome.runtime.lastError || stored?.torConnectActiveBridgeConnectionAttempt !== id) {
+        resolve(false);
+        return;
+      }
+      chrome.storage.local.remove("torConnectActiveBridgeConnectionAttempt", () => resolve(!chrome.runtime.lastError));
+    });
+  }));
+  return bridgeAttemptStorageQueue;
+}
+
+async function recordBridgeFailureIfReported(result, id) {
+  if (!id || activeBridgeConnectionAttemptId !== id || result?.state === "connected") return;
+  const currentIndex = Number(result?.currentBridgeIndex) || 0;
+  const bridgeFailed = result?.bridgeActivity === "failed" || result?.bridgeActivity === "closed";
+  const connectionFailed = result?.state === "failed";
+  if (!bridgeFailed && !connectionFailed) return;
+  const outcomeId = `${id}:${currentIndex || "bridge"}`;
+  const recorded = await appendBridgeOutcome(result, outcomeId, false);
+  if (connectionFailed && recorded) await clearBridgeConnectionAttempt(id);
+}
 
 function updateSiteCheckInterval(value) {
   const minutes = Number(value);
@@ -128,6 +236,7 @@ function checkConnectivityAfterConnect(result, generation, { force = false } = {
   if (connectivityCheckPromise) return connectivityCheckPromise;
   if (!force && Date.now() < connectivityCheckNextAt) return;
   connectivityCheckConnectionId = connectionId;
+  const bridgeConnectionAttemptId = activeBridgeConnectionAttemptId;
   const attempt = ++connectivityCheckAttempt;
   connectivityCheckState = "pending";
   connectivityCheckPromise = checkSitesReachability().then(async (siteResults) => {
@@ -142,6 +251,12 @@ function checkConnectivityAfterConnect(result, generation, { force = false } = {
         ? connectivityCheckRecheckIntervalMs
         : CONNECTIVITY_CHECK_RETRY_DELAY_MS);
       connectivityCheckPromise = undefined;
+      if (result.connectedAt) {
+        const recorded = await appendBridgeOutcome(result, `connected:${connectionId}`, siteResults.every((site) => site.state === "passed"));
+        if (recorded && bridgeConnectionAttemptId) await clearBridgeConnectionAttempt(bridgeConnectionAttemptId);
+      }
+      if (generation !== connectivityGeneration || connectivityCheckConnectionId !== connectionId
+          || connectivityCheckAttempt !== attempt) return;
       await setActionConnected(true);
     }
   });
@@ -208,10 +323,20 @@ function logHelperResult(command, result) {
     state: result?.state,
     message: result?.message,
     error: result?.error,
+    helperVersion: result?.helperVersion,
     bridgeCount: result?.bridgeCount,
+    builtCircuitCount: result?.builtCircuitCount,
+    controlMonitorState: result?.controlMonitorState,
+    controlMonitorError: result?.controlMonitorError,
+    controlSnapshotCount: result?.controlSnapshotCount,
     currentBridgeIndex: result?.currentBridgeIndex,
     bridgeTransport: result?.bridgeTransport,
+    hasBridgeAddress: Boolean(result?.bridgeAddress),
+    hasBridgeFingerprint: Boolean(result?.bridgeFingerprint),
+    hasBridgeCountryCode: Boolean(result?.bridgeCountryCode),
     bridgeActivity: result?.bridgeActivity,
+    hasExitRelayIp: Boolean(result?.exitRelayIp),
+    hasExitRelayCountryCode: Boolean(result?.exitRelayCountryCode),
     exitRelayDebug: result?.exitRelayDebug,
     diagnostics: Array.isArray(result?.diagnostics) ? result.diagnostics : []
   };
@@ -347,8 +472,10 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   (async () => {
     if (!message || typeof message.type !== "string") throw new Error("Invalid request.");
     if (message.type === "status") {
+      const attemptId = await loadActiveBridgeConnectionAttempt();
       const result = await request("status");
       logHelperResult("status", result);
+      await recordBridgeFailureIfReported(result, attemptId);
       const connected = result.ok && result.state === "connected";
       const generation = trackConnectivityConnection(result);
       if (connected) {
@@ -385,6 +512,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       return;
     }
     if (message.type === "connect") {
+      const attemptId = await beginBridgeConnectionAttempt();
       if (!actionRetryingAfterSiteFailure) actionSiteCheckState = "";
       const result = await request("start", {
         mode: message.mode,
@@ -396,6 +524,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
         exitCountry: message.exitCountry || ""
       });
       logHelperResult("start", result);
+      await recordBridgeFailureIfReported(result, attemptId);
       const connected = result.ok && result.state === "connected";
       const generation = trackConnectivityConnection(result);
       if (connected) {
@@ -411,8 +540,10 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     }
     if (message.type === "disconnect" || message.type === "stopTorForRouteChange") {
       if (message.type === "disconnect") {
+        resetConnectivityCheck();
         actionSiteCheckState = "";
         actionRetryingAfterSiteFailure = false;
+        await clearBridgeConnectionAttempt();
         await clearProxy();
       } else {
         actionRetryingAfterSiteFailure = ["failed", "limited"].includes(actionSiteCheckState);

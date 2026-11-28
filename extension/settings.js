@@ -84,7 +84,9 @@ const t = (key, params) => (globalThis.torI18n?.t || ((s) => s))(key, params);
 const MAX_ENABLED_BRIDGES = 20;
 const ACTIVE_SETTINGS_SECTION_KEY = "torConnectSettingsActiveSection";
 const SHOW_ALL_SETTINGS_SECTIONS_KEY = "torConnectSettingsShowAllSections";
+const BRIDGE_SUCCESS_HISTORY_KEY = "torConnectBridgeSuccessHistory";
 let showAllSettingsSections = sessionStorage.getItem(SHOW_ALL_SETTINGS_SECTIONS_KEY) !== "false";
+let bridgeSuccessHistory = {};
 
 function normalizeSiteCheckInterval(value) {
   const minutes = Number(value);
@@ -142,7 +144,8 @@ function markSaveState(message, kind = "") {
 
 function readPreferences() {
   return new Promise((resolve) => {
-    chrome.storage.local.get("torConnectionPreferences", (stored) => {
+    chrome.storage.local.get(["torConnectionPreferences", BRIDGE_SUCCESS_HISTORY_KEY], (stored) => {
+      bridgeSuccessHistory = stored?.[BRIDGE_SUCCESS_HISTORY_KEY] || {};
       const saved = { ...(stored?.torConnectionPreferences || {}) };
       delete saved.autoBridgeSelection;
       bridgeLines = typeof saved.bridges === "string"
@@ -382,6 +385,57 @@ function parseBridgeLine(line) {
   };
 }
 
+function bridgeSuccessIdentity(line) {
+  const parts = parseBridgeLine(line);
+  const fingerprint = /^[a-f\d]{40}$/i.test(parts.fingerprint) ? parts.fingerprint.toLowerCase() : "";
+  return JSON.stringify([
+    parts.transport.toLowerCase(),
+    parts.address.toLowerCase(),
+    fingerprint
+  ]);
+}
+
+function bridgeSuccessPresentation(line) {
+  const outcomes = bridgeSuccessHistory[bridgeSuccessIdentity(line)]?.outcomes;
+  const attempts = Array.isArray(outcomes) ? outcomes : [];
+  const recent = attempts.slice(-30);
+  const successes = recent.filter((outcome) => outcome.success === true).length;
+  const rate = recent.length ? Math.round(successes / recent.length * 100) : null;
+  const note = rate === null ? t("No data yet") : rate < 50 ? t("Often fails") : t("Success");
+  const title = rate === null
+    ? t("No completed connection attempts yet.")
+    : t("Success rate: {rate}% ({successes} of {attempts} recent connection attempts passed Tor and site verification.)", {
+      rate, successes, attempts: recent.length
+    });
+  return { attempts: recent, rate, note, title, successes };
+}
+
+function refreshBridgeSuccessPresentations() {
+  for (const item of bridgeListNode.querySelectorAll(".settings-bridge-item[data-bridge-index]")) {
+    const line = bridgeLines[Number(item.dataset.bridgeIndex)];
+    if (!line) continue;
+    const success = bridgeSuccessPresentation(line);
+    const successNode = item.querySelector(".bridge-success-rate");
+    const valueNode = successNode?.querySelector(".bridge-success-value");
+    const noteNode = successNode?.querySelector(".bridge-success-note");
+    const barsNode = successNode?.querySelector(".bridge-success-bars");
+    if (!successNode || !valueNode || !noteNode || !barsNode) continue;
+    successNode.dataset.level = success.rate === null ? "empty" : success.rate < 50 ? "low" : success.rate < 80 ? "medium" : "high";
+    successNode.title = success.title;
+    successNode.setAttribute("aria-label", success.title);
+    valueNode.textContent = success.rate === null ? "—" : `${success.rate}%`;
+    noteNode.textContent = success.note;
+    barsNode.replaceChildren();
+    const recentOutcomes = success.attempts.slice(-10);
+    for (let barIndex = 0; barIndex < 10; barIndex += 1) {
+      const outcome = recentOutcomes[barIndex - (10 - recentOutcomes.length)];
+      const bar = document.createElement("i");
+      bar.dataset.outcome = outcome ? outcome.success ? "success" : "failure" : "empty";
+      barsNode.append(bar);
+    }
+  }
+}
+
 const KNOWN_TRANSPORTS = new Set(["obfs4", "webtunnel", "snowflake", "meek_lite"]);
 // Vanilla bridges must use a numeric IP (matching the native Swift/Python parsers).
 const VANILLA_ADDRESS_RE = /^(\[[\da-f:]+\]|[\d.]+):\d{1,5}$/i;
@@ -460,6 +514,7 @@ function renderBridgeList() {
     const enabled = !disabledBridgeLines.has(line);
     const item = document.createElement("article");
     item.className = "settings-bridge-item";
+    item.dataset.bridgeIndex = String(index);
     item.dataset.enabled = String(enabled);
     if (connected) item.dataset.connected = "true";
 
@@ -521,6 +576,33 @@ function renderBridgeList() {
       fingerprintRow.append(inUse);
     }
     main.append(primary, fingerprintRow);
+
+    const success = bridgeSuccessPresentation(line);
+    const successNode = document.createElement("div");
+    successNode.className = "bridge-success-rate";
+    successNode.dataset.level = success.rate === null ? "empty" : success.rate < 50 ? "low" : success.rate < 80 ? "medium" : "high";
+    successNode.title = success.title;
+    successNode.setAttribute("aria-label", success.title);
+    const successCopy = document.createElement("div");
+    successCopy.className = "bridge-success-copy";
+    const successValue = document.createElement("span");
+    successValue.className = "bridge-success-value";
+    successValue.textContent = success.rate === null ? "—" : `${success.rate}%`;
+    const successNote = document.createElement("span");
+    successNote.className = "bridge-success-note";
+    successNote.textContent = success.note;
+    successCopy.append(successValue, successNote);
+    const successBars = document.createElement("span");
+    successBars.className = "bridge-success-bars";
+    successBars.setAttribute("aria-hidden", "true");
+    const recentOutcomes = success.attempts.slice(-10);
+    for (let barIndex = 0; barIndex < 10; barIndex += 1) {
+      const outcome = recentOutcomes[barIndex - (10 - recentOutcomes.length)];
+      const bar = document.createElement("i");
+      bar.dataset.outcome = outcome ? outcome.success ? "success" : "failure" : "empty";
+      successBars.append(bar);
+    }
+    successNode.append(successCopy, successBars);
 
     const ping = pingDescription(line);
     const pingNode = document.createElement("span");
@@ -604,7 +686,7 @@ function renderBridgeList() {
       saveBridgeList(t("Bridge removed and saved. Changes apply the next time you connect."));
     });
     actions.append(copyButton, removeButton);
-    item.append(number, main, pingNode, toggle, actions);
+    item.append(number, main, successNode, pingNode, toggle, actions);
     bridgeListNode.append(item);
   });
 }
@@ -1047,20 +1129,8 @@ pingButton.addEventListener("click", () => {
       } catch { /* still null = timed out */ }
     }));
     pingResults = latencies;
-    bridgeLines = [...bridgeLines].sort((a, b) => {
-      const aValid = isBridgeLineValid(a), bValid = isBridgeLineValid(b);
-      if (!aValid && !bValid) return 0;
-      if (!aValid) return 1;
-      if (!bValid) return -1;
-      const pa = pingResults.get(a), pb = pingResults.get(b);
-      if (pa === null) return pb === null ? 0 : 1;
-      if (pb === null) return -1;
-      return (pa ?? Infinity) - (pb ?? Infinity);
-    });
     renderBridgeList();
     finishPinging();
-    markDirty();
-    saveBridgeList(t("Sorted fastest first and saved."));
   });
 });
 
@@ -1271,7 +1341,12 @@ checkSitesNowButton.addEventListener("click", checkSitesNow);
 document.addEventListener("tor-language-changed", () => { setActiveSection(getSelectedSettingsSection()); renderBridgeList(); renderExitCountry(); renderKillSwitch(); renderConnectionHealth(); loadDonationAddresses(); });
 
 chrome.storage.onChanged.addListener((changes, areaName) => {
-  if (areaName !== "local" || !changes.torConnectionPreferences) return;
+  if (areaName !== "local") return;
+  if (changes[BRIDGE_SUCCESS_HISTORY_KEY]) {
+    bridgeSuccessHistory = changes[BRIDGE_SUCCESS_HISTORY_KEY].newValue || {};
+    refreshBridgeSuccessPresentations();
+  }
+  if (!changes.torConnectionPreferences) return;
   const saved = { ...(changes.torConnectionPreferences.newValue || {}) };
   confirmedKillSwitch = saved.killSwitch === true;
   confirmedSiteCheckInterval = normalizeSiteCheckInterval(saved.siteCheckIntervalMinutes);

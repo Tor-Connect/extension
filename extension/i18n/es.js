@@ -489,6 +489,12 @@ module.exports = {
       "Your traffic is relayed through Snowflake proxies. The route may change.": "Tu tráfico se retransmite mediante proxies Snowflake. La ruta puede cambiar.",
       "{n} circuits": "{n} circuitos",
       "{n} imported bridge lines were left disabled; up to {limit} bridges can be enabled.": "Se dejaron desactivadas {n} líneas de puente importadas; se pueden activar hasta {limit} puentes.",
-      "Up to {n} bridges may be enabled at a time. Disable one to enable another.": "Se pueden activar hasta {n} puentes a la vez. Desactiva uno para activar otro."
+      "Up to {n} bridges may be enabled at a time. Disable one to enable another.": "Se pueden activar hasta {n} puentes a la vez. Desactiva uno para activar otro.",
+
+      "No completed connection attempts yet.": "Aún no hay intentos de conexión completados.",
+      "No data yet": "Aún no hay datos",
+      "Often fails": "Suele fallar",
+      "Success": "Éxito",
+      "Success rate: {rate}% ({successes} of {attempts} recent connection attempts passed Tor and site verification.)": "Tasa de éxito: {rate}% ({successes} de los {attempts} intentos de conexión recientes superaron Tor y la verificación de sitios.)",
   },
 };
