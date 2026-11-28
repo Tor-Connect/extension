@@ -1129,20 +1129,8 @@ pingButton.addEventListener("click", () => {
       } catch { /* still null = timed out */ }
     }));
     pingResults = latencies;
-    bridgeLines = [...bridgeLines].sort((a, b) => {
-      const aValid = isBridgeLineValid(a), bValid = isBridgeLineValid(b);
-      if (!aValid && !bValid) return 0;
-      if (!aValid) return 1;
-      if (!bValid) return -1;
-      const pa = pingResults.get(a), pb = pingResults.get(b);
-      if (pa === null) return pb === null ? 0 : 1;
-      if (pb === null) return -1;
-      return (pa ?? Infinity) - (pb ?? Infinity);
-    });
     renderBridgeList();
     finishPinging();
-    markDirty();
-    saveBridgeList(t("Sorted fastest first and saved."));
   });
 });
 
