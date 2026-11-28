@@ -1,9 +1,8 @@
 const HOST_NAME = "org.torconnect.torchrome";
 const PROXY_PORT = 9050;
-// The minimum helper version the extension requires. Bump this (matching the
-// helper's HELPER_VERSION constant) only when the native protocol changes in a
-// breaking way that requires users to reinstall the helper.
-const MIN_HELPER_VERSION = "1.16.0";
+// The minimum helper version required for the extension's native behavior.
+// Keep this aligned with the helper version so older helpers surface an update.
+const MIN_HELPER_VERSION = "1.16.2";
 
 function isHelperOutdated(result) {
   const v = result?.helperVersion;
@@ -300,10 +299,20 @@ function logHelperResult(command, result) {
     state: result?.state,
     message: result?.message,
     error: result?.error,
+    helperVersion: result?.helperVersion,
     bridgeCount: result?.bridgeCount,
+    builtCircuitCount: result?.builtCircuitCount,
+    controlMonitorState: result?.controlMonitorState,
+    controlMonitorError: result?.controlMonitorError,
+    controlSnapshotCount: result?.controlSnapshotCount,
     currentBridgeIndex: result?.currentBridgeIndex,
     bridgeTransport: result?.bridgeTransport,
+    hasBridgeAddress: Boolean(result?.bridgeAddress),
+    hasBridgeFingerprint: Boolean(result?.bridgeFingerprint),
+    hasBridgeCountryCode: Boolean(result?.bridgeCountryCode),
     bridgeActivity: result?.bridgeActivity,
+    hasExitRelayIp: Boolean(result?.exitRelayIp),
+    hasExitRelayCountryCode: Boolean(result?.exitRelayCountryCode),
     exitRelayDebug: result?.exitRelayDebug,
     diagnostics: Array.isArray(result?.diagnostics) ? result.diagnostics : []
   };

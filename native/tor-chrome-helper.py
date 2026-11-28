@@ -19,7 +19,7 @@ from pathlib import Path
 
 HOST_NAME = "org.torconnect.torchrome"
 FIREFOX_ADDON_ID = "{92FAAAD1-58C8-461B-8447-0A43AE6CF002}"
-HELPER_VERSION = "1.16.0"
+HELPER_VERSION = "1.16.2"
 PROXY_PORT = 9050
 MAX_MESSAGE = 1_048_576
 MANUAL_BRIDGE_CONNECT_TIMEOUT = 5 * 60
@@ -108,6 +108,11 @@ class Helper:
         self.bridge_activity: str | None = None
         self.built_circuits: dict[str, int] = {}
         self.exit_relay_candidates: set[str] = set()
+        self.exit_relay_lookups_in_progress: set[str] = set()
+        self.control_monitor_state = "stopped"
+        self.control_monitor_error: str | None = None
+        self.control_snapshot_count = 0
+        self.exit_nodes_applied = False
         self.reconnect_since: float | None = None
         self.auto_recovery_bridges: list[str] = []
         self.auto_recovery_indices: list[int] = []
@@ -123,6 +128,7 @@ class Helper:
         self.exit_relay_ip: str = ""
         self.exit_relay_country: str = ""
         self.exit_relay_circuit_id: str = ""
+        self.selected_exit_circuit_id: str = ""
         self.geo4: list[tuple[int, int, str]] | None = None
         self.geo6: list[tuple[int, int, str]] | None = None
 
@@ -184,7 +190,11 @@ class Helper:
     def status_payload(self, ok: bool) -> dict:
         payload = {"ok": ok, "state": self.state, "message": self.message,
                    "diagnostics": list(self.diagnostics), "bridgeCount": len(self.targets),
-                   "helperVersion": HELPER_VERSION}
+                   "helperVersion": HELPER_VERSION,
+                   "controlMonitorState": self.control_monitor_state,
+                   "controlSnapshotCount": self.control_snapshot_count}
+        if self.control_monitor_error:
+            payload["controlMonitorError"] = self.control_monitor_error
         if self.last_error: payload["error"] = self.last_error
         if self.state == "connected" and self.connected_at is not None:
             payload["connectedAt"] = self.connected_at
@@ -204,7 +214,9 @@ class Helper:
             "country": self.exit_relay_country,
             "circuits": list(self.built_circuits.keys())[:3]
         }
-        if self.state == "connected" and self.exit_relay_ip:
+        if (self.state == "connected" and self.exit_relay_ip
+                and self.selected_exit_circuit_id
+                and self.exit_relay_circuit_id == self.selected_exit_circuit_id):
             payload["exitRelayIp"] = self.exit_relay_ip
             if self.exit_relay_country: payload["exitRelayCountryCode"] = self.exit_relay_country
         if self.process and self.process.poll() is None:
@@ -385,8 +397,10 @@ class Helper:
                 self.current_index = targets[0]["index"] if len(targets) == 1 else None
                 self.bridge_activity = None; self.connected_at = None; self.state = "starting"; self.message = "Starting Tor…"
                 self.bootstrap_progress = -1
-                self.built_circuits = {}; self.exit_relay_candidates = set(); self.reconnect_since = None
+                self.built_circuits = {}; self.exit_relay_candidates = set(); self.exit_relay_lookups_in_progress = set(); self.reconnect_since = None
                 self.exit_relay_ip = ""; self.exit_relay_country = ""; self.exit_relay_circuit_id = ""
+                self.selected_exit_circuit_id = ""
+                self.control_monitor_state = "starting"; self.control_monitor_error = None; self.control_snapshot_count = 0; self.exit_nodes_applied = False
                 self.exit_country = exit_country
                 self.auto_recovery_bridges = list(recovery_bridges) if recovery_bridges is not None else (auto_bridges if mode == "manual" and selected_index is None else [])
                 if recovery_bridges is not None:
@@ -585,118 +599,209 @@ class Helper:
         return targets
 
     def monitor_control(self, targets: list[dict], process: subprocess.Popen[str]) -> None:
+        port_file, cookie_file = DATA / "control-port", DATA / "control_auth_cookie"
+        retry_delay = 1.0
+        while self._is_current_process(process):
+            self._set_control_monitor(process, "connecting")
+            error = self._run_control_session(port_file, cookie_file, targets, process)
+            if not self._is_current_process(process):
+                break
+            self._set_control_monitor(process, "retrying", error)
+            time.sleep(retry_delay)
+            retry_delay = min(10.0, retry_delay * 2)
+        self._set_control_monitor(process, "stopped")
+
+    def _is_current_process(self, process: subprocess.Popen[str]) -> bool:
+        with self.lock:
+            return self.process is process
+
+    def _set_control_monitor(self, process: subprocess.Popen[str], state: str,
+                             error: str | None = None) -> None:
         with self.lock:
             if self.process is not process:
                 return
+            self.control_monitor_state = state
+            self.control_monitor_error = error
 
-        def is_current_process() -> bool:
-            with self.lock:
-                return self.process is process
-
-        port_file, cookie_file = DATA / "control-port", DATA / "control_auth_cookie"
+    def _run_control_session(self, port_file: Path, cookie_file: Path,
+                             targets: list[dict], process: subprocess.Popen[str]) -> str:
         deadline = time.monotonic() + 20
         port = cookie = None
         while time.monotonic() < deadline:
-            if not is_current_process():
-                return
+            if not self._is_current_process(process):
+                return "process_replaced"
             try:
                 port = int(port_file.read_text().strip().rsplit(":", 1)[-1])
-            except (OSError, ValueError): port = None
+            except (OSError, ValueError):
+                port = None
             try:
                 candidate = cookie_file.read_bytes()
                 cookie = candidate if len(candidate) == 32 else None
-            except OSError: cookie = None
-            if port and cookie: break
+            except OSError:
+                cookie = None
+            if port and cookie:
+                break
             time.sleep(.1)
-        if not port or not cookie: return
+        if not port or not cookie:
+            return "control_files_unavailable"
+
         try:
-            if not is_current_process():
-                return
             with socket.create_connection(("127.0.0.1", port), timeout=5) as conn:
                 conn.settimeout(1)
                 conn.sendall(f"AUTHENTICATE {cookie.hex()}\r\n".encode())
-                if "250 OK" not in self.read_control_reply(conn): return
-                conn.sendall(b"SETEVENTS EXTENDED STATUS_CLIENT ORCONN CIRC\r\n")
+                if "250 OK" not in self.read_control_reply(conn):
+                    return "control_authentication_failed"
+                conn.sendall(b"SETEVENTS EXTENDED STATUS_CLIENT ORCONN CIRC STREAM\r\n")
                 events = self.read_control_reply(conn)
-                if "250 OK" not in events: return
-                if not is_current_process():
-                    return
+                if "250 OK" not in events:
+                    return "control_event_subscription_failed"
+                self.process_control_events(events, targets, process)
                 if targets:
-                    self.process_control_events(events, targets, process)
-                    # The bridge may already be connected before the control listener
-                    # attaches, so seed our active bridge from Tor's current OR conns.
                     conn.sendall(b"GETINFO orconn-status\r\n")
                     orconn_snapshot = self.read_control_reply(conn)
-                    if not is_current_process():
-                        return
-                    self.process_orconn_snapshot(orconn_snapshot, targets, process)
-                conn.sendall(b"GETINFO circuit-status\r\n")
-                circuit_text = self.read_control_reply(conn)
-                if not is_current_process():
-                    return
-                self.process_circuit_snapshot(circuit_text, targets, process)
-                threading.Thread(
-                    target=self.lookup_exit_relay_from_snapshot_fresh,
-                    args=(port, cookie, circuit_text, process),
-                    daemon=True
-                ).start()
+                    if "250 OK" in orconn_snapshot:
+                        self.process_control_events(orconn_snapshot, targets, process)
+                        self.process_orconn_snapshot(orconn_snapshot, targets, process)
+                conn.sendall(b"GETINFO stream-status\r\n")
+                stream_snapshot = self.read_control_reply(conn)
+                if "250+stream-status=" in stream_snapshot:
+                    self.process_stream_snapshot(stream_snapshot, process)
+                    self.process_control_events(stream_snapshot, targets, process)
+                if not self._refresh_circuit_snapshot(conn, port, cookie, targets, process):
+                    return "circuit_snapshot_failed"
+
+                self._set_control_monitor(process, "watching")
+                next_snapshot = time.monotonic() + 5
                 buffer = b""
-                exit_nodes_applied = False
-                while True:
-                    if not is_current_process():
-                        return
-                    try: data = conn.recv(8192)
+                while self._is_current_process(process):
+                    try:
+                        data = conn.recv(8192)
                     except socket.timeout:
-                        if self.maybe_auto_recover(): return
-                        # After bootstrap completes, apply exit country restriction via SETCONF once.
-                        if not exit_nodes_applied:
-                            with self.lock:
-                                current_state = self.state
-                                current_exit = self.exit_country
-                            if current_state == "connected":
-                                if current_exit and re.fullmatch(r"[a-zA-Z]{2}", current_exit):
-                                    code = current_exit.lower()
-                                    conn.sendall(f"SETCONF ExitNodes={{{code}}}\r\n".encode())
-                                    self.read_control_reply(conn)
-                                    conn.sendall(b"SIGNAL NEWNYM\r\n")
-                                    self.read_control_reply(conn)
-                                exit_nodes_applied = True
-                        continue
-                    if not data: return
-                    buffer += data
-                    while b"\r\n" in buffer:
-                        raw, buffer = buffer.split(b"\r\n", 1)
-                        event = raw.decode("utf-8", "replace")
-                        if not is_current_process():
-                            return
-                        if targets:
-                            self.update_bridge_activity(event, targets, process)
-                        elif " CIRC " in event:
-                            fields = event.split()
-                            if len(fields) >= 5:
-                                self.update_circuit_activity(fields[2], fields[3], fields[4], [], process)
-                        if " CIRC " in event and "ONEHOP_TUNNEL" not in event and "IS_INTERNAL" not in event:
-                            fields = event.split()
-                            if len(fields) >= 5 and fields[3] in {"LAUNCHED", "EXTENDED", "BUILT"}:
-                                hops = fields[4].split(",")
-                                if len(hops) >= 3:
-                                    last_fp = re.split(r"[~=]", hops[-1], maxsplit=1)[0] if hops else ""
-                                    if fields[3] in {"LAUNCHED", "EXTENDED"}:
-                                        with self.lock:
-                                            self.exit_relay_candidates.add(fields[2])
-                                    threading.Thread(
-                                        target=self.lookup_exit_relay_fresh,
-                                        args=(port, cookie, last_fp, fields[2], process),
-                                        daemon=True
-                                    ).start()
-                        if self.maybe_auto_recover(): return
-                    if len(buffer) > 65536: buffer = b""
-        except OSError: return
+                        data = None
+                    if data == b"":
+                        return "control_socket_closed"
+                    if data:
+                        buffer += data
+                        while b"\r\n" in buffer:
+                            raw, buffer = buffer.split(b"\r\n", 1)
+                            event = raw.decode("utf-8", "replace")
+                            if self.process_control_events(event + "\r\n", targets, process):
+                                next_snapshot = time.monotonic()
+                            self._handle_control_circuit_event(event, port, cookie, targets, process)
+                            if self.maybe_auto_recover():
+                                return "process_replaced"
+                        if len(buffer) > 65536:
+                            buffer = b""
+                    elif self.maybe_auto_recover():
+                        return "process_replaced"
+
+                    self._apply_exit_country_if_needed(conn, process)
+                    if time.monotonic() >= next_snapshot:
+                        if not self._refresh_circuit_snapshot(conn, port, cookie, targets, process):
+                            return "circuit_snapshot_failed"
+                        next_snapshot = time.monotonic() + 5
+                return "process_replaced"
+        except OSError:
+            return "control_socket_failed"
+
+    def _apply_exit_country_if_needed(self, conn: socket.socket,
+                                      process: subprocess.Popen[str]) -> None:
+        with self.lock:
+            if self.process is not process or self.state != "connected" or self.exit_nodes_applied:
+                return
+            current_exit = self.exit_country.strip()
+        if not re.fullmatch(r"[A-Za-z]{2}", current_exit):
+            with self.lock:
+                if self.process is process:
+                    self.exit_nodes_applied = True
+            return
+        code = current_exit.lower()
+        try:
+            conn.sendall(f"SETCONF ExitNodes={{{code}}}\r\n".encode())
+            if "250 OK" not in self.read_control_reply(conn):
+                return
+            conn.sendall(b"SIGNAL NEWNYM\r\n")
+            if "250 OK" not in self.read_control_reply(conn):
+                return
+            with self.lock:
+                if self.process is process:
+                    self.exit_nodes_applied = True
+        except OSError:
+            pass
+
+    def _refresh_circuit_snapshot(self, conn: socket.socket, port: int, cookie: bytes,
+                                  targets: list[dict], process: subprocess.Popen[str]) -> bool:
+        try:
+            conn.sendall(b"GETINFO circuit-status\r\n")
+            snapshot = self.read_control_reply(conn)
+        except OSError:
+            return False
+        if "250+circuit-status=" not in snapshot or "250 OK" not in snapshot:
+            return False
+        self.process_control_events(snapshot, targets, process)
+        exit_lookups = self.process_circuit_snapshot(snapshot, targets, process)
+        for circuit_id, fingerprint in exit_lookups:
+            self._schedule_exit_relay_lookup(port, cookie, fingerprint, circuit_id, process)
+        with self.lock:
+            if self.process is process:
+                self.control_snapshot_count += 1
+                self.control_monitor_error = None
+        return True
+
+    def _handle_control_circuit_event(self, event: str, port: int, cookie: bytes,
+                                      targets: list[dict], process: subprocess.Popen[str]) -> None:
+        if " CIRC " not in event or "ONEHOP_TUNNEL" in event or "IS_INTERNAL" in event:
+            return
+        fields = event.split()
+        if len(fields) < 5:
+            return
+        if fields[3] in {"CLOSED", "FAILED", "DESTROYED"}:
+            return
+        if fields[3] not in {"LAUNCHED", "EXTENDED", "BUILT"}:
+            return
+        hops = fields[4].split(",")
+        if len(hops) < 3:
+            return
+        if fields[3] in {"LAUNCHED", "EXTENDED"}:
+            with self.lock:
+                if self.process is process:
+                    self.exit_relay_candidates.add(fields[2])
+        fingerprint = re.split(r"[~=]", hops[-1], maxsplit=1)[0]
+        with self.lock:
+            is_selected = self.selected_exit_circuit_id == fields[2]
+        if fields[3] == "BUILT" and is_selected:
+            self._schedule_exit_relay_lookup(port, cookie, fingerprint, fields[2], process)
+
+    def _schedule_exit_relay_lookup(self, port: int, cookie: bytes, fingerprint: str,
+                                    circuit_id: str, process: subprocess.Popen[str]) -> None:
+        lookup_key = f"{id(process)}:{circuit_id}"
+        with self.lock:
+            if self.process is not process or lookup_key in self.exit_relay_lookups_in_progress:
+                return
+            if circuit_id != self.selected_exit_circuit_id or circuit_id not in self.built_circuits:
+                return
+            if self.exit_relay_ip and self.exit_relay_circuit_id == circuit_id:
+                return
+            self.exit_relay_lookups_in_progress.add(lookup_key)
+        threading.Thread(
+            target=self._run_exit_relay_lookup,
+            args=(port, cookie, fingerprint, circuit_id, lookup_key, process),
+            daemon=True
+        ).start()
+
+    def _run_exit_relay_lookup(self, port: int, cookie: bytes, fingerprint: str,
+                               circuit_id: str, lookup_key: str,
+                               process: subprocess.Popen[str]) -> None:
+        try:
+            self.lookup_exit_relay_fresh(port, cookie, fingerprint, circuit_id, process)
+        finally:
+            with self.lock:
+                self.exit_relay_lookups_in_progress.discard(lookup_key)
 
     @staticmethod
     def read_control_reply(conn: socket.socket) -> str:
         data = bytearray(); deadline = time.monotonic() + 5
-        while time.monotonic() < deadline and len(data) < 8192:
+        while time.monotonic() < deadline and len(data) < 1_048_576:
             try: chunk = conn.recv(1024)
             except socket.timeout: continue
             if not chunk: break
@@ -705,9 +810,57 @@ class Helper:
             if "250 OK\r\n" in text: return text
         return data.decode("utf-8", "replace")
 
-    def process_control_events(self, text: str, targets: list[dict], process: subprocess.Popen[str]) -> None:
+    def process_control_events(self, text: str, targets: list[dict], process: subprocess.Popen[str]) -> bool:
+        selected_stream_changed = False
         for line in text.split("\r\n"):
-            if line.startswith("650 "): self.update_bridge_activity(line, targets, process)
+            if not line.startswith("650 "):
+                continue
+            fields = line.split()
+            if len(fields) >= 6 and fields[1] == "STREAM":
+                status, circuit_id, target = fields[3:6]
+                selected_stream_changed |= self.select_exit_circuit_from_stream(
+                    status, circuit_id, target, process)
+            self.update_bridge_activity(line, targets, process)
+        return selected_stream_changed
+
+    def process_stream_snapshot(self, text: str, process: subprocess.Popen[str]) -> bool:
+        in_snapshot = False
+        latest_stream: tuple[int, str, str] | None = None
+        for line in text.split("\r\n"):
+            if line.startswith("250+stream-status="):
+                in_snapshot = True
+                continue
+            if in_snapshot and line == ".":
+                in_snapshot = False
+                continue
+            if not in_snapshot:
+                continue
+            fields = line.split()
+            if (len(fields) < 4 or not fields[0].isdigit() or int(fields[0]) <= 0
+                    or fields[1] != "SUCCEEDED" or not fields[2].isdigit() or int(fields[2]) <= 0
+                    or ".onion" in fields[3].lower() or "(tor_internal)" in fields[3].lower()):
+                continue
+            stream_number = int(fields[0])
+            if latest_stream is None or stream_number > latest_stream[0]:
+                latest_stream = (stream_number, fields[2], fields[3])
+        if latest_stream is None:
+            return False
+        _, circuit_id, target = latest_stream
+        return self.select_exit_circuit_from_stream("SUCCEEDED", circuit_id, target, process)
+
+    def select_exit_circuit_from_stream(self, status: str, circuit_id: str,
+                                        target: str, process: subprocess.Popen[str]) -> bool:
+        if (status != "SUCCEEDED" or not circuit_id.isdigit() or int(circuit_id) <= 0
+                or ".onion" in target.lower() or "(tor_internal)" in target.lower()):
+            return False
+        with self.lock:
+            if self.process is not process or self.selected_exit_circuit_id == circuit_id:
+                return False
+            self.selected_exit_circuit_id = circuit_id
+            self.exit_relay_ip = ""
+            self.exit_relay_country = ""
+            self.exit_relay_circuit_id = ""
+            return True
 
     def process_orconn_snapshot(self, text: str, targets: list[dict], process: subprocess.Popen[str]) -> None:
         in_snapshot = False
@@ -723,8 +876,13 @@ class Helper:
                 if len(fields) >= 2:
                     self.update_bridge_activity(f"650 ORCONN {fields[0]} {fields[1]}", targets, process)
 
-    def process_circuit_snapshot(self, text: str, targets: list[dict], process: subprocess.Popen[str]) -> None:
+    def process_circuit_snapshot(self, text: str, targets: list[dict],
+                                 process: subprocess.Popen[str]) -> list[tuple[str, str]]:
         in_snapshot = False
+        built: dict[str, int] = {}
+        built_paths: dict[str, str] = {}
+        candidates: set[str] = set()
+        exit_lookups: list[tuple[str, str]] = []
         for line in text.split("\r\n"):
             if line.startswith("250+circuit-status="):
                 in_snapshot = True
@@ -735,8 +893,57 @@ class Helper:
             if not in_snapshot:
                 continue
             fields = line.split()
-            if len(fields) >= 3:
-                self.update_circuit_activity(fields[0], fields[1], fields[2], targets, process)
+            if len(fields) < 3 or "ONEHOP_TUNNEL" in line or "IS_INTERNAL" in line:
+                continue
+            circuit_id, status, path = fields[:3]
+            if status == "BUILT":
+                index = self.bridge_index_for_target(path.split(",", 1)[0], targets)
+                built[circuit_id] = index or 0
+                built_paths[circuit_id] = path
+            elif status in {"LAUNCHED", "EXTENDED"}:
+                candidates.add(circuit_id)
+
+        with self.lock:
+            if self.process is not process:
+                return []
+            had_built_circuits = bool(self.built_circuits)
+            self.built_circuits = built
+            self.exit_relay_candidates = candidates
+            if (self.selected_exit_circuit_id not in built
+                    and self.selected_exit_circuit_id not in candidates):
+                self.selected_exit_circuit_id = ""
+                self.exit_relay_ip = ""
+                self.exit_relay_country = ""
+                self.exit_relay_circuit_id = ""
+            selected_path = built_paths.get(self.selected_exit_circuit_id, "")
+            if self.selected_exit_circuit_id and selected_path:
+                hops = selected_path.split(",")
+                if len(hops) >= 3:
+                    exit_lookups.append((self.selected_exit_circuit_id,
+                                         re.split(r"[~=]", hops[-1], maxsplit=1)[0]))
+            mapped_indices = [index for index in built.values() if index > 0]
+            if mapped_indices:
+                if self.current_index not in mapped_indices:
+                    self.current_index = mapped_indices[0]
+                self.bridge_activity = "connected"
+                self.reconnect_since = None
+                if self.state == "connected":
+                    self.recovery_attempt_since = None
+                if self.auto_recovery_tried and not self.recovery_stable_since:
+                    self.recovery_stable_since = time.monotonic()
+            elif built:
+                self.current_index = None
+                self.bridge_activity = "connected"
+                self.reconnect_since = None
+            elif had_built_circuits or self.state == "connected":
+                self.current_index = None
+                self.bridge_activity = None
+                self.reconnect_since = None
+            if self.exit_relay_circuit_id not in built or self.exit_relay_circuit_id != self.selected_exit_circuit_id:
+                self.exit_relay_ip = ""
+                self.exit_relay_country = ""
+                self.exit_relay_circuit_id = ""
+        return exit_lookups
 
     def bridge_index_for_target(self, reported: str, targets: list[dict]) -> int | None:
         target = reported.lower()
@@ -748,18 +955,6 @@ class Helper:
                 return bridge["index"]
         return None
 
-    def lookup_exit_relay_from_snapshot_fresh(self, port: int, cookie: bytes, text: str, process: subprocess.Popen[str]) -> None:
-        """Seed exit relay info from an already-built circuit in the snapshot (fresh connection)."""
-        for line in text.split("\r\n"):
-            if "ONEHOP_TUNNEL" in line or "IS_INTERNAL" in line:
-                continue
-            fields = line.split()
-            if len(fields) >= 3 and fields[1] == "BUILT":
-                hops = fields[2].split(",")
-                last_fp = re.split(r"[~=]", hops[-1], maxsplit=1)[0] if hops else ""
-                self.lookup_exit_relay_fresh(port, cookie, last_fp, fields[0], process)
-                return  # use first BUILT circuit found
-
     def lookup_exit_relay_fresh(self, port: int, cookie: bytes, fingerprint: str, circuit_id: str, process: subprocess.Popen[str]) -> None:
         """Retry fresh control-port lookups while a newly built circuit settles."""
         fp = fingerprint.strip("$").upper()
@@ -769,7 +964,7 @@ class Helper:
         tor_country = None
         for attempt in range(4):
             with self.lock:
-                if self.process is not process or (circuit_id not in self.built_circuits and circuit_id not in self.exit_relay_candidates):
+                if self.process is not process or circuit_id != self.selected_exit_circuit_id or circuit_id not in self.built_circuits:
                     return
             try:
                 with socket.create_connection(("127.0.0.1", port), timeout=5) as conn:
@@ -811,7 +1006,7 @@ class Helper:
         if not ip:
             return
         with self.lock:
-            if self.process is not process or (circuit_id not in self.built_circuits and circuit_id not in self.exit_relay_candidates):
+            if self.process is not process or circuit_id != self.selected_exit_circuit_id or circuit_id not in self.built_circuits:
                 return
             self.exit_relay_ip = ip
             self.exit_relay_country = tor_country or self.country_code(ip) or ""
@@ -846,15 +1041,20 @@ class Helper:
                     return
                 self.built_circuits.pop(circuit_id, None)
                 self.exit_relay_candidates.discard(circuit_id)
-                if not self.built_circuits or circuit_id == self.exit_relay_circuit_id:
+                if (circuit_id == self.selected_exit_circuit_id
+                        or circuit_id == self.exit_relay_circuit_id):
                     self.exit_relay_ip = ""
                     self.exit_relay_country = ""
                     self.exit_relay_circuit_id = ""
+                if circuit_id == self.selected_exit_circuit_id:
+                    self.selected_exit_circuit_id = ""
 
     def update_bridge_activity(self, event: str, targets: list[dict], process: subprocess.Popen[str]) -> None:
         reported, activity = None, None
         fields = event.split()
         if " CIRC " in event and len(fields) >= 5:
+            if "ONEHOP_TUNNEL" in event or "IS_INTERNAL" in event:
+                return
             self.update_circuit_activity(fields[2], fields[3], fields[4], targets, process)
             return
         if " STATUS_CLIENT " in event and " BOOTSTRAP " in event:
@@ -975,6 +1175,10 @@ class Helper:
             self.last_error = None; self.targets = []; self.current_index = None
             self.bridge_activity = None; self.built_circuits = {}; self.exit_relay_candidates = set(); self.reconnect_since = None
             self.exit_relay_ip = ""; self.exit_relay_country = ""; self.exit_relay_circuit_id = ""
+            self.selected_exit_circuit_id = ""
+            self.exit_relay_lookups_in_progress = set()
+            self.control_monitor_state = "stopped"; self.control_monitor_error = None
+            self.control_snapshot_count = 0; self.exit_nodes_applied = False
             self.auto_recovery_bridges = auto_bridges; self.auto_recovery_tried = auto_tried
             self.auto_recovery_indices = recovery_indices
             self.auto_recovery_in_progress = recovery_in_progress; self.recovery_attempt_since = recovery_attempt_since
